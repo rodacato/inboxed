@@ -13,9 +13,6 @@ servers:
       traefik.http.routers.inboxed.rule: Host(`inboxed.notdefined.dev`)
     options:
       network: "kamal"
-    ports:
-      - "587:587"   # SMTP
-      - "465:465"   # SMTP SSL
 
 proxy:
   ssl: true
@@ -29,21 +26,40 @@ registry:
     - KAMAL_REGISTRY_PASSWORD
 
 builder:
-  dockerfile: apps/web/Dockerfile
-  context: .
+  dockerfile: apps/api/Dockerfile
+  context: apps/api
 
 env:
   clear:
     RAILS_ENV: production
-    INBOXED_DOMAIN: mail.notdefined.dev
-    INBOXED_SMTP_PORT: 587
+    RAILS_LOG_TO_STDOUT: true
   secret:
     - DATABASE_URL
     - SECRET_KEY_BASE
     - INBOXED_ADMIN_TOKEN
     - REDIS_URL
+    - DASHBOARD_URL
 
 accessories:
+  dashboard:
+    image: ghcr.io/notdefined-dev/inboxed-dashboard
+    host: YOUR_VPS_IP
+    port: "80:80"
+    options:
+      network: "kamal"
+
+  mcp:
+    image: ghcr.io/notdefined-dev/inboxed-mcp
+    host: YOUR_VPS_IP
+    port: "3001:3001"
+    env:
+      clear:
+        INBOXED_API_URL: http://inboxed-web:3000
+      secret:
+        - INBOXED_MCP_KEY
+    options:
+      network: "kamal"
+
   db:
     image: postgres:16-alpine
     host: YOUR_VPS_IP
@@ -65,17 +81,5 @@ accessories:
     port: "127.0.0.1:6379:6379"
     directories:
       - data:/data
-    options:
-      network: "kamal"
-
-  mcp:
-    image: ghcr.io/notdefined-dev/inboxed-mcp
-    host: YOUR_VPS_IP
-    port: "3001:3001"
-    env:
-      clear:
-        INBOXED_API_URL: http://inboxed-web:3000
-      secret:
-        - INBOXED_MCP_KEY
     options:
       network: "kamal"

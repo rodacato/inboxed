@@ -4,15 +4,17 @@
 .env.local
 
 # ── Ruby / Rails ──────────────────────────────────────────────
-apps/web/tmp/
-apps/web/log/
-apps/web/storage/
-apps/web/vendor/bundle/
-apps/web/.bundle/
+apps/api/tmp/
+apps/api/log/
+apps/api/storage/
+apps/api/vendor/bundle/
+apps/api/.bundle/
 
 # ── Node ──────────────────────────────────────────────────────
 node_modules/
 apps/mcp/dist/
+apps/dashboard/build/
+apps/dashboard/.svelte-kit/
 
 # ── IDE ───────────────────────────────────────────────────────
 .vscode/*

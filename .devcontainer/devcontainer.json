@@ -19,10 +19,11 @@
   },
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-  "forwardPorts": [3200, 3201, 5632, 6579, 1587, 1465],
+  "forwardPorts": [3000, 3001, 5173, 5632, 6579, 1587, 1465],
   "portsAttributes": {
-    "3200": { "label": "Rails Web", "onAutoForward": "notify" },
-    "3201": { "label": "MCP Server", "onAutoForward": "notify" },
+    "3000": { "label": "API (Rails)", "onAutoForward": "notify" },
+    "3001": { "label": "MCP Server", "onAutoForward": "notify" },
+    "5173": { "label": "Dashboard (Vite)", "onAutoForward": "notify" },
     "5632": { "label": "PostgreSQL", "onAutoForward": "silent" },
     "6579": { "label": "Redis", "onAutoForward": "silent" },
     "1587": { "label": "SMTP", "onAutoForward": "silent" },
@@ -33,6 +34,7 @@
     "vscode": {
       "extensions": [
         "Shopify.ruby-lsp",
+        "svelte.svelte-vscode",
         "bradlc.vscode-tailwindcss",
         "dbaeumer.vscode-eslint",
         "ms-azuretools.vscode-docker",
