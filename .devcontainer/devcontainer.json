@@ -1,0 +1,49 @@
+{
+  "name": "inboxed-dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspaces/inboxed",
+  "runServices": ["workspace", "db", "redis"],
+  "features": {
+    "ghcr.io/devcontainers/features/ruby:1": {
+      "version": "3.3"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/rails/devcontainer/features/postgres-client": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "forwardPorts": [3200, 3201, 5632, 6579, 1587, 1465],
+  "portsAttributes": {
+    "3200": { "label": "Rails Web", "onAutoForward": "notify" },
+    "3201": { "label": "MCP Server", "onAutoForward": "notify" },
+    "5632": { "label": "PostgreSQL", "onAutoForward": "silent" },
+    "6579": { "label": "Redis", "onAutoForward": "silent" },
+    "1587": { "label": "SMTP", "onAutoForward": "silent" },
+    "1465": { "label": "SMTP SSL", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-install.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Shopify.ruby-lsp",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "anthropic.claude-code",
+        "castwide.solargraph"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  }
+}

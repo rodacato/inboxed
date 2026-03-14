@@ -1,0 +1,61 @@
+# Production / self-hosting docker-compose
+# Usage: docker compose up -d
+
+services:
+  inboxed:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "${INBOXED_WEB_PORT:-3200}:3000"
+      - "${INBOXED_SMTP_PORT:-1587}:587"
+      - "${INBOXED_SMTPS_PORT:-1465}:465"
+    environment:
+      DATABASE_URL: postgresql://inboxed:${POSTGRES_PASSWORD:-inboxed}@db:5432/inboxed_production
+      REDIS_URL: redis://redis:6379/0
+      RAILS_ENV: production
+      INBOXED_DOMAIN: ${INBOXED_DOMAIN:-mail.localhost}
+      INBOXED_ADMIN_TOKEN: ${INBOXED_ADMIN_TOKEN:?Set INBOXED_ADMIN_TOKEN in .env}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  inboxed-mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp/Dockerfile
+    ports:
+      - "${INBOXED_MCP_PORT:-3201}:3001"
+    environment:
+      INBOXED_API_URL: http://inboxed:3000
+      INBOXED_API_KEY: ${INBOXED_MCP_KEY:-}
+    depends_on:
+      - inboxed
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: inboxed
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inboxed}
+      POSTGRES_DB: inboxed_production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inboxed"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

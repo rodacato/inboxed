@@ -1,0 +1,40 @@
+# ── Environment ───────────────────────────────────────────────
+.env
+.env.production
+.env.local
+
+# ── Ruby / Rails ──────────────────────────────────────────────
+apps/web/tmp/
+apps/web/log/
+apps/web/storage/
+apps/web/vendor/bundle/
+apps/web/.bundle/
+
+# ── Node ──────────────────────────────────────────────────────
+node_modules/
+apps/mcp/dist/
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ── Docker ────────────────────────────────────────────────────
+.docker/
+
+# ── Research / internal notes ─────────────────────────────────
+devmail_*.md
+
+# ── Claude Code ───────────────────────────────────────────────
+.claude/
+.cursorrules
+.cursorignore
+.cursor/
+.aider*
+.copilot/
+.github/copilot/

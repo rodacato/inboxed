@@ -1,0 +1,14 @@
+.git
+.devcontainer
+.vscode
+.idea
+.DS_Store
+docs/
+*.md
+!README.md
+node_modules
+apps/web/tmp
+apps/web/log
+apps/web/storage
+.env*
+!.env.example
