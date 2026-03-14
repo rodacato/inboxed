@@ -74,6 +74,7 @@ Read [ROADMAP.md](docs/ROADMAP.md) to understand the current phase, priorities, 
 
 | Document | When to read |
 |----------|-------------|
+| [specs/](docs/specs/) | Before implementing anything — read the approved spec for the current work |
 | [BRANDING.md](docs/BRANDING.md) | When working on UI, dashboard, or any visual component |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | When discussing code style, PR process, or community guidelines |
 | [SECURITY.md](SECURITY.md) | When reviewing security-sensitive code or architecture |

@@ -18,6 +18,7 @@
 | `EXPERTS.md` | Panel of domain specialists for consultation |
 | `ROADMAP.md` | Development phases, tasks, and milestones |
 | `AGENTS.md` | Instructions for AI agents working on this project |
+| `specs/` | Implementation specs — plans, decisions, and exit criteria per unit of work |
 
 ---
 
@@ -49,10 +50,11 @@ inboxed/
 │   └── inboxed/            # Core SMTP handling
 ├── spec/                   # RSpec tests
 ├── docs/                   # Extended documentation
-│   ├── dns-setup.md
-│   ├── playwright.md
-│   ├── rspec.md
-│   └── mcp.md
+│   ├── specs/              # Implementation specs per unit of work
+│   ├── ROADMAP.md
+│   ├── IDENTITY.md
+│   ├── EXPERTS.md
+│   └── BRANDING.md
 └── .github/
     ├── workflows/
     │   ├── ci.yml
