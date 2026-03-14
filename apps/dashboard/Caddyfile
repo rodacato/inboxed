@@ -1,0 +1,13 @@
+:80 {
+    root * /srv
+    file_server
+    try_files {path} /index.html
+
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+
+    handle /admin/* {
+        reverse_proxy api:3000
+    }
+}
