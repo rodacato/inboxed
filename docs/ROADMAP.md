@@ -146,7 +146,7 @@ Backlog prioritized by user feedback after initial release.
 |---------|----------|-------------|
 | **Webhooks** | High | HTTP POST on email received, with retry logic |
 | **Routing rules** | Medium | Forward, drop, auto-reply based on from/to/subject patterns |
-| **SMTP relay mode** | Medium | Capture + optional release to real SMTP |
+| **SMTP relay mode** | Medium | Capture + optional release to real SMTP (level 3 — see below) |
 | **CLI** | Medium | `inboxed list`, `inboxed wait`, `inboxed clear` |
 | **Email HTML preview** | Low | Multi-client rendering simulation |
 | **Load testing mode** | Low | Accept high volume, verify delivery stats |
@@ -165,3 +165,17 @@ Backlog prioritized by user feedback after initial release.
 | **Developer Ready** | + 5 | Test framework helpers, ready for other developers to adopt |
 | **Public Launch** | + 6 | Self-hostable, documented, CI/CD, Docker images published |
 | **Community Driven** | + 7 | Features driven by real user feedback |
+
+---
+
+## SMTP Evolution Path
+
+Inboxed's SMTP capabilities evolve in three levels. Levels 1-2 are the MVP. Level 3 is post-MVP.
+
+| Level | Name | How it works | When |
+|-------|------|-------------|------|
+| **1. Direct reception** | App sends to `user@mail.inboxed.dev` | Inboxed receives and stores. Standard MX-based inbound. | Phase 1 (MVP) |
+| **2. Transparent relay** | App configures Inboxed as its SMTP server | App thinks it's "sending" email. Inboxed captures everything that passes through — another form of reception. Transparent to the app. | Phase 1 (MVP) |
+| **3. Outbound relay** | Capture + optional release to real recipient | Inboxed captures the email AND can forward it to the actual destination. Useful in staging when you need to inspect but also deliver. Requires DKIM signing, bounce handling, deliverability management. | Post-MVP |
+
+> **Design note:** The data model should include a `direction` or `source_type` field on emails from day one, so level 3 doesn't require a migration that changes the core schema. Plan for it in the data models spec.

@@ -90,7 +90,7 @@ Unresolved items to discuss before moving to approved.
 
 | # | Spec | Phase | Status | Release | Abstract |
 |---|------|-------|--------|---------|----------|
-| — | — | — | — | — | *No specs yet. First spec coming soon.* |
+| 000 | [Project Foundation](000-foundation.md) | Phase 0 | draft | — | Rails API-only + Svelte SPA + MCP skeleton + Caddy proxy + CI/CD + Kamal deploy. Infrastructure validated end-to-end, no business logic. |
 
 <!--
 Template row:

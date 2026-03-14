@@ -60,11 +60,21 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | **Ask when** | Setting up deployment, configuring DNS, debugging networking issues, designing the Docker Compose stack, CI/CD pipelines |
 | **Would say** | "If it takes more than `docker compose up` to run, you've already lost half your potential users." |
 
+### 5. API Design Architect
+
+| | |
+|---|---|
+| **Specialty** | REST API contract design, API-as-product philosophy, developer ergonomics at the protocol level |
+| **Knows deeply** | OpenAPI 3.1, JSON:API, RFC 7807 (Problem Details), pagination patterns (cursor vs offset), idempotency keys, rate limit headers, HATEOAS, versioning strategies (URL vs header), ETags, content negotiation |
+| **Thinks about** | Is this endpoint name obvious to someone who's never read the docs? Are error responses consistent and actionable? Does the pagination contract scale? Is the auth flow the simplest it can be without being insecure? Can a developer go from zero to first successful request in under 60 seconds? |
+| **Ask when** | Naming endpoints, defining request/response schemas, choosing error formats, designing auth flows, planning API versioning, deciding what goes in headers vs body, reviewing consistency across the API surface |
+| **Would say** | "Your API is your most permanent interface. The dashboard can be redesigned next week, but a breaking API change costs every integration partner a migration. Get the contract right first, build everything else on top." |
+
 ---
 
 ## Quality & Security Experts
 
-### 5. QA Automation Engineer
+### 6. QA Automation Engineer
 
 | | |
 |---|---|
@@ -74,7 +84,7 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | **Ask when** | Designing the Playwright/RSpec helpers, writing integration tests, defining the test strategy, load testing the SMTP server |
 | **Would say** | "If your `wait_for_email` helper has a hardcoded sleep, you've already failed." |
 
-### 6. Security Engineer
+### 7. Security Engineer
 
 | | |
 |---|---|
@@ -88,7 +98,7 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 
 ## Product & Design Experts
 
-### 7. Technical Writer / DX Engineer
+### 8. Technical Writer / DX Engineer
 
 | | |
 |---|---|
@@ -98,7 +108,7 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | **Ask when** | Writing docs, designing the README, creating quickstart guides for Rails/Node/Python, structuring API documentation |
 | **Would say** | "Documentation IS the product for a developer tool. If your docs are bad, your tool doesn't exist." |
 
-### 8. UX/UI Designer (Developer Tools)
+### 9. UX/UI Designer (Developer Tools)
 
 | | |
 |---|---|
@@ -108,7 +118,7 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | **Ask when** | Designing dashboard layouts, choosing component patterns, reviewing the branding guide, mobile responsiveness for dev tools |
 | **Would say** | "A developer opening the dashboard should understand what's happening without a tutorial. Respect the density of technical information." |
 
-### 9. Product Manager (Technical)
+### 10. Product Manager (Technical)
 
 | | |
 |---|---|
@@ -118,7 +128,7 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | **Ask when** | Prioritizing the roadmap, deciding whether a feature is in scope, competitive positioning, pricing strategy for potential SaaS |
 | **Would say** | "Inboxed doesn't compete with Mailtrap for large teams. It's the email dev server that a solo developer self-hosts with native AI agent integration." |
 
-### 10. Developer Advocate / Community
+### 11. Developer Advocate / Community
 
 | | |
 |---|---|
@@ -135,7 +145,8 @@ You can also convene a **panel discussion** by asking multiple experts to weigh 
 | Decision Area | Recommended Experts |
 |--------------|-------------------|
 | SMTP server architecture | Email Infrastructure + Security + DevOps |
-| API endpoint design | Full-Stack + DX Engineer + QA |
+| API contract design | API Design Architect + Full-Stack + DX Engineer |
+| API endpoint implementation | Full-Stack + API Design Architect + QA |
 | MCP tool design | MCP Engineer + QA + Product Manager |
 | Dashboard UI | UX Designer + Full-Stack + DX Engineer |
 | Security review | Security + Email Infrastructure + DevOps |

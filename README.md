@@ -60,6 +60,7 @@ Dashboard available at `http://localhost:3200`
 ## Features
 
 ### SMTP Reception
+
 - Accepts any email addressed to your configured domain
 - Full MIME parsing — HTML, plain text, attachments, inline images
 - TLS support (STARTTLS on 587, SSL on 465)
@@ -67,6 +68,7 @@ Dashboard available at `http://localhost:3200`
 - **Not** an open relay — only accepts mail for registered domains
 
 ### REST API
+
 ```bash
 # List emails in an inbox
 GET /api/v1/inboxes/:address
@@ -90,6 +92,7 @@ DELETE /api/v1/inboxes/:address
 ```
 
 ### MCP Server
+
 Works with Claude, Claude Code, n8n, and any MCP-compatible agent.
 
 ```json
@@ -108,7 +111,8 @@ Works with Claude, Claude Code, n8n, and any MCP-compatible agent.
 ```
 
 Available tools:
-- `get_latest_email(inbox, subject_pattern?)` 
+
+- `get_latest_email(inbox, subject_pattern?)`
 - `wait_for_email(inbox, subject_pattern, timeout_seconds)`
 - `extract_otp(inbox, pattern?)` — returns the numeric/alphanumeric code
 - `extract_link(inbox, link_pattern?)` — returns first matching URL
@@ -117,6 +121,7 @@ Available tools:
 - `search_emails(query)`
 
 ### Dashboard
+
 - Real-time inbox updates via Hotwire Turbo Streams
 - HTML email preview (sandboxed iframe)
 - Raw MIME source view
@@ -130,7 +135,7 @@ Available tools:
 
 ```typescript
 // helpers/inboxed.ts
-import { InboxedClient } from '@inboxed/playwright';
+import { InboxedClient } from "@inboxed/playwright";
 
 const mail = new InboxedClient({
   url: process.env.INBOXED_URL,
@@ -138,11 +143,11 @@ const mail = new InboxedClient({
 });
 
 // In your test:
-await page.fill('[name=email]', 'signup+test123@mail.notdefined.dev');
-await page.click('[type=submit]');
+await page.fill("[name=email]", "signup+test123@mail.notdefined.dev");
+await page.click("[type=submit]");
 
-const otp = await mail.extractOtp('signup+test123@mail.notdefined.dev');
-await page.fill('[name=otp]', otp);
+const otp = await mail.extractOtp("signup+test123@mail.notdefined.dev");
+await page.fill("[name=otp]", otp);
 ```
 
 ## RSpec Integration
@@ -154,10 +159,10 @@ require 'inboxed/rspec'
 # In your spec:
 it 'sends a verification email' do
   post '/signup', params: { email: 'user@mail.notdefined.dev' }
-  
+
   email = Inboxed.wait_for_email('user@mail.notdefined.dev', subject: /verify/)
   expect(email.subject).to include('Verify')
-  
+
   otp = Inboxed.extract_otp('user@mail.notdefined.dev')
   expect(otp).to match(/\d{6}/)
 end
@@ -206,9 +211,9 @@ services:
   inboxed:
     image: ghcr.io/notdefined-dev/inboxed:latest
     ports:
-      - '587:587'
-      - '465:465'
-      - '3000:3000'
+      - "587:587"
+      - "465:465"
+      - "3000:3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres/inboxed
       INBOXED_DOMAIN: mail.yourdomain.com
@@ -218,14 +223,14 @@ services:
   inboxed-mcp:
     image: ghcr.io/notdefined-dev/inboxed-mcp:latest
     ports:
-      - '3001:3001'
+      - "3001:3001"
     environment:
       INBOXED_API_URL: http://inboxed:3000
       INBOXED_API_KEY: ${INBOXED_MCP_KEY}
 
   postgres:
     image: postgres:16-alpine
-    volumes: ['pgdata:/var/lib/postgresql/data']
+    volumes: ["pgdata:/var/lib/postgresql/data"]
     environment:
       POSTGRES_DB: inboxed
       POSTGRES_PASSWORD: postgres
@@ -256,31 +261,15 @@ inboxed/
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Web + API | Ruby on Rails 8, Hotwire |
-| SMTP server | ActionMailbox + custom SMTP handler |
-| MCP server | Node.js 22 + TypeScript |
-| Database | PostgreSQL 16 |
-| Background jobs | Solid Queue |
-| Real-time | Turbo Streams + ActionCable |
-| Deploy | Docker + Kamal |
-
----
-
-## Roadmap
-
-- [x] SMTP reception + persistence
-- [x] REST API with API key auth
-- [x] Dashboard with real-time updates
-- [x] MCP server
-- [x] Playwright + RSpec helpers
-- [ ] Webhooks on email received
-- [ ] Routing rules (forward, drop, auto-reply)
-- [ ] SMTP relay mode (capture + optional release)
-- [ ] CLI (`inboxed list`, `inboxed wait`, `inboxed clear`)
-- [ ] Email HTML preview with multi-client simulation
-- [ ] Load testing mode
+| Layer           | Technology                          |
+| --------------- | ----------------------------------- |
+| Web + API       | Ruby on Rails 8, Hotwire            |
+| SMTP server     | ActionMailbox + custom SMTP handler |
+| MCP server      | Node.js 22 + TypeScript             |
+| Database        | PostgreSQL 16                       |
+| Background jobs | Solid Queue                         |
+| Real-time       | Turbo Streams + ActionCable         |
+| Deploy          | Docker + Kamal                      |
 
 ---
 

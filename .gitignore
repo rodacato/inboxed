@@ -29,6 +29,7 @@ apps/mcp/dist/
 
 # ── Research / internal notes ─────────────────────────────────
 devmail_*.md
+docs/screens
 
 # ── Claude Code ───────────────────────────────────────────────
 .claude/
