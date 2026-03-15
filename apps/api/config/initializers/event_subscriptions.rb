@@ -36,6 +36,18 @@ Rails.application.config.after_initialize do
     })
   end
 
+  # Webhook dispatch for all supported events
+  [
+    Inboxed::Events::EmailReceived,
+    Inboxed::Events::EmailDeleted,
+    Inboxed::Events::InboxCreated,
+    Inboxed::Events::InboxPurged
+  ].each do |event_class|
+    Inboxed::EventStore::Bus.subscribe(event_class) do |event|
+      Inboxed::Services::DispatchWebhooks.new.call(event: event)
+    end
+  end
+
   Inboxed::EventStore::Bus.subscribe(Inboxed::Events::InboxCreated) do |event|
     inbox = InboxRecord.find_by(id: event.data[:inbox_id])
     next unless inbox
