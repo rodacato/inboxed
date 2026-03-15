@@ -45,6 +45,11 @@ Rails.application.routes.draw do
 
       get "search", to: "search#show"
       post "emails/wait", to: "emails#wait"
+
+      resources :webhooks, only: [:index, :show, :create, :update, :destroy] do
+        post "test", on: :member
+        resources :deliveries, only: [:index], module: :webhooks
+      end
     end
   end
 end
