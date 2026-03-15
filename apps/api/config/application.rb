@@ -40,5 +40,9 @@ module Inboxed
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Solid Queue for background jobs
+    config.active_job.queue_adapter = :solid_queue
+    config.solid_queue.connects_to = {database: {writing: :queue}}
   end
 end

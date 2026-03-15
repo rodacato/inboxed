@@ -1,3 +1,5 @@
 api: cd apps/api && bin/rails server -b 0.0.0.0 -p 3100
+smtp: cd apps/api && bundle exec rails runner "Inboxed::SmtpServer.start"
+worker: cd apps/api && bundle exec rails solid_queue:start
 dashboard: cd apps/dashboard && npm run dev
 mcp: cd apps/mcp && npm run dev
