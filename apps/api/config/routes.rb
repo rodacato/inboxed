@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     get "status", to: "status#show"
     resources :projects, only: [:index, :show, :create, :update, :destroy] do
       resources :api_keys, only: [:index, :create]
+      get "emails", to: "emails#project_index"
       resources :inboxes, only: [:index, :show, :destroy] do
         resources :emails, only: [:index] do
           delete "", on: :collection, action: :purge

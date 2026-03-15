@@ -2,6 +2,22 @@
 
 module Admin
   class EmailsController < BaseController
+    def project_index
+      project = ProjectRecord.find(params[:project_id])
+
+      result = Inboxed::ReadModels::EmailList.for_project(
+        project.id,
+        limit: pagination_limit,
+        after: params[:after],
+        inbox_id: params[:inbox_id]
+      )
+
+      render json: {
+        emails: result[:records].map { |r| EmailListSerializer.render(r) },
+        pagination: pagination_meta(result)
+      }
+    end
+
     def index
       inbox = InboxRecord.find_by!(id: params[:inbox_id], project_id: params[:project_id])
 
