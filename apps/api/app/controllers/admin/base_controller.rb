@@ -1,5 +1,10 @@
+# frozen_string_literal: true
+
 module Admin
   class BaseController < ApplicationController
+    include Paginatable
+    include ErrorRenderable
+
     before_action :authenticate_admin!
 
     private
@@ -9,7 +14,7 @@ module Admin
       admin_token = ENV["INBOXED_ADMIN_TOKEN"]
 
       if token.blank? || admin_token.blank? || !ActiveSupport::SecurityUtils.secure_compare(token, admin_token)
-        render json: {error: "Invalid admin token", code: "unauthorized"}, status: :unauthorized
+        render_unauthorized("Invalid admin token")
       end
     end
 
