@@ -56,3 +56,6 @@ NNN-short-slug.md
 | 014 | [MCP Error Handling & Timeout Strategy](014-mcp-error-handling.md) | accepted | 2026-03-15 | Structured isError responses, no internal retries, timeouts are not errors |
 | 015 | [Lightweight Clients over Framework SDKs](015-testing-helper-architecture.md) | accepted | 2026-03-15 | Framework-agnostic API clients in TS/Ruby instead of Playwright fixtures or RSpec matchers |
 | 016 | [Client Library Distribution](016-package-distribution.md) | accepted | 2026-03-15 | Monorepo packages/, install from source/git, publish to registries when demand warrants |
+| 017 | [Setup Script with Secure Defaults](017-setup-script-secure-defaults.md) | accepted | 2026-03-15 | Interactive bin/setup generates secrets and .env, secure by default, no "changeme" |
+| 018 | [Static Landing Page](018-static-landing-page.md) | accepted | 2026-03-15 | Single HTML + Tailwind page in site/, GitHub Pages, no JavaScript, dark terminal aesthetic |
+| 019 | [Docker Compose as Primary Deploy](019-docker-compose-primary-deploy.md) | accepted | 2026-03-15 | Docker Compose is the recommended path, Kamal optional for advanced users |
