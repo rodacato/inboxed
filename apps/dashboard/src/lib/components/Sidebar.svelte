@@ -1,5 +1,8 @@
 <script lang="ts">
-	let { apiStatus = 'checking...' }: { apiStatus: string } = $props();
+	import StatusPanel from '../../features/system/StatusPanel.svelte';
+	import type { ConnectionStatus } from '../../features/system/system.types';
+
+	let { apiStatus = 'checking...' }: { apiStatus: ConnectionStatus } = $props();
 
 	const navItems = [
 		{ icon: 'inbox', label: 'Inbox', count: 4, active: true },
@@ -57,17 +60,6 @@
 	</div>
 
 	<div class="mt-auto p-6">
-		<div class="flex items-center gap-3 p-3 rounded-lg bg-surface-2 border border-border">
-			<div
-				class="size-2 rounded-full {apiStatus === 'connected'
-					? 'bg-phosphor'
-					: apiStatus === 'error'
-						? 'bg-error'
-						: 'bg-amber animate-pulse'}"
-			></div>
-			<span class="text-xs font-mono text-text-secondary truncate">
-				API: {apiStatus}
-			</span>
-		</div>
+		<StatusPanel status={apiStatus} />
 	</div>
 </aside>

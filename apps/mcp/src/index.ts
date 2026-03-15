@@ -1,12 +1,12 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { InboxedApi } from "./ports/inboxed-api.js";
+import { createServer } from "./server.js";
 
-const server = new McpServer({
-  name: "inboxed-mcp",
-  version: "0.0.1",
-});
+const apiUrl = process.env.INBOXED_API_URL || "http://localhost:3000";
+const apiKey = process.env.INBOXED_API_KEY || "";
 
-// Tools will be registered in future specs
+const api = new InboxedApi(apiUrl, apiKey);
+const server = createServer(api);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

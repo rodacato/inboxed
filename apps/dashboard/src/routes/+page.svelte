@@ -1,28 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { isAuthenticated, apiClient } from '$lib/api';
+	import { isAuthenticated } from '$lib/api-client';
 	import Sidebar from '$lib/components/Sidebar.svelte';
-	import EmailList from '$lib/components/EmailList.svelte';
-	import EmailPreview from '$lib/components/EmailPreview.svelte';
+	import MessageList from '../features/messages/MessageList.svelte';
+	import MessagePreview from '../features/messages/MessagePreview.svelte';
+	import { getMessagesStore } from '../features/messages/messages.store';
+	import { checkApiStatus } from '../features/system/system.service';
+	import type { ConnectionStatus } from '../features/system/system.types';
 
-	let apiStatus = $state<string>('checking...');
+	const store = getMessagesStore();
+	let apiStatus = $state<ConnectionStatus>('checking...');
 
 	onMount(async () => {
 		if (!isAuthenticated()) {
 			window.location.href = '/login';
 			return;
 		}
-		try {
-			const res = await apiClient('/admin/status') as { status: string };
-			apiStatus = res.status === 'ok' ? 'connected' : 'error';
-		} catch {
-			apiStatus = 'disconnected';
-		}
+		apiStatus = await checkApiStatus();
 	});
 </script>
 
 <div class="flex h-screen overflow-hidden bg-base">
 	<Sidebar {apiStatus} />
-	<EmailList />
-	<EmailPreview />
+	<MessageList
+		messages={store.messages}
+		selectedId={store.selectedId}
+		onSelect={(id) => store.select(id)}
+	/>
+	<MessagePreview />
 </div>
