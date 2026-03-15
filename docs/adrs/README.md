@@ -52,3 +52,5 @@ NNN-short-slug.md
 | 010 | [Rate Limiting with Rack::Attack](010-rate-limiting.md) | accepted | 2026-03-15 | Per-API-key and per-IP throttling with transparent headers |
 | 011 | [Real-time via ActionCable + Solid Cable](011-realtime-actioncable.md) | accepted | 2026-03-15 | ActionCable with solid_cable DB backend for real-time dashboard updates |
 | 012 | [Dashboard Admin-Only Auth](012-dashboard-admin-auth.md) | accepted | 2026-03-15 | Dashboard uses only admin token; extended /admin/ endpoints for email reading |
+| 013 | [MCP Tool Design & Extraction Strategy](013-mcp-tool-design.md) | accepted | 2026-03-15 | Extraction logic (OTP, links) lives in MCP server, not Rails API; inbox addressed by email address |
+| 014 | [MCP Error Handling & Timeout Strategy](014-mcp-error-handling.md) | accepted | 2026-03-15 | Structured isError responses, no internal retries, timeouts are not errors |

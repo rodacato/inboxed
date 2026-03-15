@@ -95,6 +95,7 @@ Unresolved items to discuss before moving to approved.
 | 002 | [SMTP Reception & Email Persistence](002-smtp-persistence.md) | Phase 1 | draft | — | SMTP server with AUTH/TLS, MIME parsing, event-sourced persistence, TTL cleanup. |
 | 003 | [REST API](003-rest-api.md) | Phase 2 | draft | — | Full REST API with admin/project endpoints, cursor pagination, full-text search, long-poll wait, rate limiting, OpenAPI docs. |
 | 004 | [Dashboard](004-dashboard.md) | Phase 3 | draft | — | SvelteKit SPA dashboard with admin read endpoints, ActionCable real-time, project/inbox/email views, OTP detection, search. |
+| 005 | [MCP Server](005-mcp-server.md) | Phase 4 | accepted | — | 8 MCP tools for AI agents: list/get/search/wait emails, extract codes/links/values, delete inbox. Stdio transport, hexagonal light architecture. |
 
 <!--
 Template row:
