@@ -19,15 +19,16 @@
   },
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-  "forwardPorts": [3100, 3101, 5179, 5632, 6579, 1587, 1465],
+  "forwardPorts": [3100, 3101, 5179, 5632, 6579, 2525, 1587, 1465],
   "portsAttributes": {
     "3100": { "label": "API (Rails)", "onAutoForward": "notify" },
     "3101": { "label": "MCP Server", "onAutoForward": "notify" },
     "5179": { "label": "Dashboard (Vite)", "onAutoForward": "notify" },
     "5632": { "label": "PostgreSQL", "onAutoForward": "silent" },
     "6579": { "label": "Redis", "onAutoForward": "silent" },
-    "1587": { "label": "SMTP", "onAutoForward": "silent" },
-    "1465": { "label": "SMTP SSL", "onAutoForward": "silent" }
+    "2525": { "label": "SMTP (dev)", "onAutoForward": "silent" },
+    "1587": { "label": "SMTP STARTTLS", "onAutoForward": "silent" },
+    "1465": { "label": "SMTP TLS", "onAutoForward": "silent" }
   },
   "postCreateCommand": "bash .devcontainer/post-install.sh",
   "customizations": {
