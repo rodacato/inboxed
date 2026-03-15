@@ -1,41 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  /* Backgrounds */
-  --color-base: #0D0F0E;
-  --color-surface: #131614;
-  --color-surface-2: #1A1E1B;
-  --color-border: #2A302B;
+  /* Backgrounds — light defaults */
+  --color-base: #F5F7F5;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #EDF0ED;
+  --color-border: #D4DAD5;
 
   /* Brand */
-  --color-phosphor: #39FF14;
-  --color-phosphor-dim: #1A7A08;
-  --color-phosphor-glow: rgba(57, 255, 20, 0.12);
+  --color-phosphor: #1B8A00;
+  --color-phosphor-dim: #A8E6A0;
+  --color-phosphor-glow: rgba(27, 138, 0, 0.10);
 
   /* Accents */
-  --color-amber: #FFB800;
-  --color-amber-dim: #7A5800;
-  --color-cyan: #00E5FF;
-  --color-cyan-dim: #006B78;
+  --color-amber: #D49800;
+  --color-amber-dim: #FFF0C2;
+  --color-cyan: #0099AA;
+  --color-cyan-dim: #C2F5FA;
 
   /* Fusion accent */
   --color-primary: #ec5b13;
 
   /* Text */
-  --color-text-primary: #E8F0E9;
-  --color-text-secondary: #7A8F7B;
-  --color-text-dim: #3D4D3E;
+  --color-text-primary: #1A1E1B;
+  --color-text-secondary: #5A6B5B;
+  --color-text-dim: #9AA89B;
 
   /* Semantic */
-  --color-success: #39FF14;
-  --color-warning: #FFB800;
-  --color-error: #FF3B30;
-  --color-info: #00E5FF;
+  --color-success: #1B8A00;
+  --color-warning: #D49800;
+  --color-error: #DC2B22;
+  --color-info: #0099AA;
 
   /* Typography */
   --font-display: 'Space Grotesk', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-body: 'Inter', sans-serif;
+}
+
+.dark {
+  --color-base: #0D0F0E;
+  --color-surface: #131614;
+  --color-surface-2: #1A1E1B;
+  --color-border: #2A302B;
+
+  --color-phosphor: #39FF14;
+  --color-phosphor-dim: #1A7A08;
+  --color-phosphor-glow: rgba(57, 255, 20, 0.12);
+
+  --color-amber: #FFB800;
+  --color-amber-dim: #7A5800;
+  --color-cyan: #00E5FF;
+  --color-cyan-dim: #006B78;
+
+  --color-text-primary: #E8F0E9;
+  --color-text-secondary: #7A8F7B;
+  --color-text-dim: #3D4D3E;
+
+  --color-success: #39FF14;
+  --color-warning: #FFB800;
+  --color-error: #FF3B30;
+  --color-info: #00E5FF;
 }
 
 body {

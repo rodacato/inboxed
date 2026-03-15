@@ -4,7 +4,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import MessageList from '../features/messages/MessageList.svelte';
 	import MessagePreview from '../features/messages/MessagePreview.svelte';
-	import { getMessagesStore } from '../features/messages/messages.store';
+	import { getMessagesStore } from '../features/messages/messages.store.svelte';
 	import { checkApiStatus } from '../features/system/system.service';
 	import type { ConnectionStatus } from '../features/system/system.types';
 

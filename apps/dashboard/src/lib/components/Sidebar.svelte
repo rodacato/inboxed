@@ -1,8 +1,10 @@
 <script lang="ts">
 	import StatusPanel from '../../features/system/StatusPanel.svelte';
 	import type { ConnectionStatus } from '../../features/system/system.types';
+	import { getTheme } from '$lib/theme.svelte';
 
 	let { apiStatus = 'checking...' }: { apiStatus: ConnectionStatus } = $props();
+	const theme = getTheme();
 
 	const navItems = [
 		{ icon: 'inbox', label: 'Inbox', count: 4, active: true },
@@ -59,7 +61,16 @@
 		</div>
 	</div>
 
-	<div class="mt-auto p-6">
+	<div class="mt-auto p-6 space-y-4">
+		<button
+			onclick={() => theme.toggle()}
+			class="size-8 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
+			title={theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+		>
+			<span class="material-symbols-outlined text-lg">
+				{theme.isDark ? 'light_mode' : 'dark_mode'}
+			</span>
+		</button>
 		<StatusPanel status={apiStatus} />
 	</div>
 </aside>
