@@ -155,20 +155,42 @@ Backlog prioritized by user feedback after initial release.
 
 ---
 
-## Phase 8 — Webhook Catcher
+## Phase 8 — HTTP Catcher (Webhooks, Forms, Heartbeats)
 
-Extend the "catch & inspect" model to HTTP requests. Like webhook.site, but self-hosted and integrated with the existing dashboard, API, and MCP server. See [ADR-021](adrs/021-webhook-catcher.md) for full design rationale.
+Extend the "catch & inspect" model to HTTP requests. The HTTP catcher is the second primitive — everything beyond email is built on it. See [ADR-021](adrs/021-webhook-catcher.md) for design rationale and [VISION.md](VISION.md) for how modules map to primitives.
 
-- [ ] **Data models:** `WebhookEndpoint`, `WebhookRequest` — separate tables, same `Project` parent
+### Core: HTTP Catcher
+
+- [ ] **Data models:** `HttpEndpoint`, `HttpRequest` — separate tables, same `Project` parent
+- [ ] **Endpoint types:** `webhook`, `form`, `heartbeat` — same table, different behavior/UI per type
 - [ ] **Public catch endpoint:** `POST/GET/PUT/PATCH/DELETE /hook/:token` — receives and stores any HTTP request
 - [ ] **REST API:** CRUD for endpoints and captured requests under `/api/v1/endpoints/`
-- [ ] **Dashboard:** "Webhooks" tab in project view — endpoint list, request detail with method badge, headers, body (JSON pretty-print), query params, IP
+- [ ] **Dashboard:** "HTTP" tab in project view — endpoint list, request detail with method badge, headers, body (JSON pretty-print), query params, IP
 - [ ] **Real-time:** Incoming requests appear live via existing ActionCable infrastructure
-- [ ] **MCP tools:** `create_webhook_endpoint`, `wait_for_request`, `get_latest_request`, `extract_json_field`, `list_requests`
+- [ ] **MCP tools:** `create_endpoint`, `wait_for_request`, `get_latest_request`, `extract_json_field`, `list_requests`
 - [ ] **Security:** Cryptographic tokens (32+ bytes), rate limiting per endpoint, max body size (256KB), TTL cleanup
-- [ ] **Feature flag:** Webhook module can be disabled entirely for email-only deployments
+- [ ] **Feature flag:** HTTP catcher module can be disabled entirely for email-only deployments
 
-**Exit criteria:** Create a webhook endpoint, send an HTTP request to it via `curl`, see it appear in the dashboard in real-time, and retrieve it via API and MCP.
+### Form Submissions
+
+Zero new backend — forms are HTTP POSTs to the same catcher. The additions are UI and DX:
+
+- [ ] **Endpoint type `form`:** when creating an endpoint, choose "Form" to get form-optimized UI
+- [ ] **Dashboard:** form view parses `application/x-www-form-urlencoded` and `multipart/form-data` into a readable field table (key → value), shows uploaded files
+- [ ] **HTML snippet generator:** dashboard provides a copy-pasteable `<form action="https://inboxed.dev/hook/:token" method="POST">` snippet
+- [ ] **Response config:** form endpoints return a configurable redirect URL or a simple "Thank you" HTML page (for prototyping without a backend)
+
+### Heartbeat Monitor
+
+Webhook catcher + expected interval. Alert when a ping is missed:
+
+- [ ] **Endpoint type `heartbeat`:** has an `expected_interval` (e.g. "5m", "1h", "24h")
+- [ ] **Status tracking:** `healthy` (last ping within interval), `late` (1x interval missed), `down` (2x+ intervals missed)
+- [ ] **Dashboard:** heartbeat endpoints show status badge, last ping time, and timeline of pings
+- [ ] **Alerts:** when status transitions to `down`, fire a webhook notification (reuses Phase 7 webhook delivery infra)
+- [ ] **MCP tools:** `check_heartbeat(endpoint)` returns status, last ping, next expected
+
+**Exit criteria:** (1) Create a webhook endpoint, send an HTTP request via `curl`, see it in the dashboard and retrieve via API/MCP. (2) Create a form endpoint, submit an HTML form to it, see parsed fields in dashboard. (3) Create a heartbeat endpoint with 1-minute interval, send pings, stop pinging, see status transition to `down`.
 
 ---
 

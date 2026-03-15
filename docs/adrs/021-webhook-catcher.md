@@ -1,4 +1,4 @@
-# ADR-021: Webhook Catcher — HTTP Request Inspection
+# ADR-021: HTTP Catcher — Webhooks, Forms, and Heartbeats
 
 **Status:** accepted
 **Date:** 2026-03-15

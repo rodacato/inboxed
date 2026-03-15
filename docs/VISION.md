@@ -1,37 +1,66 @@
 # Inboxed — Vision
 
-> The dev inbox for everything your app sends and receives.
+> The dev inbox. Catch emails, webhooks, form submissions, cron heartbeats, logs — anything your app sends to the outside world during development. Inspect everything in one dashboard. Let AI agents access it via MCP.
+
+---
+
+## The Pitch
+
+**Inboxed: The dev inbox.**
+
+Catch emails, webhooks, form submissions, cron heartbeats, push notifications, logs — anything your app sends to the outside world during development. Inspect everything in one dashboard. Let AI agents access it via MCP.
+
+Self-host it with `docker compose up`. Try it free at cloud.inboxed.dev.
 
 ---
 
 ## The Problem
 
-During development, your app talks to the outside world through multiple channels: it sends emails, receives webhooks, fires callbacks, expects external notifications. Today, debugging each of these requires a different tool:
+During development, your app talks to the outside world constantly. Every one of those interactions is a black box:
 
 | What you need to inspect | What you use today |
 |---|---|
 | Emails your app sends | Mailpit, Mailtrap, MailHog |
 | Webhooks your app receives | webhook.site, RequestBin |
+| Form submissions during prototyping | Custom backend, Formspree |
+| Cron jobs / background tasks ran | healthchecks.io, Dead Man's Snitch |
+| Push notification payloads | Open the phone and pray |
 | Simulate a webhook hitting your app | curl + ngrok, Mockoon |
-| See the full flow (email out → webhook in → response back) | ...nothing unified |
+| App logs/output from a deploy | CI artifacts, terminal scroll |
+| Full flow (email → webhook → response) | ...nothing unified |
 
 Every tool has its own setup, its own dashboard, its own API. None of them talk to each other. None of them have MCP integration.
 
 ## The Insight
 
-These are all the same problem: **inspecting and simulating external communications during development**. The protocol differs (SMTP, HTTP), the direction differs (inbound, outbound), but the developer need is identical — catch it, store it, inspect it, assert on it.
+These are all the same problem: **inspecting external communications during development**. The protocol differs (SMTP, HTTP), the direction differs (inbound, outbound), but the developer need is identical — catch it, store it, inspect it, assert on it.
+
+And it all runs on **two primitives**: an SMTP catcher and an HTTP catcher. Everything else is naming, docs, templates, and MCP tools on top of that foundation.
 
 ## The Vision
 
-Inboxed becomes the **unified dev inspector for external communications**. One self-hosted tool. One dashboard. One API. One MCP server.
+Inboxed becomes the **unified dev inbox for external communications**. One self-hosted tool. One dashboard. One API. One MCP server.
 
 ```
 Inboxed
-├── Mail       Catch and inspect emails (SMTP → store → inspect)
-├── Hooks In   Catch and inspect incoming webhooks (HTTP → store → inspect)
-├── Hooks Out  Send webhooks to your app for testing (create → send → log response)
-└── Relay      Receive a webhook → optionally transform → forward → log both sides
+├── Mail          Catch and inspect emails (SMTP → store → inspect)
+├── Hooks In      Catch and inspect incoming webhooks (HTTP → store → inspect)
+├── Forms         Catch form submissions during prototyping (HTTP POST → store → inspect)
+├── Heartbeats    Monitor cron jobs and background tasks (periodic HTTP ping → alert on miss)
+├── Hooks Out     Send webhooks to your app for testing (create → send → log response)
+└── Relay         Receive a webhook → optionally transform → forward → log both sides
 ```
+
+### The Two Primitives
+
+Every module above is built on one of two primitives:
+
+| Primitive | Protocol | Modules built on it |
+|---|---|---|
+| **SMTP catcher** | SMTP → parse → store | Mail |
+| **HTTP catcher** | HTTP → parse → store | Hooks In, Forms, Heartbeats, Hooks Out (response capture), Relay |
+
+This means the engineering investment is concentrated: build two catchers well, and every module is a thin layer of naming + UI + MCP tools on top.
 
 ### What stays constant across all modules
 
@@ -43,13 +72,23 @@ Inboxed
 
 ### What differs per module
 
-| | Mail | Hooks In | Hooks Out | Relay |
-|---|---|---|---|---|
-| **Protocol** | SMTP | HTTP (any method) | HTTP (any method) | HTTP → HTTP |
-| **Direction** | App → Inboxed | External → Inboxed | Inboxed → App | External → Inboxed → App |
-| **Trigger** | App sends email | Third party calls URL | User/schedule/event | Incoming request |
-| **Stored data** | MIME, headers, body, attachments | Method, headers, body, query, IP | Request sent + response received | Both sides of the proxy |
-| **Key use case** | "Did my app send the verification email?" | "What does the Stripe webhook payload look like?" | "Does my handler process this payload correctly?" | "I need to inspect production webhooks while still delivering them" |
+| | Mail | Hooks In | Forms | Heartbeats | Hooks Out | Relay |
+|---|---|---|---|---|---|---|
+| **Primitive** | SMTP | HTTP | HTTP | HTTP | HTTP | HTTP |
+| **Direction** | App → Inboxed | External → Inboxed | Browser → Inboxed | App → Inboxed (periodic) | Inboxed → App | External → Inboxed → App |
+| **Stored data** | MIME, headers, body, attachments | Method, headers, body, query, IP | Form fields, files | Timestamp, IP, optional body | Request sent + response received | Both sides of the proxy |
+| **Key use case** | "Did my app send the verification email?" | "What does the Stripe webhook payload look like?" | "What did the contact form submit?" | "Did my cleanup cron run at 3am?" | "Does my handler process this payload correctly?" | "Inspect webhooks while still delivering them" |
+
+### Use cases that are already covered (no new code)
+
+Some developer pain points are solved automatically by the HTTP catcher without any feature-specific work:
+
+| Pain point | How Inboxed covers it |
+|---|---|
+| SMS OTP in E2E tests | Twilio/provider sends a webhook → HTTP catcher captures it → MCP extracts the OTP |
+| Background job completion tracking | Job sends HTTP ping on completion → HTTP catcher logs it |
+| Push notification payload inspection | Firebase/APNS webhook → HTTP catcher captures the payload |
+| CI/CD deploy output capture | Deploy script POSTs output → HTTP catcher stores it |
 
 ## What This Is Not
 
@@ -57,16 +96,40 @@ Inboxed
 - **Not an API gateway.** No routing rules, no auth proxying, no rate limiting for your app.
 - **Not an integration platform.** No Zapier-style workflow builder. Catch, inspect, assert — that's it.
 - **Not a monitoring tool.** This is for development and testing, not production observability.
+- **Not a test result dashboard.** Inboxed can *receive* test results, but analyzing them is out of scope.
 
 ## Naming
 
-"Inboxed" works for the broader vision. An inbox receives things — emails, requests, notifications. The brand identity ("catch, inspect, assert") and the retro terminal aesthetic apply equally to all modules.
+"Inboxed" works for the broader vision. An inbox receives things — emails, requests, form submissions, heartbeats. The brand identity ("catch, inspect, assert") and the retro terminal aesthetic apply equally to all modules.
 
 Each module can be referenced as:
 - **Inboxed Mail** (or just "Inboxed" when context is clear)
 - **Inboxed Hooks**
+- **Inboxed Forms**
+- **Inboxed Heartbeats**
 
 No need to rename. No need for sub-brands.
+
+## Future Ideas Backlog
+
+Ideas that passed the litmus test but don't have a timeline yet. Ordered by natural fit:
+
+| Idea | What it is | Builds on |
+|---|---|---|
+| **DNS validator** | Check SPF/DKIM/DMARC/MX for a domain. MCP tool: `check_dns(domain)` | Mail module |
+| **Request diff** | Compare two captured requests/emails side-by-side in the dashboard | Existing stored data, pure UI |
+| **Log/output catcher** | HTTP catcher with elevated body size for capturing deploy logs, test output | HTTP catcher with config |
+| **Cron/heartbeat monitor** | HTTP catcher + expected interval. Alert (webhook notification) on missed ping | HTTP catcher + `expected_interval` column |
+
+Ideas that are interesting but belong to a different product:
+
+| Idea | Why not Inboxed |
+|---|---|
+| OAuth flow debugger | Requires proxy/intercept, not just catch. More Charles Proxy than Inboxed |
+| Screenshot/visual diff | Storage-heavy, rendering-heavy. Is Percy, not Inboxed |
+| Test result aggregator | The HTTP catcher can *receive* results, but the analysis UI is Allure/ReportPortal |
+| Secret rotation tracker | Production monitoring, not dev/test |
+| API mock server | Responding with custom payloads is a different primitive than catching |
 
 ## Go-to-Market: Inboxed Cloud
 

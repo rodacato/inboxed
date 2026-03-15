@@ -6,11 +6,13 @@
 
 ## Identity
 
-**Product name:** Inboxed  
-**Tagline (primary):** *Your emails go nowhere. You see everything.*  
-**Tagline (alt 1):** *The inbox that never sends.*  
-**Tagline (alt 2):** *SMTP received. Secrets kept.*  
-**Tagline (alt 3):** *Drop test emails into the void. Pull them back with an API.*  
+**Product name:** Inboxed
+**Tagline (primary):** *The dev inbox.*
+**Tagline (extended):** *Catch emails, webhooks, forms, cron heartbeats — anything your app sends. Inspect everything. Let AI agents access it via MCP.*
+**Tagline (alt 1):** *Your emails go nowhere. Your webhooks go nowhere. You see everything.*
+**Tagline (alt 2):** *The inbox that catches everything your app sends to the outside world.*
+**Tagline (alt 3):** *Catch. Inspect. Assert. Emails, webhooks, and everything in between.*
+**Tagline (legacy/email-only):** *Drop test emails into the void. Pull them back with an API.*
 **Domain:** inboxed.notdefined.dev  
 **SMTP:** mail.notdefined.dev  
 
@@ -25,7 +27,9 @@ Inboxed speaks like a senior developer who's been around long enough to find the
 | "Catch. Inspect. Assert." | "Streamline your email workflow" |
 | "Your test emails go to `/dev/null`. Readable `/dev/null`." | "Boost team productivity" |
 | "No real inboxes were harmed in the making of this test." | "Enterprise-grade email solution" |
-| "One API key. Every email. Zero spam." | "Unlock the power of email testing" |
+| "One API key. Every email. Every webhook. Zero noise." | "Unlock the power of email testing" |
+| "Your app talks to the outside world. Now you can listen." | "Centralized communication hub" |
+| "Two primitives. Unlimited use cases." | "All-in-one developer platform" |
 
 ---
 
@@ -254,10 +258,16 @@ Wrap code examples and API responses in a fake terminal window:
 
 ### Badge Styles
 ```
-[ MCP ]    — cyan background, dark text
-[ NEW ]    — amber background, dark text  
-[ API ]    — phosphor background, dark text
-[ 6h TTL ] — surface-2, dim text
+[ MCP ]       — cyan background, dark text
+[ NEW ]       — amber background, dark text
+[ API ]       — phosphor background, dark text
+[ 6h TTL ]    — surface-2, dim text
+[ MAIL ]      — phosphor background, dark text
+[ WEBHOOK ]   — cyan background, dark text
+[ FORM ]      — amber background, dark text
+[ HEARTBEAT ] — phosphor-dim background, light text
+[ HEALTHY ]   — phosphor background, dark text
+[ DOWN ]      — error background, light text
 ```
 
 ---
@@ -267,27 +277,38 @@ Wrap code examples and API responses in a fake terminal window:
 ```
 HERO
   [@ inboxed]
-  "Your emails go nowhere. You see everything."
-  > Self-hosted SMTP server with REST API and MCP
-  [Get Started →]  [View on GitHub]
+  "The dev inbox."
+  > Catch emails, webhooks, forms, and cron heartbeats.
+  > Inspect everything. Let AI agents access it via MCP.
+  [Try Free →]  [Self-Host →]  [GitHub]
 
 SECTION: The problem in one line
-  "Every dev tool sends test emails somewhere.
-   Yours sends them here."
+  "Your app talks to the outside world.
+   You have no idea what it said."
 
-SECTION: Three columns
-  [@ Catch]          [~ Inspect]         [⚡ Assert]
-  Any SMTP client    Full HTML render     REST API + MCP
-  3-line config      Raw MIME headers     wait_for_email()
+SECTION: Four columns
+  [@ Emails]         [~ Webhooks]        [> Forms]           [♥ Heartbeats]
+  SMTP catcher       HTTP catcher        Form submissions    Cron monitor
+  OTP extraction     Payload inspect     Field parsing       Miss alerts
+  MCP + API          MCP + API           MCP + API           MCP + API
 
 SECTION: Terminal demo (animated)
-  $ action_mailer → mail.notdefined.dev
+  $ action_mailer → mail.inboxed.dev
   $ curl /api/v1/inboxes/signup@test.local/latest
   > { "subject": "Your OTP is 847291" }
+  $ curl -X POST /hook/abc123 -d '{"event":"payment.success"}'
+  > { "ok": true }
 
 SECTION: MCP highlight
   "Works with Claude, n8n, and any MCP-compatible agent"
-  extract_otp('signup@mail.notdefined.dev')
+  extract_otp('signup@mail.inboxed.dev')
+  wait_for_request('abc123', timeout: 30)
+
+SECTION: Two paths
+  [Try Free]                          [Self-Host]
+  30-second signup                    docker compose up
+  cloud.inboxed.dev                   Unlimited everything
+  Perfect for evaluating              MCP, HTML preview, no limits
 
 FOOTER
   [@ inboxed] · notdefined.dev · MIT License
