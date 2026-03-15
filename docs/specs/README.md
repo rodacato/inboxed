@@ -98,6 +98,7 @@ Unresolved items to discuss before moving to approved.
 | 005 | [MCP Server](005-mcp-server.md) | Phase 4 | accepted | — | 8 MCP tools for AI agents: list/get/search/wait emails, extract codes/links/values, delete inbox. Stdio transport, hexagonal light architecture. |
 | 006 | [Testing Helpers](006-testing-helpers.md) | Phase 5 | accepted | — | Lightweight API client libraries in TypeScript and Ruby with extraction helpers. Integration guides for Playwright, RSpec, Vitest, Cypress, Minitest. |
 | 007 | [Deploy & Self-Hosting](007-deploy-self-hosting.md) | Phase 6 | accepted | — | bin/setup, structured logging, multi-arch Docker CI/CD, documentation suite, static landing page. 10-minute setup goal. |
+| 008 | [Webhooks](008-webhooks.md) | Phase 7 | accepted | — | HTTP push notifications on email events. HMAC-SHA256 signing, exponential backoff retries, delivery log, webhook management API. |
 
 <!--
 Template row:

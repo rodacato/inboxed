@@ -59,3 +59,4 @@ NNN-short-slug.md
 | 017 | [Setup Script with Secure Defaults](017-setup-script-secure-defaults.md) | accepted | 2026-03-15 | Interactive bin/setup generates secrets and .env, secure by default, no "changeme" |
 | 018 | [Static Landing Page](018-static-landing-page.md) | accepted | 2026-03-15 | Single HTML + Tailwind page in site/, GitHub Pages, no JavaScript, dark terminal aesthetic |
 | 019 | [Docker Compose as Primary Deploy](019-docker-compose-primary-deploy.md) | accepted | 2026-03-15 | Docker Compose is the recommended path, Kamal optional for advanced users |
+| 020 | [Webhook Delivery & Retry Strategy](020-webhook-delivery-strategy.md) | accepted | 2026-03-15 | Exponential backoff via Solid Queue, HMAC-SHA256 signing, at-least-once delivery, auto-disable failing endpoints |
