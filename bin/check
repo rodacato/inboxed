@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── Colors ────────────────────────────────────────────────────
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+DIM='\033[2m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+PASS=0
+FAIL=0
+
+check_service() {
+  local name="$1"
+  local cmd="$2"
+  if eval "$cmd" &>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} $name"
+    PASS=$((PASS + 1))
+  else
+    echo -e "  ${RED}✗${NC} $name"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# Load .env for port values
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/.env"
+  set +a
+fi
+
+WEB_PORT="${INBOXED_WEB_PORT:-80}"
+SMTP_PORT="${INBOXED_SMTP_PORT:-587}"
+API_PORT="${INBOXED_API_PORT:-3000}"
+
+echo ""
+echo -e "  ${GREEN}${BOLD}[@] Inboxed Health Check${NC}"
+echo -e "  ${DIM}───────────────────────${NC}"
+echo ""
+
+check_service "API          (http://localhost:${API_PORT}/up)" \
+  "curl -sf http://localhost:${API_PORT}/up"
+
+check_service "Dashboard    (http://localhost:${WEB_PORT})" \
+  "curl -sf http://localhost:${WEB_PORT}"
+
+check_service "Database     (PostgreSQL)" \
+  "docker compose exec -T db pg_isready -U inboxed"
+
+check_service "Redis" \
+  "docker compose exec -T redis redis-cli ping"
+
+check_service "SMTP         (port ${SMTP_PORT})" \
+  "nc -z localhost ${SMTP_PORT}"
+
+echo ""
+echo -e "  ${BOLD}${PASS} passed${NC}, ${FAIL} failed"
+echo ""
+
+if [ "$FAIL" -gt 0 ]; then
+  echo -e "  ${DIM}Troubleshoot:${NC}"
+  echo -e "    docker compose ps"
+  echo -e "    docker compose logs --tail=20"
+  echo ""
+  exit 1
+fi
