@@ -19,6 +19,8 @@ coverage/
 apps/mcp/dist/
 apps/dashboard/build/
 apps/dashboard/.svelte-kit/
+packages/typescript/dist/
+packages/ruby/Gemfile.lock
 
 # ── IDE ───────────────────────────────────────────────────────
 .vscode/*
