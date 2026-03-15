@@ -44,7 +44,7 @@ const mockMessages: Message[] = [
 	}
 ];
 
-let messages = $state<Message[]>(mockMessages);
+const messages = $state<Message[]>(mockMessages);
 let selectedId = $state<string>('1');
 let loading = $state(false);
 

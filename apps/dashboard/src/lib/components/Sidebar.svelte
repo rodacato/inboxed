@@ -21,7 +21,7 @@
 		</div>
 
 		<nav class="space-y-1">
-			{#each navItems as item}
+			{#each navItems as item (item.label)}
 				<button
 					class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors {item.active
 						? 'bg-phosphor-glow text-phosphor font-medium'

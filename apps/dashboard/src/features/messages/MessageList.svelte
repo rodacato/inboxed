@@ -30,7 +30,7 @@
 	</div>
 
 	<div class="flex-1 overflow-y-auto">
-		{#each messages as email}
+		{#each messages as email (email.id)}
 			<button
 				class="w-full text-left p-4 border-b border-border/50 cursor-pointer transition-colors
 					{selectedId === email.id
