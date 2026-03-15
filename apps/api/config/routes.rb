@@ -9,5 +9,5 @@ Rails.application.routes.draw do
     get :status, to: "status#show"
   end
 
-  get "up" => "rails/health#show", as: :rails_health_check
+  get "up" => "rails/health#show", :as => :rails_health_check
 end

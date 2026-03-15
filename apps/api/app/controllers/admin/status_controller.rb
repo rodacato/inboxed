@@ -22,7 +22,7 @@ module Admin
     end
 
     def redis_status
-      redis_url = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
+      ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
       require "net/http"
       "configured"
     rescue => e
