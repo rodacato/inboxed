@@ -54,3 +54,5 @@ NNN-short-slug.md
 | 012 | [Dashboard Admin-Only Auth](012-dashboard-admin-auth.md) | accepted | 2026-03-15 | Dashboard uses only admin token; extended /admin/ endpoints for email reading |
 | 013 | [MCP Tool Design & Extraction Strategy](013-mcp-tool-design.md) | accepted | 2026-03-15 | Extraction logic (OTP, links) lives in MCP server, not Rails API; inbox addressed by email address |
 | 014 | [MCP Error Handling & Timeout Strategy](014-mcp-error-handling.md) | accepted | 2026-03-15 | Structured isError responses, no internal retries, timeouts are not errors |
+| 015 | [Lightweight Clients over Framework SDKs](015-testing-helper-architecture.md) | accepted | 2026-03-15 | Framework-agnostic API clients in TS/Ruby instead of Playwright fixtures or RSpec matchers |
+| 016 | [Client Library Distribution](016-package-distribution.md) | accepted | 2026-03-15 | Monorepo packages/, install from source/git, publish to registries when demand warrants |

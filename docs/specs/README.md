@@ -96,6 +96,7 @@ Unresolved items to discuss before moving to approved.
 | 003 | [REST API](003-rest-api.md) | Phase 2 | draft | — | Full REST API with admin/project endpoints, cursor pagination, full-text search, long-poll wait, rate limiting, OpenAPI docs. |
 | 004 | [Dashboard](004-dashboard.md) | Phase 3 | draft | — | SvelteKit SPA dashboard with admin read endpoints, ActionCable real-time, project/inbox/email views, OTP detection, search. |
 | 005 | [MCP Server](005-mcp-server.md) | Phase 4 | accepted | — | 8 MCP tools for AI agents: list/get/search/wait emails, extract codes/links/values, delete inbox. Stdio transport, hexagonal light architecture. |
+| 006 | [Testing Helpers](006-testing-helpers.md) | Phase 5 | accepted | — | Lightweight API client libraries in TypeScript and Ruby with extraction helpers. Integration guides for Playwright, RSpec, Vitest, Cypress, Minitest. |
 
 <!--
 Template row:
