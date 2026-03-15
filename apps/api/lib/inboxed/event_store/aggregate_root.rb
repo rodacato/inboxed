@@ -86,6 +86,16 @@ module Inboxed
         self.class.stream_name(id)
       end
 
+      # Override in subclass to provide state for snapshots.
+      def snapshot_state
+        {}
+      end
+
+      # Override in subclass to restore state from a snapshot.
+      def restore_from_snapshot(state)
+        # no-op by default
+      end
+
       private
 
       def apply_event(event)

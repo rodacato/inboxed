@@ -36,6 +36,10 @@ gem "rack-cors"
 gem "dry-types", "~> 1.7"
 gem "dry-struct", "~> 1.6"
 
+# SMTP server and email parsing
+gem "midi-smtp-server", "~> 3.2"
+gem "mail", "~> 2.8"
+
 group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"
   gem "bundler-audit", require: false

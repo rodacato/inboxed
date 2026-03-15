@@ -166,6 +166,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.1.0)
+    midi-smtp-server (3.2.1)
     mini_mime (1.1.5)
     minitest (6.0.2)
       drb (~> 2.0)
@@ -399,6 +400,8 @@ DEPENDENCIES
   dry-struct (~> 1.6)
   dry-types (~> 1.7)
   kamal
+  mail (~> 2.8)
+  midi-smtp-server (~> 3.2)
   pg (~> 1.1)
   puma (>= 5.0)
   rack-cors

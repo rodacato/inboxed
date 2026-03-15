@@ -66,15 +66,34 @@ module Inboxed
         end
 
         # Load an aggregate by replaying its event stream.
+        # Uses snapshots when available to avoid full replay.
         #
         #   aggregate = Store.load_aggregate(MessageAggregate, uuid)
         #
         def load_aggregate(aggregate_class, id)
           stream = aggregate_class.stream_name(id)
-          events = read_stream(stream)
-
           aggregate = aggregate_class.new(id)
+
+          snapshot = SnapshotStore.load(stream, aggregate_class.name)
+          if snapshot
+            aggregate.restore_from_snapshot(snapshot[:state])
+            aggregate.instance_variable_set(:@version, snapshot[:stream_position])
+            events = read_stream(stream, after: snapshot[:stream_position])
+          else
+            events = read_stream(stream)
+          end
+
           events.each { |event| aggregate.apply_existing(event) }
+
+          if SnapshotStore.should_snapshot?(aggregate.version)
+            SnapshotStore.save(
+              stream,
+              aggregate_type: aggregate_class.name,
+              stream_position: aggregate.version,
+              state: aggregate.snapshot_state
+            )
+          end
+
           aggregate
         end
 
