@@ -144,7 +144,7 @@ Backlog prioritized by user feedback after initial release.
 
 | Feature | Priority | Description |
 |---------|----------|-------------|
-| **Webhooks** | High | HTTP POST on email received, with retry logic |
+| **Webhook notifications** | High | HTTP POST on email received, with retry logic (see [ADR-020](adrs/020-webhook-delivery-strategy.md)) |
 | **Routing rules** | Medium | Forward, drop, auto-reply based on from/to/subject patterns |
 | **SMTP relay mode** | Medium | Capture + optional release to real SMTP (level 3 — see below) |
 | **CLI** | Medium | `inboxed list`, `inboxed wait`, `inboxed clear` |
@@ -152,6 +152,23 @@ Backlog prioritized by user feedback after initial release.
 | **Load testing mode** | Low | Accept high volume, verify delivery stats |
 | **Prometheus metrics** | Low | `/metrics` endpoint for observability |
 | **Additional SDKs** | Low | Python (pytest), Cypress, k6 helpers |
+
+---
+
+## Phase 8 — Webhook Catcher
+
+Extend the "catch & inspect" model to HTTP requests. Like webhook.site, but self-hosted and integrated with the existing dashboard, API, and MCP server. See [ADR-021](adrs/021-webhook-catcher.md) for full design rationale.
+
+- [ ] **Data models:** `WebhookEndpoint`, `WebhookRequest` — separate tables, same `Project` parent
+- [ ] **Public catch endpoint:** `POST/GET/PUT/PATCH/DELETE /hook/:token` — receives and stores any HTTP request
+- [ ] **REST API:** CRUD for endpoints and captured requests under `/api/v1/endpoints/`
+- [ ] **Dashboard:** "Webhooks" tab in project view — endpoint list, request detail with method badge, headers, body (JSON pretty-print), query params, IP
+- [ ] **Real-time:** Incoming requests appear live via existing ActionCable infrastructure
+- [ ] **MCP tools:** `create_webhook_endpoint`, `wait_for_request`, `get_latest_request`, `extract_json_field`, `list_requests`
+- [ ] **Security:** Cryptographic tokens (32+ bytes), rate limiting per endpoint, max body size (256KB), TTL cleanup
+- [ ] **Feature flag:** Webhook module can be disabled entirely for email-only deployments
+
+**Exit criteria:** Create a webhook endpoint, send an HTTP request to it via `curl`, see it appear in the dashboard in real-time, and retrieve it via API and MCP.
 
 ---
 
@@ -165,6 +182,7 @@ Backlog prioritized by user feedback after initial release.
 | **Developer Ready** | + 5 | Test framework helpers, ready for other developers to adopt |
 | **Public Launch** | + 6 | Self-hostable, documented, CI/CD, Docker images published |
 | **Community Driven** | + 7 | Features driven by real user feedback |
+| **Full Dev Inbox** | + 8 | Webhook catcher — emails + HTTP requests in one tool |
 
 ---
 

@@ -83,6 +83,7 @@ Read [ROADMAP.md](docs/ROADMAP.md) to understand the current phase, priorities, 
 | [CONTRIBUTING.md](CONTRIBUTING.md) | When discussing code style, PR process, or community guidelines |
 | [SECURITY.md](SECURITY.md) | When reviewing security-sensitive code or architecture |
 | [CHANGELOG.md](CHANGELOG.md) | When documenting changes for a release |
+| [VISION.md](docs/VISION.md) | When discussing scope, new modules, or long-term product direction |
 
 ---
 
