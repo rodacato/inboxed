@@ -39,12 +39,12 @@ export async function apiClient(path: string, options: RequestInit = {}): Promis
 	return res.json();
 }
 
-function getStoredToken(): string | null {
+export function getStoredToken(): string | null {
 	if (typeof window === 'undefined') return null;
 	return localStorage.getItem('inboxed_admin_token');
 }
 
-function clearStoredToken(): void {
+export function clearStoredToken(): void {
 	if (typeof window === 'undefined') return;
 	localStorage.removeItem('inboxed_admin_token');
 }

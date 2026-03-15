@@ -9,7 +9,11 @@ export default defineConfig({
 		port: 5179,
 		proxy: {
 			'/api': 'http://localhost:3100',
-			'/admin': 'http://localhost:3100'
+			'/admin': 'http://localhost:3100',
+			'/cable': {
+				target: 'ws://localhost:3100',
+				ws: true
+			}
 		}
 	}
 });

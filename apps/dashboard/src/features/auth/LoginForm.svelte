@@ -12,7 +12,7 @@
 
 		try {
 			await authenticate(token);
-			window.location.href = '/';
+			window.location.href = '/projects';
 		} catch {
 			error = 'Invalid admin token';
 		} finally {
