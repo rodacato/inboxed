@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="#0D0F0E"/>
+
+  <!-- Logo mark: [ @ ] — centered in the box -->
+  <g filter="url(#glow)">
+    <!-- Opening bracket -->
+    <text x="18" y="43"
+      font-family="JetBrains Mono, monospace"
+      font-size="38"
+      font-weight="700"
+      fill="#39FF14"
+      opacity="0.6"
+      text-anchor="end">&#x5B;</text>
+
+    <!-- @ symbol — centered -->
+    <text x="32" y="43"
+      font-family="JetBrains Mono, monospace"
+      font-size="34"
+      font-weight="700"
+      fill="#39FF14"
+      text-anchor="middle">@</text>
+
+    <!-- Closing bracket -->
+    <text x="46" y="43"
+      font-family="JetBrains Mono, monospace"
+      font-size="38"
+      font-weight="700"
+      fill="#39FF14"
+      opacity="0.6"
+      text-anchor="start">&#x5D;</text>
+  </g>
+</svg>

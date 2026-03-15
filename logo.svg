@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Logo mark: [ @ ] — centered as a group -->
+  <g filter="url(#glow)">
+    <!-- Opening bracket -->
+    <text x="6" y="42"
+      font-family="JetBrains Mono, monospace"
+      font-size="36"
+      font-weight="700"
+      fill="#39FF14"
+      opacity="0.7"
+      text-anchor="start">&#x5B;</text>
+
+    <!-- @ symbol — centered between brackets -->
+    <text x="38" y="42"
+      font-family="JetBrains Mono, monospace"
+      font-size="36"
+      font-weight="700"
+      fill="#39FF14"
+      text-anchor="middle">@</text>
+
+    <!-- Closing bracket -->
+    <text x="52" y="42"
+      font-family="JetBrains Mono, monospace"
+      font-size="36"
+      font-weight="700"
+      fill="#39FF14"
+      opacity="0.7"
+      text-anchor="start">&#x5D;</text>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="86" y="42"
+    font-family="Space Grotesk, sans-serif"
+    font-size="28"
+    font-weight="700"
+    fill="#E8F0E9"
+    letter-spacing="-0.5">inboxed</text>
+</svg>
