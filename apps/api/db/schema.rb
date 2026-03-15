@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_145620) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_200001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -107,8 +107,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_145620) do
     t.index ["stream_name"], name: "index_snapshots_on_stream_name", unique: true
   end
 
+  create_table "webhook_deliveries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "attempt_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.string "event_id", null: false
+    t.string "event_type", null: false
+    t.integer "http_status"
+    t.datetime "last_attempted_at"
+    t.datetime "next_retry_at"
+    t.jsonb "payload", default: {}, null: false
+    t.text "response_body"
+    t.string "status", default: "pending", null: false
+    t.uuid "webhook_endpoint_id", null: false
+    t.index ["status", "next_retry_at"], name: "index_webhook_deliveries_on_status_and_next_retry_at"
+    t.index ["webhook_endpoint_id", "created_at"], name: "index_webhook_deliveries_on_webhook_endpoint_id_and_created_at"
+    t.index ["webhook_endpoint_id", "status"], name: "index_webhook_deliveries_on_webhook_endpoint_id_and_status"
+    t.index ["webhook_endpoint_id"], name: "index_webhook_deliveries_on_webhook_endpoint_id"
+  end
+
+  create_table "webhook_endpoints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "event_types", default: [], null: false, array: true
+    t.integer "failure_count", default: 0, null: false
+    t.uuid "project_id", null: false
+    t.string "secret", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["project_id", "status"], name: "index_webhook_endpoints_on_project_id_and_status"
+    t.index ["project_id"], name: "index_webhook_endpoints_on_project_id"
+  end
+
   add_foreign_key "api_keys", "projects"
   add_foreign_key "attachments", "emails"
   add_foreign_key "emails", "inboxes"
   add_foreign_key "inboxes", "projects"
+  add_foreign_key "webhook_deliveries", "webhook_endpoints"
+  add_foreign_key "webhook_endpoints", "projects"
 end
