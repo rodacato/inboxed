@@ -17,3 +17,7 @@ production:
     class: EmailCleanupJob
     queue: maintenance
     schedule: every hour
+  webhook_delivery_cleanup:
+    class: WebhookDeliveryCleanupJob
+    queue: default
+    schedule: every day at 3am
