@@ -1,5 +1,5 @@
 # Production / self-hosting docker-compose
-# Usage: docker compose up -d
+# Usage: bin/setup && docker compose up -d
 
 services:
   api:
@@ -12,6 +12,7 @@ services:
       DATABASE_URL: postgresql://inboxed:${POSTGRES_PASSWORD:-inboxed}@db:5432/inboxed_production
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: production
+      RAILS_LOG_LEVEL: ${RAILS_LOG_LEVEL:-info}
       INBOXED_ADMIN_TOKEN: ${INBOXED_ADMIN_TOKEN:?Set INBOXED_ADMIN_TOKEN in .env}
       DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
@@ -20,15 +21,28 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   dashboard:
     build:
       context: apps/dashboard
       dockerfile: Dockerfile
     ports:
-      - "${INBOXED_DASHBOARD_PORT:-80}:80"
+      - "${INBOXED_WEB_PORT:-80}:80"
     depends_on:
       - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   mcp:
     build:
@@ -41,6 +55,7 @@ services:
       INBOXED_API_KEY: ${INBOXED_MCP_KEY:-}
     depends_on:
       - api
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
@@ -56,12 +71,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    # mem_limit: 512m  # Uncomment to limit memory usage
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    # mem_limit: 256m  # Uncomment to limit memory usage
 
 volumes:
   pgdata:
