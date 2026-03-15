@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class EmailDetailSerializer
-  def self.render(record)
+  def self.render(record, url_prefix: "/api/v1")
     {
       id: record.id,
       inbox_id: record.inbox_id,
@@ -15,18 +15,18 @@ class EmailDetailSerializer
       source_type: record.source_type,
       received_at: record.received_at.iso8601,
       expires_at: record.expires_at.iso8601,
-      attachments: record.attachments.map { |a| attachment_json(a) }
+      attachments: record.attachments.map { |a| attachment_json(a, url_prefix: url_prefix) }
     }
   end
 
-  def self.attachment_json(att)
+  def self.attachment_json(att, url_prefix: "/api/v1")
     {
       id: att.id,
       filename: att.filename,
       content_type: att.content_type,
       size_bytes: att.size_bytes,
       inline: att.inline,
-      download_url: "/api/v1/attachments/#{att.id}/download"
+      download_url: "#{url_prefix}/attachments/#{att.id}/download"
     }
   end
 end
