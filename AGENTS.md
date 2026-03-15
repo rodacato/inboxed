@@ -29,12 +29,15 @@ Inboxed is a **self-hosted SMTP server built for developers and QA automation**.
 ```
 inboxed/
 ├── apps/
-│   ├── web/          # Rails 8 — API, Dashboard, SMTP handler
-│   └── mcp/          # Node.js MCP server
-├── docs/             # All project documentation
+│   ├── api/           # Rails 8 API-only
+│   ├── dashboard/     # Svelte 5 SPA + Tailwind 4
+│   └── mcp/           # Node.js MCP server (TypeScript)
+├── docs/
+│   ├── specs/         # Implementation specs
+│   └── adrs/          # Architecture Decision Records
 ├── config/
-│   └── deploy.yml    # Kamal deploy configuration
-├── .devcontainer/    # Dev environment
+│   └── deploy.yml     # Kamal deploy configuration
+├── .devcontainer/     # Dev environment
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -75,6 +78,7 @@ Read [ROADMAP.md](docs/ROADMAP.md) to understand the current phase, priorities, 
 | Document | When to read |
 |----------|-------------|
 | [specs/](docs/specs/) | Before implementing anything — read the approved spec for the current work |
+| [adrs/](docs/adrs/) | When making or reviewing architectural decisions |
 | [BRANDING.md](docs/BRANDING.md) | When working on UI, dashboard, or any visual component |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | When discussing code style, PR process, or community guidelines |
 | [SECURITY.md](SECURITY.md) | When reviewing security-sensitive code or architecture |
@@ -87,18 +91,60 @@ Read [ROADMAP.md](docs/ROADMAP.md) to understand the current phase, priorities, 
 ### When writing code for this project:
 
 1. **Follow Rails conventions** — standard Ruby style, `bundle exec standardrb` compliance
-2. **TypeScript for MCP** — strict types, ESLint compliance
+2. **TypeScript for MCP and Dashboard** — strict types, ESLint compliance
 3. **Tailwind utility classes only** — no custom CSS without justification
 4. **Conventional commits** — `feat:`, `fix:`, `docs:`, `chore:`
-5. **Test everything** — RSpec for Ruby, Jest/Vitest for TypeScript
+5. **Test everything** — RSpec for Ruby, Vitest for TypeScript
 6. **No sensitive data** — never hardcode API keys, IPs, domains, or personal information in code or docs
+
+### Architecture Layer Rules (see [spec 001](docs/specs/001-architecture.md) and [ADRs](docs/adrs/))
+
+The Rails API uses a **rich DDD architecture** with strict layer separation. These rules are non-negotiable:
+
+#### Where code goes
+
+| I'm writing... | Put it in... |
+|----------------|-------------|
+| Business rule or invariant | `app/domain/entities/` or `app/domain/aggregates/` |
+| Immutable data holder (no ID) | `app/domain/value_objects/` |
+| A fact that happened | `app/domain/events/` |
+| Use case orchestration | `app/application/services/` |
+| Database access | `app/infrastructure/repositories/` |
+| External API call | `app/infrastructure/adapters/` |
+| ActiveRecord model | `app/models/` — **persistence only**, no business methods |
+| Query-optimized view | `app/read_models/` |
+| HTTP endpoint | `app/controllers/` — thin, delegates to service |
+
+#### Layer boundaries
+
+- **`domain/`** has **zero** Rails or ActiveRecord dependencies. Only `dry-types` and `dry-struct`.
+- **Entities and value objects** are immutable (`Dry::Struct`).
+- **Application services** orchestrate only — no `if` statements checking business rules.
+- **Repositories** translate between domain entities and AR models. The domain never sees `ActiveRecord::Base`.
+- **AR models** have no business methods. Only scopes, associations, DB validations.
+- **Controllers** are thin — parse params, call service, serialize response.
+
+#### Svelte Dashboard
+
+- **Feature-based** — each feature in `src/features/<name>/` with `.svelte`, `.service.ts`, `.store.ts`, `.types.ts`
+- **Components are dumb** — props in, events out, no direct API calls
+- **Services** handle all API communication
+- **Stores** use Svelte 5 runes (`$state`, `$derived`)
+- Features import from `lib/`, never from other features
+
+#### MCP Server
+
+- **Tools + Ports** — each tool in `src/tools/<name>.ts`, external calls in `src/ports/`
+- **Tools are pure functions** — receive input + port, return output
+- **Zero state** — each invocation is independent
 
 ### When making architectural decisions:
 
 1. Read IDENTITY.md for the decision-making framework
-2. Consult the relevant experts from EXPERTS.md
-3. Check ROADMAP.md to understand how the decision fits in the current phase
-4. Prefer simplicity — the right amount of complexity is the minimum needed
+2. Read [ADRs](docs/adrs/) for existing architectural decisions
+3. Consult the relevant experts from EXPERTS.md
+4. Check ROADMAP.md to understand how the decision fits in the current phase
+5. Prefer simplicity — the right amount of complexity is the minimum needed
 
 ### When unsure about scope:
 

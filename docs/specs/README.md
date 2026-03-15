@@ -91,6 +91,7 @@ Unresolved items to discuss before moving to approved.
 | # | Spec | Phase | Status | Release | Abstract |
 |---|------|-------|--------|---------|----------|
 | 000 | [Project Foundation](000-foundation.md) | Phase 0 | draft | — | Rails API-only + Svelte SPA + MCP skeleton + Caddy proxy + CI/CD + Kamal deploy. Infrastructure validated end-to-end, no business logic. |
+| 001 | [Software Architecture](001-architecture.md) | Cross-cutting | approved | — | Rich DDD + custom event store for Rails API, feature-based Svelte dashboard, hexagonal light MCP server. ADRs, layer rules, and LLM guidelines. |
 
 <!--
 Template row:
