@@ -72,4 +72,22 @@ describe("wait_for_email", () => {
     const result = await execute({ inbox: "unknown@mail.inboxed.dev" }, api);
     expect(result.isError).toBe(true);
   });
+
+  it("defaults timeout to 30 seconds", async () => {
+    const api = createMockApi();
+    const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
+
+    expect(api.waitForEmail).toHaveBeenCalledWith("inbox-1", undefined, 30);
+    const data = JSON.parse(result.content[0].text);
+    expect(data.message).toContain("30 seconds");
+  });
+
+  it("maps API errors via mapApiError", async () => {
+    const api = createMockApi({
+      findInboxByAddress: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    });
+    const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
+  });
 });

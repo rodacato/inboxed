@@ -15,6 +15,7 @@ apps/api/config/credentials/
 
 # ── Node ──────────────────────────────────────────────────────
 node_modules/
+coverage/
 apps/mcp/dist/
 apps/dashboard/build/
 apps/dashboard/.svelte-kit/

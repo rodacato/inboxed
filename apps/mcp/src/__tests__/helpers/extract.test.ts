@@ -132,6 +132,15 @@ describe("extractLabeledValue", () => {
       extractLabeledValue(body, null, "Tracking number", "[A-Z0-9]+")
     ).toBe("1Z999AA10123456784");
   });
+
+  it("escapes special regex characters in label", () => {
+    const body = "Total ($): 99.50";
+    expect(extractLabeledValue(body, null, "Total ($)")).toBe("99.50");
+  });
+
+  it("returns null for empty input", () => {
+    expect(extractLabeledValue(null, null, "password")).toBeNull();
+  });
 });
 
 describe("stripHtml", () => {

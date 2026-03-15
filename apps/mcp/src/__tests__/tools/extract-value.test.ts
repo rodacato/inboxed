@@ -87,4 +87,50 @@ describe("extract_value", () => {
     expect(data.value).toBeNull();
     expect(data.message).toContain("No value found");
   });
+
+  it("returns error for unknown inbox", async () => {
+    const api = {
+      findInboxByAddress: vi.fn().mockResolvedValue(null),
+    } as unknown as InboxedApi;
+
+    const result = await execute(
+      { inbox: "unknown@mail.inboxed.dev", label: "password" },
+      api
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Inbox not found");
+  });
+
+  it("returns error when inbox has no emails", async () => {
+    const api = {
+      findInboxByAddress: vi.fn().mockResolvedValue({
+        id: "inbox-1",
+        address: "test@mail.inboxed.dev",
+        email_count: 0,
+      }),
+      listEmails: vi.fn().mockResolvedValue({
+        data: [],
+        meta: { total_count: 0, next_cursor: null },
+      }),
+    } as unknown as InboxedApi;
+
+    const result = await execute(
+      { inbox: "test@mail.inboxed.dev", label: "password" },
+      api
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("No emails");
+  });
+
+  it("maps API errors via mapApiError", async () => {
+    const api = {
+      findInboxByAddress: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    } as unknown as InboxedApi;
+
+    const result = await execute(
+      { inbox: "test@mail.inboxed.dev", label: "password" },
+      api
+    );
+    expect(result.isError).toBe(true);
+  });
 });

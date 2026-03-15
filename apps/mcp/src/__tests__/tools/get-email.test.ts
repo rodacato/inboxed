@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { execute } from "../../tools/get-email.js";
 import type { InboxedApi } from "../../ports/inboxed-api.js";
+import { ApiError } from "../../helpers/errors.js";
 
 describe("get_email", () => {
   it("returns full email detail", async () => {
@@ -41,20 +42,29 @@ describe("get_email", () => {
     expect(data.attachments[0].filename).toBe("doc.pdf");
   });
 
-  it("returns error for missing email", async () => {
+  it("returns error for missing email (ApiError)", async () => {
     const api = {
-      getEmail: vi.fn().mockRejectedValue(
-        Object.assign(new Error("Inboxed API error: 404 Not Found"), {
-          name: "ApiError",
-          status: 404,
-          statusText: "Not Found",
-          url: "/api/v1/emails/missing",
-        })
-      ),
+      getEmail: vi
+        .fn()
+        .mockRejectedValue(
+          new ApiError(404, "Not Found", "/api/v1/emails/missing")
+        ),
     } as unknown as InboxedApi;
 
     const result = await execute({ email_id: "missing" }, api);
-    // mapApiError handles generic Error, not ApiError instance from object.assign
     expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Not found");
+  });
+
+  it("maps network errors via mapApiError", async () => {
+    const api = {
+      getEmail: vi
+        .fn()
+        .mockRejectedValue(new TypeError("fetch failed")),
+    } as unknown as InboxedApi;
+
+    const result = await execute({ email_id: "email-1" }, api);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
   });
 });

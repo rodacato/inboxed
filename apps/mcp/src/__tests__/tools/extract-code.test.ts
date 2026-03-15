@@ -70,6 +70,16 @@ describe("extract_code", () => {
     expect(data.message).toContain("No verification code");
   });
 
+  it("maps API errors via mapApiError", async () => {
+    const api = {
+      findInboxByAddress: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    } as unknown as InboxedApi;
+
+    const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
+  });
+
   it("returns error when inbox has no emails", async () => {
     const api = {
       findInboxByAddress: vi.fn().mockResolvedValue({

@@ -63,4 +63,21 @@ describe("list_emails", () => {
 
     expect(api.listEmails).toHaveBeenCalledWith("inbox-1", 5);
   });
+
+  it("defaults limit to 10", async () => {
+    const api = createMockApi();
+    await execute({ inbox: "test@mail.inboxed.dev" }, api);
+
+    expect(api.listEmails).toHaveBeenCalledWith("inbox-1", 10);
+  });
+
+  it("maps API errors via mapApiError", async () => {
+    const api = createMockApi({
+      findInboxByAddress: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    });
+    const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
+  });
 });

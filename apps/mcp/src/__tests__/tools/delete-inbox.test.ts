@@ -31,4 +31,19 @@ describe("delete_inbox", () => {
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("Inbox not found");
   });
+
+  it("maps API errors via mapApiError", async () => {
+    const api = {
+      findInboxByAddress: vi.fn().mockResolvedValue({
+        id: "inbox-1",
+        address: "test@mail.inboxed.dev",
+        email_count: 3,
+      }),
+      deleteInbox: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    } as unknown as InboxedApi;
+
+    const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
+  });
 });

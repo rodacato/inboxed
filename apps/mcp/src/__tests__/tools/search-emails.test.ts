@@ -41,4 +41,26 @@ describe("search_emails", () => {
     await execute({ query: "test", limit: 25 }, api);
     expect(api.searchEmails).toHaveBeenCalledWith("test", 25);
   });
+
+  it("defaults limit to 10", async () => {
+    const api = {
+      searchEmails: vi.fn().mockResolvedValue({
+        data: [],
+        meta: { total_count: 0, next_cursor: null },
+      }),
+    } as unknown as InboxedApi;
+
+    await execute({ query: "test" }, api);
+    expect(api.searchEmails).toHaveBeenCalledWith("test", 10);
+  });
+
+  it("maps API errors via mapApiError", async () => {
+    const api = {
+      searchEmails: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    } as unknown as InboxedApi;
+
+    const result = await execute({ query: "test" }, api);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot reach Inboxed API");
+  });
 });
