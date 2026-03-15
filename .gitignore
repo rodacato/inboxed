@@ -9,6 +9,7 @@ apps/api/log/
 apps/api/storage/
 apps/api/vendor/bundle/
 apps/api/.bundle/
+apps/api/config/master.key
 
 # ── Node ──────────────────────────────────────────────────────
 node_modules/
