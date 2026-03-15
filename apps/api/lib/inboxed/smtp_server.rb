@@ -19,7 +19,11 @@ module Inboxed
     # Validate API key on AUTH
     def on_auth_event(_ctx, _authorization_id, _authentication_id, authentication)
       api_key = authenticate_api_key(authentication)
-      raise MidiSmtpServer::Smtpd535Exception unless api_key
+      unless api_key
+        log_json(event: "auth_failed")
+        raise MidiSmtpServer::Smtpd535Exception
+      end
+      log_json(event: "auth_success", project_id: api_key.project_id)
       api_key.id
     end
 
@@ -35,6 +39,7 @@ module Inboxed
 
     # Process complete message — enqueue for async processing
     def on_message_data_event(ctx)
+      started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       auth_id = ctx[:server][:authenticated]
       api_key = ApiKeyRecord.find_by(id: auth_id)
       return unless api_key
@@ -51,12 +56,24 @@ module Inboxed
         raw_source: raw_source,
         source_type: "relay"
       )
+
+      duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round(1)
+      log_json(
+        event: "email_received",
+        from: envelope_from,
+        to: Array(envelope_to).join(", "),
+        size_bytes: raw_source.bytesize,
+        duration_ms: duration_ms
+      )
     end
 
     def self.start
       server = new
       server.start
-      Rails.logger.info("[SMTP] Server listening on #{ENV.fetch("SMTP_HOST", "0.0.0.0")}:#{ENV.fetch("SMTP_PORTS", "2525")}")
+      server.send(:log_json,
+        event: "server_started",
+        host: ENV.fetch("SMTP_HOST", "0.0.0.0"),
+        port: ENV.fetch("SMTP_PORTS", "2525"))
 
       trap("INT") { server.stop }
       trap("TERM") { server.stop }
@@ -65,6 +82,11 @@ module Inboxed
     end
 
     private
+
+    def log_json(**fields)
+      payload = {service: "smtp", timestamp: Time.now.utc.iso8601}.merge(fields)
+      Rails.logger.info(payload.to_json)
+    end
 
     def tls_mode
       if ENV["SMTP_TLS_CERT"].present?

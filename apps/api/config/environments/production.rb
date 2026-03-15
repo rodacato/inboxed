@@ -40,6 +40,16 @@ Rails.application.configure do
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"
 
+  # Structured JSON request logging via lograge
+  config.lograge.enabled = true
+  config.lograge.formatter = Lograge::Formatters::Json.new
+  config.lograge.custom_payload do |controller|
+    {
+      request_id: controller.request.request_id,
+      ip: controller.request.remote_ip
+    }
+  end
+
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 

@@ -41,6 +41,9 @@ gem "dry-struct", "~> 1.6"
 gem "midi-smtp-server", "~> 3.2"
 gem "mail", "~> 2.8"
 
+# Structured JSON request logging
+gem "lograge", "~> 0.14"
+
 group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"
   gem "bundler-audit", require: false
