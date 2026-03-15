@@ -6,9 +6,35 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
+      mcp: ${{ steps.filter.outputs.mcp }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+            dashboard:
+              - 'apps/dashboard/**'
+            mcp:
+              - 'apps/mcp/**'
+
   api:
-    name: API (Rails)
+    name: API
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -38,42 +64,38 @@ jobs:
           DATABASE_URL: postgresql://inboxed:inboxed@localhost:5432/inboxed_test
           RAILS_ENV: test
         run: bin/rails db:setup
-      - name: Run linter
+      - name: Lint
         run: bundle exec standardrb
-      - name: Run tests
+      - name: Test
         env:
           DATABASE_URL: postgresql://inboxed:inboxed@localhost:5432/inboxed_test
           RAILS_ENV: test
         run: bundle exec rspec
 
-  dashboard:
-    name: Dashboard (Svelte)
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.dashboard == 'true' || needs.changes.outputs.mcp == 'true'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/dashboard
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/dashboard/package-lock.json
-      - run: npm ci --legacy-peer-deps
-      - run: npm run build
 
-  mcp:
-    name: MCP Server
-    runs-on: ubuntu-latest
-    defaults:
-      run:
+      - name: Dashboard
+        if: needs.changes.outputs.dashboard == 'true'
+        working-directory: apps/dashboard
+        run: |
+          npm ci --legacy-peer-deps
+          npm run lint
+          npm run check
+          npm run build
+
+      - name: MCP
+        if: needs.changes.outputs.mcp == 'true'
         working-directory: apps/mcp
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/mcp/package-lock.json
-      - run: npm ci
-      - run: npm run build
+        run: |
+          npm ci
+          npm run check
+          npm run build
