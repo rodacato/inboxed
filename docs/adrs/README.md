@@ -50,3 +50,5 @@ NNN-short-slug.md
 | 008 | [API Response Format & Error Handling](008-api-response-format.md) | accepted | 2026-03-15 | JSON resource envelope for success, RFC 7807 Problem Details for errors |
 | 009 | [Cursor-based Pagination](009-cursor-pagination.md) | accepted | 2026-03-15 | Cursor pagination with Base64-encoded sort keys for all collections |
 | 010 | [Rate Limiting with Rack::Attack](010-rate-limiting.md) | accepted | 2026-03-15 | Per-API-key and per-IP throttling with transparent headers |
+| 011 | [Real-time via ActionCable + Solid Cable](011-realtime-actioncable.md) | accepted | 2026-03-15 | ActionCable with solid_cable DB backend for real-time dashboard updates |
+| 012 | [Dashboard Admin-Only Auth](012-dashboard-admin-auth.md) | accepted | 2026-03-15 | Dashboard uses only admin token; extended /admin/ endpoints for email reading |

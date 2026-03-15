@@ -94,6 +94,7 @@ Unresolved items to discuss before moving to approved.
 | 001 | [Software Architecture](001-architecture.md) | Cross-cutting | approved | — | Rich DDD + custom event store for Rails API, feature-based Svelte dashboard, hexagonal light MCP server. ADRs, layer rules, and LLM guidelines. |
 | 002 | [SMTP Reception & Email Persistence](002-smtp-persistence.md) | Phase 1 | draft | — | SMTP server with AUTH/TLS, MIME parsing, event-sourced persistence, TTL cleanup. |
 | 003 | [REST API](003-rest-api.md) | Phase 2 | draft | — | Full REST API with admin/project endpoints, cursor pagination, full-text search, long-poll wait, rate limiting, OpenAPI docs. |
+| 004 | [Dashboard](004-dashboard.md) | Phase 3 | draft | — | SvelteKit SPA dashboard with admin read endpoints, ActionCable real-time, project/inbox/email views, OTP detection, search. |
 
 <!--
 Template row:
