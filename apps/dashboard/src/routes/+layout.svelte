@@ -30,7 +30,7 @@
 {:else if ready}
 	<div class="flex h-screen overflow-hidden bg-base">
 		<Sidebar wsConnected={realtime.connected} />
-		<main class="flex-1 overflow-auto">
+		<main class="flex-1 overflow-hidden">
 			{@render children()}
 		</main>
 	</div>

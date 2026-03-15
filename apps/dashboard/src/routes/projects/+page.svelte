@@ -47,7 +47,7 @@
 	}
 </script>
 
-<div class="p-8 max-w-5xl">
+<div class="p-8 overflow-auto h-full">
 	<div class="flex items-center justify-between mb-8">
 		<h2 class="text-2xl font-display font-bold text-text-primary">Projects</h2>
 		<button

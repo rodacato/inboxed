@@ -7,6 +7,7 @@ export interface EmailSummary {
 	has_attachments: boolean;
 	attachment_count: number;
 	source_type: string;
+	inbox_address: string | null;
 	received_at: string;
 }
 

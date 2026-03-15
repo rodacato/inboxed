@@ -17,6 +17,21 @@ export async function fetchEmails(
 	)) as { emails: EmailSummary[]; pagination: Pagination };
 }
 
+export async function fetchProjectEmails(
+	projectId: string,
+	params?: { limit?: number; after?: string; inbox_id?: string }
+): Promise<{ emails: EmailSummary[]; pagination: Pagination }> {
+	const qs = new URLSearchParams();
+	if (params?.limit) qs.set('limit', String(params.limit));
+	if (params?.after) qs.set('after', params.after);
+	if (params?.inbox_id) qs.set('inbox_id', params.inbox_id);
+	const query = qs.toString() ? `?${qs}` : '';
+
+	return (await apiClient(
+		`/admin/projects/${projectId}/emails${query}`
+	)) as { emails: EmailSummary[]; pagination: Pagination };
+}
+
 export async function fetchEmail(id: string): Promise<{ email: EmailDetail }> {
 	return (await apiClient(`/admin/emails/${id}`)) as { email: EmailDetail };
 }

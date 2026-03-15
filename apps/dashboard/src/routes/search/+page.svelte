@@ -53,7 +53,7 @@
 	}
 </script>
 
-<div class="p-8 max-w-4xl">
+<div class="p-8 max-w-4xl mx-auto overflow-auto h-full">
 	<h2 class="text-2xl font-display font-bold text-text-primary mb-6">Search</h2>
 
 	<div class="relative mb-6">

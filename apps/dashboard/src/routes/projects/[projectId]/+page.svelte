@@ -104,7 +104,7 @@
 		<p class="text-text-dim font-mono text-sm">Loading...</p>
 	</div>
 {:else if project}
-	<div class="p-8 max-w-5xl">
+	<div class="p-8 overflow-auto h-full">
 		<!-- Breadcrumb -->
 		<div class="flex items-center gap-2 text-sm font-mono text-text-secondary mb-6">
 			<a href="/projects" class="hover:text-phosphor">Projects</a>
@@ -118,12 +118,21 @@
 				<h2 class="text-2xl font-display font-bold text-text-primary">{project.name}</h2>
 				<p class="text-sm font-mono text-text-dim mt-1">{project.slug}</p>
 			</div>
-			<button
-				onclick={handleDeleteProject}
-				class="px-3 py-1.5 text-xs font-mono text-error border border-error/30 rounded hover:bg-error/10 transition-colors"
-			>
-				Delete Project
-			</button>
+			<div class="flex gap-2">
+				<a
+					href="/projects/{projectId}/emails"
+					class="flex items-center gap-2 px-4 py-2 bg-phosphor text-base rounded-lg text-sm font-mono font-medium hover:brightness-110 transition-all"
+				>
+					<span class="material-symbols-outlined text-lg">mail</span>
+					View Emails
+				</a>
+				<button
+					onclick={handleDeleteProject}
+					class="px-3 py-1.5 text-xs font-mono text-error border border-error/30 rounded hover:bg-error/10 transition-colors"
+				>
+					Delete
+				</button>
+			</div>
 		</div>
 
 		<div class="grid grid-cols-3 gap-4 mb-8">
