@@ -4,6 +4,7 @@ require "rails_helper"
 require "webmock/rspec"
 
 RSpec.describe WebhookDeliveryJob do
+  before { ActiveJob::Base.queue_adapter = :test }
   let!(:project) do
     ProjectRecord.create!(id: SecureRandom.uuid, name: "Test", slug: "test")
   end

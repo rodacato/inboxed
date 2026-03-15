@@ -40,7 +40,7 @@ module Inboxed
     # Process complete message — enqueue for async processing
     def on_message_data_event(ctx)
       started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      auth_id = ctx[:server][:authenticated]
+      auth_id = ctx[:server][:authorization_id]
       api_key = ApiKeyRecord.find_by(id: auth_id)
       return unless api_key
 
