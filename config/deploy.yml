@@ -13,6 +13,19 @@ servers:
       traefik.http.routers.inboxed.rule: Host(`inboxed.notdefined.dev`)
     options:
       network: "kamal"
+    env:
+      clear:
+        SOLID_QUEUE_IN_PUMA: true
+
+  smtp:
+    hosts:
+      - YOUR_VPS_IP
+    cmd: bundle exec rails runner "Inboxed::SmtpServer.start"
+    options:
+      network: "kamal"
+      publish:
+        - "${INBOXED_SMTP_PORT:-2525}:2525"
+        - "${INBOXED_SMTPS_PORT:-465}:465"
 
 proxy:
   ssl: true
