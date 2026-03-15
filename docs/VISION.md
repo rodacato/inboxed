@@ -68,6 +68,92 @@ Each module can be referenced as:
 
 No need to rename. No need for sub-brands.
 
+## Go-to-Market: Inboxed Cloud
+
+Inboxed Cloud is not a SaaS business. It's a **marketing funnel** for self-hosted adoption. The hosted version lets developers try Inboxed in 30 seconds without installing anything. The limits push them toward self-hosting.
+
+*"Try it free at cloud.inboxed.dev. Self-host it forever with `docker compose up`."*
+
+### The Conversion Flow
+
+```
+Landing page → "Try free" → Register (30s, email + password or GitHub OAuth)
+    → First inbox: test@{slug}.inboxed.dev
+    → Configure SMTP in app (3 lines)
+    → First email arrives → "this works" moment
+    → Hits limits (5 inboxes, 50 emails, needs MCP)
+    → Banner: "Love Inboxed? Self-host for unlimited everything"
+    → Self-hosting docs: docker compose up (5 min)
+    → Done.
+```
+
+### Free Tier Limits
+
+Generous enough to evaluate, tight enough to outgrow in a day of real work.
+
+| Resource | Free tier | Why this limit |
+|---|---|---|
+| Projects | 1 | Enough to try, not enough for a team |
+| Inboxes per project | 5 | Basic test flows, not a full test suite |
+| Emails retained | 50 | See that it works, fills up fast |
+| TTL | 1 hour | Urgency — use it now or lose it |
+| Webhook endpoints | 2 | Demo, not production |
+| Requests per endpoint | 20 | Same principle |
+| MCP server | Disabled | **The differentiator is self-hosted only** |
+| HTML email preview | Disabled | Security — no cross-tenant XSS risk |
+| API rate limit | 60 req/min | Enough for curl, not for CI/CD |
+| SMTP rate limit | 10 emails/hour | Prevents relay abuse |
+
+### What Cloud Is Not
+
+- **Not a paid tier.** No Stripe, no plans, no subscriptions. If demand appears for "hosted unlimited", that's a future decision.
+- **Not a different codebase.** Same Rails app with `INBOXED_MODE=cloud` flag. Multi-tenancy is additive, not a fork.
+- **Not a retention play.** Success metric is `docker pull` after cloud trial, not cloud MAU.
+
+### Infrastructure (Budget-First)
+
+| Component | Choice | Cost |
+|---|---|---|
+| VPS | Hetzner CAX21 (4 vCPU ARM, 8GB RAM) | ~€6/mo |
+| Backups | pg_dump → Hetzner Object Storage | ~€1/mo |
+| DNS | Wildcard `*.inboxed.dev` (MX + A) | Included |
+| Redis | Not needed (Solid Cable uses PostgreSQL) | €0 |
+| CDN | Not needed (lightweight dashboard) | €0 |
+| Email verification | Dogfood — send via Inboxed itself | €0 |
+| **Total** | | **~€7-10/mo** |
+
+Single process, single database, single SMTP server. Multi-tenancy via row-level scoping (`project_id`), not containers per tenant.
+
+### What Changes in Cloud Mode
+
+| Concern | Standalone (self-hosted) | Cloud |
+|---|---|---|
+| Auth | Admin token | User registration + sessions |
+| Project creation | Admin creates via dashboard | User creates at signup (max 1) |
+| Scoping | Implicit (single tenant) | Explicit (`current_user.projects`) |
+| Limits | Configurable via ENV | Hardcoded free tier |
+| HTML email preview | Sandboxed iframe | Disabled (text + headers only) |
+| MCP | Enabled | Disabled |
+| SMTP addressing | Configurable domain | `{slug}.inboxed.dev` automatic |
+
+### Data Model Additions
+
+Only two new tables beyond the self-hosted schema:
+
+- `User` — email, password_digest, verified_at, created_at
+- `users_projects` — join table (one user → one project in free tier)
+
+### Security (Non-Negotiable for Multi-Tenant)
+
+| Vector | Mitigation |
+|---|---|
+| Cross-tenant data leak | Strict scoping: every query includes `project_id`. Test suite verifies isolation |
+| SMTP relay abuse | Registration requires email verification. SMTP rate limit: 10/hour per account |
+| Storage abuse | 1-hour TTL non-negotiable. Body cap: 100KB emails, 256KB webhooks. Cron cleans every 5 min |
+| HTML email XSS | No HTML rendering in cloud. Text + headers only |
+| Account enumeration | Project slugs are UUIDs, not usernames |
+| DDoS on SMTP | fail2ban + connection rate limit in midi-smtp-server |
+
 ## Execution Strategy
 
 ### Phase 1: Prove the core (now → public launch)
@@ -78,7 +164,11 @@ Build and ship **Inboxed Mail** (Phases 0-6 in the roadmap). This is the MVP, th
 
 Add webhook modules (Phases 7-8+) once Mail is stable and has real users. The architecture of Projects, API keys, dashboard, MCP tools, and ActionCable will already exist — webhook modules plug into it.
 
-### Phase 3: Let users tell you what's next
+### Phase 3: Cloud as funnel (post-webhook catcher)
+
+Launch Inboxed Cloud (Phase 9) as the try-before-you-self-host experience. Same codebase, `INBOXED_MODE=cloud`, single VPS. See [ADR-022](adrs/022-cloud-free-tier.md).
+
+### Phase 4: Let users tell you what's next
 
 Maybe it's gRPC inspection. Maybe it's GraphQL subscription catching. Maybe it's something nobody has thought of yet. The modular architecture supports it, but we don't build it until there's demand.
 

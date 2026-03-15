@@ -172,6 +172,25 @@ Extend the "catch & inspect" model to HTTP requests. Like webhook.site, but self
 
 ---
 
+## Phase 9 — Inboxed Cloud (Free Tier)
+
+Hosted version as a try-before-you-self-host funnel. Not a SaaS — no paid plans, no Stripe. Cloud exists to reduce the barrier to adoption. See [ADR-022](adrs/022-cloud-free-tier.md) and [VISION.md](VISION.md) for full strategy.
+
+- [ ] **User model:** `User` (email, password_digest, verified_at) + `users_projects` join table
+- [ ] **Registration flow:** email + password or GitHub OAuth, email verification required
+- [ ] **Cloud mode flag:** `INBOXED_MODE=cloud` — conditional behavior for auth, limits, features
+- [ ] **Multi-tenant scoping:** Every query scoped by `project_id`. Test suite verifies tenant isolation
+- [ ] **Free tier limits:** 1 project, 5 inboxes, 50 emails, 2 webhook endpoints, 20 requests, 1h TTL, 60 req/min API
+- [ ] **Feature gates:** MCP disabled, HTML email preview disabled (text + headers only)
+- [ ] **SMTP multi-tenant:** Wildcard subdomain routing — `*@{slug}.inboxed.dev` via single MX record
+- [ ] **Limit banners:** Dashboard shows usage ("4/5 inboxes") with CTA to self-hosting docs
+- [ ] **Abuse prevention:** SMTP rate limit (10/hour per account), body size caps, fail2ban, aggressive cleanup cron
+- [ ] **Deploy:** Single Hetzner VPS (CAX21), same docker-compose with cloud config overlay
+
+**Exit criteria:** A developer registers, sends a test email to their `@{slug}.inboxed.dev` inbox, inspects it in the dashboard, hits a limit, and follows the self-hosting CTA to `docker compose up` on their own machine.
+
+---
+
 ## Milestones Summary
 
 | Milestone | Phases | What it unlocks |
@@ -183,6 +202,7 @@ Extend the "catch & inspect" model to HTTP requests. Like webhook.site, but self
 | **Public Launch** | + 6 | Self-hostable, documented, CI/CD, Docker images published |
 | **Community Driven** | + 7 | Features driven by real user feedback |
 | **Full Dev Inbox** | + 8 | Webhook catcher — emails + HTTP requests in one tool |
+| **Try Before You Host** | + 9 | Inboxed Cloud — free hosted tier as adoption funnel |
 
 ---
 

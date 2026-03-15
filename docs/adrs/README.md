@@ -61,3 +61,4 @@ NNN-short-slug.md
 | 019 | [Docker Compose as Primary Deploy](019-docker-compose-primary-deploy.md) | accepted | 2026-03-15 | Docker Compose is the recommended path, Kamal optional for advanced users |
 | 020 | [Webhook Delivery & Retry Strategy](020-webhook-delivery-strategy.md) | accepted | 2026-03-15 | Exponential backoff via Solid Queue, HMAC-SHA256 signing, at-least-once delivery, auto-disable failing endpoints |
 | 021 | [Webhook Catcher — HTTP Request Inspection](021-webhook-catcher.md) | accepted | 2026-03-15 | Catch and inspect incoming HTTP requests (like webhook.site), reusing Projects/API/Dashboard/MCP infrastructure |
+| 022 | [Inboxed Cloud — Free Tier as Funnel](022-cloud-free-tier.md) | accepted | 2026-03-15 | Hosted free tier to drive self-hosted adoption. Same codebase, mode flag, ~€7-10/mo single VPS |
