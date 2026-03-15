@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  /* Backgrounds */
+  --color-base: #0D0F0E;
+  --color-surface: #131614;
+  --color-surface-2: #1A1E1B;
+  --color-border: #2A302B;
+
+  /* Phosphor green — primary brand color */
+  --color-phosphor: #39FF14;
+  --color-phosphor-dim: #1A7A08;
+  --color-phosphor-glow: rgba(57, 255, 20, 0.12);
+
+  /* Amber — warnings, highlights, accents */
+  --color-amber: #FFB800;
+  --color-amber-dim: #7A5800;
+
+  /* Cyan — interactive, links, MCP badge */
+  --color-cyan: #00E5FF;
+  --color-cyan-dim: #006B78;
+
+  /* Text */
+  --color-text-primary: #E8F0E9;
+  --color-text-secondary: #7A8F7B;
+  --color-text-dim: #3D4D3E;
+
+  /* Semantic */
+  --color-success: #39FF14;
+  --color-warning: #FFB800;
+  --color-error: #FF3B30;
+  --color-info: #00E5FF;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-body: 'Inter', sans-serif;
+  --font-retro: 'VT323', monospace;
+}
+
+/* Phosphor glow effect */
+.glow {
+  text-shadow: 0 0 20px var(--color-phosphor-glow), 0 0 40px var(--color-phosphor-glow);
+}
+
+/* Blinking cursor */
+.cursor {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
