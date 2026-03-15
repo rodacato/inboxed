@@ -1,16 +1,20 @@
 # Kamal deploy configuration for Inboxed
 # Docs: https://kamal-deploy.org/docs
+#
+# Prerequisites:
+#   1. Set KAMAL_REGISTRY_PASSWORD (GitHub PAT with packages:write)
+#   2. Set HOST_IP environment variable or replace below
+#   3. SSH access to the VPS configured
+#   4. GitHub secrets configured (see docs/guides/kamal-deploy.md)
 
 service: inboxed
 
-image: ghcr.io/notdefined-dev/inboxed
+image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-api
 
 servers:
   web:
     hosts:
-      - YOUR_VPS_IP
-    labels:
-      traefik.http.routers.inboxed.rule: Host(`inboxed.notdefined.dev`)
+      - <%= ENV["HOST_IP"] %>
     options:
       network: "kamal"
     env:
@@ -19,7 +23,7 @@ servers:
 
   smtp:
     hosts:
-      - YOUR_VPS_IP
+      - <%= ENV["HOST_IP"] %>
     cmd: bundle exec rails runner "Inboxed::SmtpServer.start"
     options:
       network: "kamal"
@@ -27,14 +31,16 @@ servers:
         - "${INBOXED_SMTP_PORT:-2525}:2525"
         - "${INBOXED_SMTPS_PORT:-465}:465"
 
+# Cloudflared handles TLS — kamal-proxy only routes internally
 proxy:
-  ssl: true
-  host: inboxed.notdefined.dev
+  ssl: false
+  host: <%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
   app_port: 3000
 
 registry:
   server: ghcr.io
-  username: notdefined-dev
+  username:
+    - KAMAL_REGISTRY_USERNAME
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -46,24 +52,24 @@ env:
   clear:
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: true
+    INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
   secret:
     - DATABASE_URL
     - SECRET_KEY_BASE
     - INBOXED_ADMIN_TOKEN
     - REDIS_URL
-    - DASHBOARD_URL
 
 accessories:
   dashboard:
-    image: ghcr.io/notdefined-dev/inboxed-dashboard
-    host: YOUR_VPS_IP
-    port: "80:80"
+    image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-dashboard
+    host: <%= ENV["HOST_IP"] %>
+    port: "8080:80"
     options:
       network: "kamal"
 
   mcp:
-    image: ghcr.io/notdefined-dev/inboxed-mcp
-    host: YOUR_VPS_IP
+    image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-mcp
+    host: <%= ENV["HOST_IP"] %>
     port: "3001:3001"
     env:
       clear:
@@ -75,7 +81,7 @@ accessories:
 
   db:
     image: postgres:16-alpine
-    host: YOUR_VPS_IP
+    host: <%= ENV["HOST_IP"] %>
     port: "127.0.0.1:5432:5432"
     env:
       clear:
@@ -90,7 +96,7 @@ accessories:
 
   redis:
     image: redis:7-alpine
-    host: YOUR_VPS_IP
+    host: <%= ENV["HOST_IP"] %>
     port: "127.0.0.1:6379:6379"
     directories:
       - data:/data

@@ -2,12 +2,12 @@ name: Docker Build & Push
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     tags: ["v*"]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
 
 jobs:
   build-api:
@@ -27,11 +27,11 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ${{ env.IMAGE_PREFIX }}/api
+          images: ${{ env.IMAGE_PREFIX }}/inboxed-api
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
       - uses: docker/build-push-action@v6
         with:
           context: apps/api
@@ -59,11 +59,11 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ${{ env.IMAGE_PREFIX }}/dashboard
+          images: ${{ env.IMAGE_PREFIX }}/inboxed-dashboard
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
       - uses: docker/build-push-action@v6
         with:
           context: apps/dashboard
@@ -91,11 +91,11 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ${{ env.IMAGE_PREFIX }}/mcp
+          images: ${{ env.IMAGE_PREFIX }}/inboxed-mcp
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
       - uses: docker/build-push-action@v6
         with:
           context: apps/mcp

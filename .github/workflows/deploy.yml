@@ -1,0 +1,183 @@
+name: Deploy
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-api:
+    name: Build API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/inboxed-api:latest
+            ghcr.io/${{ github.repository_owner }}/inboxed-api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+  build-dashboard:
+    name: Build Dashboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/dashboard
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/inboxed-dashboard:latest
+            ghcr.io/${{ github.repository_owner }}/inboxed-dashboard:${{ github.sha }}
+          cache-from: type=gha,scope=dashboard
+          cache-to: type=gha,mode=max,scope=dashboard
+
+  build-mcp:
+    name: Build MCP
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/mcp
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/inboxed-mcp:latest
+            ghcr.io/${{ github.repository_owner }}/inboxed-mcp:${{ github.sha }}
+          cache-from: type=gha,scope=mcp
+          cache-to: type=gha,mode=max,scope=mcp
+
+  deploy:
+    name: Deploy API + SMTP
+    needs: build-api
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+
+    env:
+      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      HOST_IP: ${{ secrets.HOST_IP }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+      INBOXED_ADMIN_TOKEN: ${{ secrets.INBOXED_ADMIN_TOKEN }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
+      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install Kamal
+        run: gem install kamal
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Boot accessories (if not running)
+        run: kamal accessory boot all 2>/dev/null || true
+
+      - name: Deploy with Kamal
+        run: kamal deploy
+
+  deploy-dashboard:
+    name: Deploy Dashboard
+    needs: [deploy, build-dashboard]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+
+    env:
+      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      HOST_IP: ${{ secrets.HOST_IP }}
+      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install Kamal
+        run: gem install kamal
+
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy dashboard accessory
+        run: kamal accessory reboot dashboard 2>/dev/null || kamal accessory boot dashboard
+
+  deploy-mcp:
+    name: Deploy MCP
+    needs: [deploy, build-mcp]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+
+    env:
+      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      HOST_IP: ${{ secrets.HOST_IP }}
+      INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
+      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install Kamal
+        run: gem install kamal
+
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy MCP accessory
+        run: kamal accessory reboot mcp 2>/dev/null || kamal accessory boot mcp
