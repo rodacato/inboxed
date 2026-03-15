@@ -1,6 +1,9 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # Use env var for secret_key_base — no credentials.yml.enc needed
+  config.secret_key_base = ENV.fetch("SECRET_KEY_BASE", "dev-secret-key-base-not-for-production")
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Make code changes take effect immediately without server restart.

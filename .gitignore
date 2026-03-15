@@ -10,6 +10,8 @@ apps/api/storage/
 apps/api/vendor/bundle/
 apps/api/.bundle/
 apps/api/config/master.key
+apps/api/config/credentials.yml.enc
+apps/api/config/credentials/
 
 # ── Node ──────────────────────────────────────────────────────
 node_modules/
