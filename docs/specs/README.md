@@ -92,6 +92,8 @@ Unresolved items to discuss before moving to approved.
 |---|------|-------|--------|---------|----------|
 | 000 | [Project Foundation](000-foundation.md) | Phase 0 | draft | — | Rails API-only + Svelte SPA + MCP skeleton + Caddy proxy + CI/CD + Kamal deploy. Infrastructure validated end-to-end, no business logic. |
 | 001 | [Software Architecture](001-architecture.md) | Cross-cutting | approved | — | Rich DDD + custom event store for Rails API, feature-based Svelte dashboard, hexagonal light MCP server. ADRs, layer rules, and LLM guidelines. |
+| 002 | [SMTP Reception & Email Persistence](002-smtp-persistence.md) | Phase 1 | draft | — | SMTP server with AUTH/TLS, MIME parsing, event-sourced persistence, TTL cleanup. |
+| 003 | [REST API](003-rest-api.md) | Phase 2 | draft | — | Full REST API with admin/project endpoints, cursor pagination, full-text search, long-poll wait, rate limiting, OpenAPI docs. |
 
 <!--
 Template row:

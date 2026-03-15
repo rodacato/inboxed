@@ -45,3 +45,8 @@ NNN-short-slug.md
 | 003 | [dry-types + dry-struct for Domain Layer](003-dry-types-domain.md) | accepted | 2026-03-15 | Use dry-rb ecosystem for immutable, type-safe domain objects |
 | 004 | [Feature-based Svelte Architecture](004-svelte-features.md) | accepted | 2026-03-15 | Organize dashboard by features with separated services/stores/types |
 | 005 | [Hexagonal Light for MCP Server](005-mcp-hexagonal.md) | accepted | 2026-03-15 | Tools + Ports pattern for the MCP server |
+| 006 | [Store Attachments in PostgreSQL](006-attachment-storage.md) | accepted | 2026-03-15 | Store attachment binary in PostgreSQL bytea column for simplicity |
+| 007 | [SMTP Server Design](007-smtp-server-design.md) | accepted | 2026-03-15 | Separate process + async processing + midi-smtp-server |
+| 008 | [API Response Format & Error Handling](008-api-response-format.md) | accepted | 2026-03-15 | JSON resource envelope for success, RFC 7807 Problem Details for errors |
+| 009 | [Cursor-based Pagination](009-cursor-pagination.md) | accepted | 2026-03-15 | Cursor pagination with Base64-encoded sort keys for all collections |
+| 010 | [Rate Limiting with Rack::Attack](010-rate-limiting.md) | accepted | 2026-03-15 | Per-API-key and per-IP throttling with transparent headers |
