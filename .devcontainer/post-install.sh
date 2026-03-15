@@ -29,10 +29,12 @@ if [ -f apps/mcp/package.json ]; then
   cd /workspaces/inboxed
 fi
 
-# ── Kamal ──────────────────────────────────────────────────
+# ── Kamal & Foreman ───────────────────────────────────────
 if command -v gem &>/dev/null; then
   echo "==> Installing Kamal..."
   gem install kamal --no-document || true
+  echo "==> Installing Foreman..."
+  gem install foreman --no-document || true
 fi
 
 # ── Shell niceties ─────────────────────────────────────────
@@ -41,10 +43,11 @@ cat >> ~/.bashrc << 'ALIASES'
 
 # Inboxed shortcuts
 alias be="bundle exec"
-alias rs="cd /workspaces/inboxed/apps/api && bin/rails server -b 0.0.0.0 -p 3000"
+alias rs="cd /workspaces/inboxed/apps/api && bin/rails server -b 0.0.0.0 -p 3100"
 alias rc="cd /workspaces/inboxed/apps/api && bin/rails console"
 alias ds="cd /workspaces/inboxed/apps/dashboard && npm run dev"
 alias mcp="cd /workspaces/inboxed/apps/mcp && npm run dev"
+alias dev="cd /workspaces/inboxed && bin/dev"
 ALIASES
 
 echo "==> [inboxed] Post-install complete!"

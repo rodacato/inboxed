@@ -1,0 +1,3 @@
+api: cd apps/api && bin/rails server -b 0.0.0.0 -p 3100
+dashboard: cd apps/dashboard && npm run dev
+mcp: cd apps/mcp && npm run dev

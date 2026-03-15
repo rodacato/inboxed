@@ -53,7 +53,7 @@ config.action_mailer.smtp_settings = {
 }
 ```
 
-Dashboard available at `http://localhost:3200`
+Dashboard available at `http://localhost:5179`
 
 ---
 
@@ -102,7 +102,7 @@ Works with Claude, Claude Code, n8n, and any MCP-compatible agent.
       "command": "node",
       "args": ["/path/to/inboxed-mcp/index.js"],
       "env": {
-        "INBOXED_URL": "http://localhost:3000",
+        "INBOXED_URL": "http://localhost:3100",
         "INBOXED_API_KEY": "your-api-key"
       }
     }
@@ -185,7 +185,7 @@ INBOXED_SMTP_PORT=587          # default: 587
 INBOXED_DEFAULT_TTL_HOURS=168  # default: 7 days
 INBOXED_MAX_EMAILS_PER_PROJECT=10000
 INBOXED_MAX_MESSAGE_SIZE_MB=25
-INBOXED_MCP_PORT=3001
+INBOXED_MCP_PORT=3101
 ```
 
 ---
