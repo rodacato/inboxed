@@ -4,9 +4,16 @@ require "rails_helper"
 
 RSpec.describe ProjectChannel, type: :channel do
   let(:project_id) { SecureRandom.uuid }
+  let!(:user) do
+    UserRecord.create!(
+      email: "channel@test.dev",
+      password: "password123",
+      verified_at: Time.current
+    )
+  end
 
   before do
-    stub_connection admin_authenticated: true
+    stub_connection current_user: user
   end
 
   it "subscribes to the project stream" do

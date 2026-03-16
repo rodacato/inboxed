@@ -3,13 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Admin::Attachments", type: :request do
-  let(:admin_token) { "test-admin-token" }
-  let(:auth_headers) { {"Authorization" => "Bearer #{admin_token}"} }
+  let!(:user_and_org) { create_authenticated_user }
+  let!(:user) { user_and_org[0] }
+  let!(:org) { user_and_org[1] }
+  before { sign_in(user) }
 
-  before { ENV["INBOXED_ADMIN_TOKEN"] = admin_token }
-  after { ENV.delete("INBOXED_ADMIN_TOKEN") }
-
-  let!(:project) { ProjectRecord.create!(name: "Test Project", slug: "test-project") }
+  let!(:project) { ProjectRecord.create!(name: "Test Project", slug: "test-project", organization: org) }
   let!(:inbox) { InboxRecord.create!(project: project, address: "attach@test.dev") }
   let!(:email) do
     EmailRecord.create!(
@@ -37,13 +36,14 @@ RSpec.describe "Admin::Attachments", type: :request do
   end
 
   describe "GET /admin/emails/:email_id/attachments" do
-    it "returns 401 without token" do
+    it "returns 401 without session" do
+      reset!
       get "/admin/emails/#{email.id}/attachments"
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "returns attachment list" do
-      get "/admin/emails/#{email.id}/attachments", headers: auth_headers
+      get "/admin/emails/#{email.id}/attachments"
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
@@ -55,7 +55,7 @@ RSpec.describe "Admin::Attachments", type: :request do
 
   describe "GET /admin/attachments/:id/download" do
     it "returns the attachment binary" do
-      get "/admin/attachments/#{attachment.id}/download", headers: auth_headers
+      get "/admin/attachments/#{attachment.id}/download"
       expect(response).to have_http_status(:ok)
       expect(response.body).to eq("fake-pdf-binary")
       expect(response.headers["Content-Type"]).to include("application/pdf")

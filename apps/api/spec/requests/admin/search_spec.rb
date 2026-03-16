@@ -3,14 +3,13 @@
 require "rails_helper"
 
 RSpec.describe "Admin::Search", type: :request do
-  let(:admin_token) { "test-admin-token" }
-  let(:auth_headers) { {"Authorization" => "Bearer #{admin_token}"} }
+  let!(:user_and_org) { create_authenticated_user }
+  let!(:user) { user_and_org[0] }
+  let!(:org) { user_and_org[1] }
+  before { sign_in(user) }
 
-  before { ENV["INBOXED_ADMIN_TOKEN"] = admin_token }
-  after { ENV.delete("INBOXED_ADMIN_TOKEN") }
-
-  let!(:project1) { ProjectRecord.create!(name: "Project One", slug: "project-one") }
-  let!(:project2) { ProjectRecord.create!(name: "Project Two", slug: "project-two") }
+  let!(:project1) { ProjectRecord.create!(name: "Project One", slug: "project-one", organization: org) }
+  let!(:project2) { ProjectRecord.create!(name: "Project Two", slug: "project-two", organization: org) }
   let!(:inbox1) { InboxRecord.create!(project: project1, address: "search1@test.dev") }
   let!(:inbox2) { InboxRecord.create!(project: project2, address: "search2@test.dev") }
 
@@ -30,13 +29,14 @@ RSpec.describe "Admin::Search", type: :request do
   end
 
   describe "GET /admin/search" do
-    it "returns 401 without token" do
+    it "returns 401 without session" do
+      reset!
       get "/admin/search", params: {q: "test"}
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "returns 400 without query" do
-      get "/admin/search", headers: auth_headers
+      get "/admin/search"
       expect(response).to have_http_status(:bad_request)
     end
 
@@ -45,7 +45,7 @@ RSpec.describe "Admin::Search", type: :request do
       create_email(inbox2, subject: "Verification code 5678")
       create_email(inbox1, subject: "Welcome email")
 
-      get "/admin/search", headers: auth_headers, params: {q: "verification"}
+      get "/admin/search", params: {q: "verification"}
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
@@ -56,7 +56,7 @@ RSpec.describe "Admin::Search", type: :request do
     it "returns empty results for no matches" do
       create_email(inbox1, subject: "Hello world")
 
-      get "/admin/search", headers: auth_headers, params: {q: "nonexistent"}
+      get "/admin/search", params: {q: "nonexistent"}
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)

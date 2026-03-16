@@ -3,26 +3,24 @@
 require "rails_helper"
 
 RSpec.describe ApplicationCable::Connection, type: :channel do
-  let(:admin_token) { "test-admin-token" }
-
-  before { ENV["INBOXED_ADMIN_TOKEN"] = admin_token }
-  after { ENV.delete("INBOXED_ADMIN_TOKEN") }
-
-  it "accepts connection with valid admin token" do
-    connect "/cable?token=#{admin_token}"
-    expect(connection.admin_authenticated).to be true
+  let!(:user) do
+    UserRecord.create!(
+      email: "ws@test.dev",
+      password: "password123",
+      verified_at: Time.current
+    )
   end
 
-  it "rejects connection without token" do
+  it "accepts connection with valid session" do
+    connect "/cable", session: {user_id: user.id}
+    expect(connection.current_user).to eq(user)
+  end
+
+  it "rejects connection without session" do
     expect { connect "/cable" }.to have_rejected_connection
   end
 
-  it "rejects connection with invalid token" do
-    expect { connect "/cable?token=wrong" }.to have_rejected_connection
-  end
-
-  it "rejects connection when admin token is not configured" do
-    ENV.delete("INBOXED_ADMIN_TOKEN")
-    expect { connect "/cable?token=anything" }.to have_rejected_connection
+  it "rejects connection with invalid user_id in session" do
+    expect { connect "/cable", session: {user_id: SecureRandom.uuid} }.to have_rejected_connection
   end
 end

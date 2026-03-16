@@ -3,13 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Admin::Emails", type: :request do
-  let(:admin_token) { "test-admin-token" }
-  let(:auth_headers) { {"Authorization" => "Bearer #{admin_token}"} }
+  let!(:user_and_org) { create_authenticated_user }
+  let!(:user) { user_and_org[0] }
+  let!(:org) { user_and_org[1] }
+  before { sign_in(user) }
 
-  before { ENV["INBOXED_ADMIN_TOKEN"] = admin_token }
-  after { ENV.delete("INBOXED_ADMIN_TOKEN") }
-
-  let!(:project) { ProjectRecord.create!(name: "Test Project", slug: "test-project") }
+  let!(:project) { ProjectRecord.create!(name: "Test Project", slug: "test-project", organization: org) }
   let!(:inbox) { InboxRecord.create!(project: project, address: "emails@test.dev") }
 
   def create_email(attrs = {})
@@ -29,7 +28,8 @@ RSpec.describe "Admin::Emails", type: :request do
   end
 
   describe "GET /admin/projects/:pid/inboxes/:iid/emails" do
-    it "returns 401 without token" do
+    it "returns 401 without session" do
+      reset!
       get "/admin/projects/#{project.id}/inboxes/#{inbox.id}/emails"
       expect(response).to have_http_status(:unauthorized)
     end
@@ -38,7 +38,7 @@ RSpec.describe "Admin::Emails", type: :request do
       3.times { |i| create_email(subject: "Email #{i}") }
 
       get "/admin/projects/#{project.id}/inboxes/#{inbox.id}/emails",
-        headers: auth_headers, params: {limit: 2}
+        params: {limit: 2}
 
       expect(response).to have_http_status(:ok)
 
@@ -61,7 +61,7 @@ RSpec.describe "Admin::Emails", type: :request do
         inline: false
       )
 
-      get "/admin/emails/#{email.id}", headers: auth_headers
+      get "/admin/emails/#{email.id}"
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
@@ -72,7 +72,7 @@ RSpec.describe "Admin::Emails", type: :request do
     end
 
     it "returns 404 for non-existent email" do
-      get "/admin/emails/00000000-0000-0000-0000-000000000000", headers: auth_headers
+      get "/admin/emails/00000000-0000-0000-0000-000000000000"
       expect(response).to have_http_status(:not_found)
     end
   end
@@ -81,7 +81,7 @@ RSpec.describe "Admin::Emails", type: :request do
     it "returns raw MIME source" do
       email = create_email(raw_source: "From: test@example.com\r\nSubject: Raw\r\n\r\nBody")
 
-      get "/admin/emails/#{email.id}/raw", headers: auth_headers
+      get "/admin/emails/#{email.id}/raw"
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("From: test@example.com")
     end
@@ -91,7 +91,7 @@ RSpec.describe "Admin::Emails", type: :request do
     it "deletes the email" do
       email = create_email
 
-      delete "/admin/emails/#{email.id}", headers: auth_headers
+      delete "/admin/emails/#{email.id}"
       expect(response).to have_http_status(:no_content)
       expect(EmailRecord.find_by(id: email.id)).to be_nil
     end
@@ -101,7 +101,7 @@ RSpec.describe "Admin::Emails", type: :request do
     it "purges all emails in inbox" do
       3.times { create_email }
 
-      delete "/admin/projects/#{project.id}/inboxes/#{inbox.id}/emails", headers: auth_headers
+      delete "/admin/projects/#{project.id}/inboxes/#{inbox.id}/emails"
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
