@@ -13,7 +13,7 @@ Inboxed needs a tenancy model that supports three deployment scenarios with one 
 |---|---|---|---|
 | **Solo developer** | Admin via setup wizard | No | localhost, personal VPS |
 | **Team** | Admin invites members | No | Company VPS, shared staging |
-| **Public instance** | Anyone registers | Yes, time-limited | `cloud.inboxed.dev` or any operator's public instance |
+| **Public instance** | Anyone registers | Yes, time-limited | `inboxed.notdefined.dev` or any operator's public instance |
 
 Rather than separate modes, these are different **configurations** of the same system: registration policy (open vs invite-only) and trial duration.
 

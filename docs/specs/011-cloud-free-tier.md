@@ -25,7 +25,7 @@ Make Inboxed multi-user from day one. An operator installs Inboxed, creates thei
 |---|---|---|---|
 | **Solo dev** | Closed — setup wizard only | None | `localhost`, personal VPS |
 | **Team** | Invite-only — admin invites members | None | Company VPS, shared staging |
-| **Public instance** | Open — anyone registers | 7 days | `cloud.inboxed.dev` or any operator |
+| **Public instance** | Open — anyone registers | 7 days | `inboxed.notdefined.dev` or any operator |
 
 Configuration:
 ```bash

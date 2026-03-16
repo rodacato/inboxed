@@ -10,7 +10,7 @@
 
 Catch emails, webhooks, form submissions, cron heartbeats, push notifications, logs — anything your app sends to the outside world during development. Inspect everything in one dashboard. Let AI agents access it via MCP.
 
-Self-host it with `docker compose up`. Try it free at cloud.inboxed.dev.
+Self-host it with `docker compose up`. Try it free at inboxed.notdefined.dev.
 
 ---
 
@@ -135,7 +135,7 @@ Ideas that are interesting but belong to a different product:
 
 Inboxed Cloud is not a SaaS business. It's a **marketing funnel** for self-hosted adoption. The hosted version lets developers try Inboxed in 30 seconds without installing anything. The limits push them toward self-hosting.
 
-*"Try it free at cloud.inboxed.dev. Self-host it forever with `docker compose up`."*
+*"Try it free at inboxed.notdefined.dev. Self-host it forever with `docker compose up`."*
 
 ### The Conversion Flow
 

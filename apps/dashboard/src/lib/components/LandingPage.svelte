@@ -535,7 +535,7 @@ curl localhost:3100/api/v1/emails/wait \
 				<div class="p-10 bg-surface border border-border rounded-3xl">
 					<h3 class="text-2xl font-bold font-display mb-2">Cloud Sandbox</h3>
 					<div class="text-4xl font-bold mb-1 font-display">$0 <span class="text-sm font-normal text-text-dim">/ forever</span></div>
-					<p class="text-text-dim text-sm mb-8 font-mono">cloud.inboxed.dev</p>
+					<p class="text-text-dim text-sm mb-8 font-mono">inboxed.notdefined.dev</p>
 					<ul class="space-y-4 mb-10 text-text-secondary text-sm">
 						<li class="flex items-center gap-2">
 							<span class="text-phosphor">&#10003;</span> 50 messages retained

@@ -307,7 +307,7 @@ SECTION: MCP highlight
 SECTION: Two paths
   [Try Free]                          [Self-Host]
   30-second signup                    docker compose up
-  cloud.inboxed.dev                   Unlimited everything
+  inboxed.notdefined.dev                   Unlimited everything
   Perfect for evaluating              MCP, HTML preview, no limits
 
 FOOTER

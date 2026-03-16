@@ -4,7 +4,7 @@
 
 <svelte:head>
 	<title>Terms of Service — Inboxed</title>
-	<meta name="description" content="Inboxed terms of service for the cloud trial at cloud.inboxed.dev." />
+	<meta name="description" content="Inboxed terms of service for the cloud trial at inboxed.notdefined.dev." />
 </svelte:head>
 
 <div class="min-h-screen bg-base text-text-primary antialiased">
@@ -44,7 +44,7 @@
 				<h2 class="font-display text-xl font-semibold text-text-primary mb-4">1. Scope</h2>
 				<p>
 					These terms apply to the <strong class="text-text-primary">Inboxed cloud trial</strong> at
-					<span class="font-mono text-cyan">cloud.inboxed.dev</span>. The self-hosted open-source software is
+					<span class="font-mono text-cyan">inboxed.notdefined.dev</span>. The self-hosted open-source software is
 					licensed under the <a href="{githubUrl}/blob/main/LICENSE" class="text-cyan hover:underline">MIT License</a>
 					and is not subject to these terms.
 				</p>
