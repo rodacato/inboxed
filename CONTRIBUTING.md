@@ -42,7 +42,7 @@ First off — thanks for taking the time. Inboxed is a small project built to sc
 ### Getting Started
 
 ```bash
-git clone https://github.com/notdefined-dev/inboxed
+git clone https://github.com/rodacato/inboxed
 cd inboxed
 
 # Install Ruby dependencies

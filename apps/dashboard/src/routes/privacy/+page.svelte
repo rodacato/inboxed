@@ -1,5 +1,5 @@
 <script lang="ts">
-	const githubUrl = 'https://github.com/notdefined-dev/inboxed';
+	const githubUrl = 'https://github.com/rodacato/inboxed';
 </script>
 
 <svelte:head>

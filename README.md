@@ -12,7 +12,7 @@
 ## Quickstart
 
 ```bash
-git clone https://github.com/notdefined-dev/inboxed && cd inboxed
+git clone https://github.com/rodacato/inboxed && cd inboxed
 bin/setup
 docker compose up -d
 ```

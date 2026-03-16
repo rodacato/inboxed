@@ -11,7 +11,7 @@ Complete walkthrough from a blank VPS to a running Inboxed instance.
 ## Step 1: Clone and Setup
 
 ```bash
-git clone https://github.com/notdefined-dev/inboxed
+git clone https://github.com/rodacato/inboxed
 cd inboxed
 bin/setup
 ```
