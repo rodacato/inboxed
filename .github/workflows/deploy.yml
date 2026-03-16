@@ -93,11 +93,18 @@ jobs:
       HOST_IP: ${{ secrets.HOST_IP }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
-      INBOXED_ADMIN_TOKEN: ${{ secrets.INBOXED_ADMIN_TOKEN }}
+      INBOXED_SETUP_TOKEN: ${{ secrets.INBOXED_SETUP_TOKEN }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
+      OUTBOUND_SMTP_HOST: ${{ secrets.OUTBOUND_SMTP_HOST }}
+      OUTBOUND_FROM_EMAIL: ${{ secrets.OUTBOUND_FROM_EMAIL }}
+      GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+      GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
       INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
+      REGISTRATION_MODE: ${{ vars.REGISTRATION_MODE }}
+      TRIAL_DURATION_DAYS: ${{ vars.TRIAL_DURATION_DAYS }}
+      EMAIL_TTL_HOURS: ${{ vars.EMAIL_TTL_HOURS }}
 
     steps:
       - uses: actions/checkout@v4

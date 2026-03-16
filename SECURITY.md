@@ -56,8 +56,8 @@ Inboxed only accepts mail addressed to domains explicitly registered in its conf
 **API Key Storage**  
 API keys are hashed in the database (bcrypt). The plaintext key is only shown once at creation. Treat it like a password.
 
-**Dashboard Auth**  
-The dashboard requires the admin token set in `INBOXED_ADMIN_TOKEN`. Use a strong token. Consider putting the dashboard behind your VPN or Cloudflare Access if it's publicly reachable.
+**Dashboard Auth**
+The dashboard uses session-based authentication. On first boot, create an admin account via the setup wizard (`/setup`) using `INBOXED_SETUP_TOKEN`. Consider putting the dashboard behind your VPN or Cloudflare Access if it's publicly reachable.
 
 **Email Content**  
 Test emails may contain tokens, OTPs, and magic links. Apply the same access controls you'd apply to a staging secrets store.

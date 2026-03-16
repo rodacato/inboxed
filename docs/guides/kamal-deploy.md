@@ -60,7 +60,7 @@ Run these locally and save the output — you'll need them for GitHub Secrets:
 # Rails secret
 openssl rand -hex 64
 
-# Admin dashboard token
+# Setup token (one-time, for creating admin account)
 openssl rand -hex 32
 
 # PostgreSQL password
@@ -84,11 +84,15 @@ Go to **Settings → Secrets and variables → Actions** in your GitHub repo.
 | `SSH_PRIVATE_KEY` | Full content of your SSH private key | `cat ~/.ssh/id_rsa` (the key must be in `~/.ssh/authorized_keys` on VPS) |
 | `KAMAL_REGISTRY_PASSWORD` | GitHub Personal Access Token | GitHub → Settings → Developer Settings → PAT (classic) with `write:packages` scope |
 | `SECRET_KEY_BASE` | 128-char hex string | `openssl rand -hex 64` |
-| `INBOXED_ADMIN_TOKEN` | 64-char hex string | `openssl rand -hex 32` |
+| `INBOXED_SETUP_TOKEN` | 64-char hex string | `openssl rand -hex 32` |
 | `POSTGRES_PASSWORD` | 64-char hex string | `openssl rand -hex 32` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://inboxed:<POSTGRES_PASSWORD>@localhost:5432/inboxed_production` |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
 | `INBOXED_MCP_KEY` | 64-char hex string | `openssl rand -hex 32` |
+| `OUTBOUND_SMTP_HOST` | SMTP relay for system emails | `smtp.resend.com` (optional) |
+| `OUTBOUND_FROM_EMAIL` | From address for system emails | `noreply@yourdomain.com` (optional) |
+| `GITHUB_CLIENT_ID` | GitHub OAuth client ID | *(optional, enables GitHub login)* |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret | *(optional)* |
 
 ### Required Variables (not secrets)
 
@@ -97,6 +101,9 @@ Go to **Settings → Secrets and variables → Actions → Variables tab**.
 | Variable | Value | Example |
 |----------|-------|---------|
 | `INBOXED_DOMAIN` | Your domain for the API | `inboxed.example.com` |
+| `REGISTRATION_MODE` | Registration policy | `closed` (default), `open`, or `invite_only` |
+| `TRIAL_DURATION_DAYS` | Trial days for new orgs | `7` (default, only applies when `open`) |
+| `EMAIL_TTL_HOURS` | Email retention hours | `168` (default, 7 days) |
 
 > **Important:** `DATABASE_URL` must use the same password as `POSTGRES_PASSWORD`.
 
@@ -150,7 +157,7 @@ gem install kamal
 export HOST_IP=<your-vps-ip>
 export KAMAL_REGISTRY_PASSWORD=<your-github-pat>
 export SECRET_KEY_BASE=<generated>
-export INBOXED_ADMIN_TOKEN=<generated>
+export INBOXED_SETUP_TOKEN=<generated>
 export POSTGRES_PASSWORD=<generated>
 export DATABASE_URL=postgresql://inboxed:<POSTGRES_PASSWORD>@localhost:5432/inboxed_production
 export REDIS_URL=redis://localhost:6379/0

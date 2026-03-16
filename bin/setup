@@ -113,8 +113,8 @@ echo -e "  Generating secrets..."
 SECRET_KEY_BASE=$(openssl rand -hex 64)
 echo -e "  ${GREEN}✓${NC} SECRET_KEY_BASE ${DIM}(64 bytes)${NC}"
 
-INBOXED_ADMIN_TOKEN=$(openssl rand -hex 32)
-echo -e "  ${GREEN}✓${NC} INBOXED_ADMIN_TOKEN ${DIM}(32 bytes)${NC}"
+INBOXED_SETUP_TOKEN=$(openssl rand -hex 32)
+echo -e "  ${GREEN}✓${NC} INBOXED_SETUP_TOKEN ${DIM}(32 bytes)${NC}"
 
 POSTGRES_PASSWORD=$(openssl rand -hex 32)
 echo -e "  ${GREEN}✓${NC} POSTGRES_PASSWORD ${DIM}(32 bytes)${NC}"
@@ -130,22 +130,33 @@ cat > "$ENV_FILE" <<EOF
 
 # ── Required ──────────────────────────────────────────────────
 INBOXED_DOMAIN=${INBOXED_DOMAIN}
-INBOXED_ADMIN_TOKEN=${INBOXED_ADMIN_TOKEN}
+INBOXED_BASE_URL=http://${INBOXED_DOMAIN}:${DASHBOARD_PORT}
+DASHBOARD_URL=http://${INBOXED_DOMAIN}:${DASHBOARD_PORT}
 SECRET_KEY_BASE=${SECRET_KEY_BASE}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
+# ── Setup & Auth ─────────────────────────────────────────────
+INBOXED_SETUP_TOKEN=${INBOXED_SETUP_TOKEN}
+REGISTRATION_MODE=closed
+TRIAL_DURATION_DAYS=7
+
 # ── Ports ─────────────────────────────────────────────────────
 INBOXED_WEB_PORT=${DASHBOARD_PORT}
+INBOXED_API_PORT=3100
 INBOXED_SMTP_PORT=${SMTP_PORT}
 INBOXED_MCP_PORT=3001
 
 # ── MCP ───────────────────────────────────────────────────────
 INBOXED_MCP_KEY=${INBOXED_MCP_KEY}
 
-# ── Optional — tuning ────────────────────────────────────────
-INBOXED_DEFAULT_TTL_HOURS=168
+# ── Email & Storage ──────────────────────────────────────────
+EMAIL_TTL_HOURS=168
 INBOXED_MAX_EMAILS_PER_PROJECT=10000
 INBOXED_MAX_MESSAGE_SIZE_MB=25
+
+# ── Outbound SMTP (optional — for verification, invitations) ─
+# OUTBOUND_SMTP_HOST=
+# OUTBOUND_FROM_EMAIL=
 EOF
 
 chmod 600 "$ENV_FILE"
@@ -156,10 +167,12 @@ echo ""
 echo -e "  ${BOLD}Next steps:${NC}"
 echo -e "    ${BOLD}docker compose up -d${NC}"
 if [ "$INBOXED_DOMAIN" = "localhost" ]; then
-  echo -e "    open ${BOLD}http://localhost:${DASHBOARD_PORT}${NC}"
+  DASHBOARD_ADDR="http://localhost:${DASHBOARD_PORT}"
 else
-  echo -e "    open ${BOLD}http://${INBOXED_DOMAIN}:${DASHBOARD_PORT}${NC}"
+  DASHBOARD_ADDR="http://${INBOXED_DOMAIN}:${DASHBOARD_PORT}"
 fi
+echo -e "    open ${BOLD}${DASHBOARD_ADDR}/setup${NC}"
+echo -e "    ${DIM}Use setup token to create your admin account${NC}"
 echo ""
 echo -e "  Send a test email:"
 echo -e "    ${DIM}swaks --to test@${INBOXED_DOMAIN} --server localhost:${SMTP_PORT}${NC}"
