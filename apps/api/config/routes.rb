@@ -47,6 +47,7 @@ Rails.application.routes.draw do
         delete :purge, on: :member
         resources :requests, only: [:index, :show, :destroy], module: :endpoints
       end
+      resources :requests, only: [:index, :show], controller: "project_requests"
     end
     resources :api_keys, only: [:update, :destroy]
 

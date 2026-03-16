@@ -2,7 +2,7 @@
 
 class HttpEndpointSerializer
   def self.render(record)
-    base_url = ENV.fetch("INBOXED_BASE_URL", "http://localhost:3000")
+    base_url = ENV.fetch("INBOXED_BASE_URL", "http://localhost:3100")
     {
       id: record.id,
       endpoint_type: record.endpoint_type,

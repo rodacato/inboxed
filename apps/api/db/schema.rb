@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_16_200006) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_200007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -78,7 +78,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_200006) do
 
   create_table "http_endpoints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "allowed_ips", default: [], null: false, array: true
-    t.string "allowed_methods", default: ["POST"], null: false, array: true
+    t.string "allowed_methods", default: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], null: false, array: true
     t.datetime "created_at", null: false
     t.string "description"
     t.string "endpoint_type", null: false

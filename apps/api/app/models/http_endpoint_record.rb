@@ -29,8 +29,18 @@ class HttpEndpointRecord < ApplicationRecord
 
   private
 
+  TOKEN_PREFIXES = {
+    "webhook" => "wh_",
+    "form" => "fm_",
+    "heartbeat" => "hb_"
+  }.freeze
+  NANOID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  NANOID_SIZE = 16
+
   def generate_token
-    self.token ||= SecureRandom.urlsafe_base64(32)
+    prefix = TOKEN_PREFIXES.fetch(endpoint_type, "ep_")
+    random = Array.new(NANOID_SIZE) { NANOID_ALPHABET[SecureRandom.random_number(NANOID_ALPHABET.length)] }.join
+    self.token ||= "#{prefix}#{random}"
   end
 
   def validate_allowed_methods
