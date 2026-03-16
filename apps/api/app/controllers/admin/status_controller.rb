@@ -2,6 +2,8 @@
 
 module Admin
   class StatusController < BaseController
+    skip_before_action :require_auth!
+
     def show
       response = {
         service: "inboxed-api",
