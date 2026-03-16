@@ -34,7 +34,7 @@ servers:
 # Cloudflared handles TLS — kamal-proxy only routes internally
 proxy:
   ssl: false
-  host: <%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
+  host: <%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
   app_port: 3000
 
 registry:
@@ -52,9 +52,9 @@ env:
   clear:
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: true
-    INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
-    INBOXED_BASE_URL: https://<%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
-    DASHBOARD_URL: https://<%= ENV.fetch("INBOXED_DOMAIN", "inboxed.example.com") %>
+    INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "mail.example.com") %>
+    INBOXED_BASE_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
+    DASHBOARD_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
     REGISTRATION_MODE: <%= ENV.fetch("REGISTRATION_MODE", "closed") %>
     TRIAL_DURATION_DAYS: <%= ENV.fetch("TRIAL_DURATION_DAYS", "7") %>
     EMAIL_TTL_HOURS: <%= ENV.fetch("EMAIL_TTL_HOURS", "168") %>

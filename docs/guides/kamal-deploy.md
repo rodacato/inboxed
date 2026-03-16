@@ -100,7 +100,8 @@ Go to **Settings → Secrets and variables → Actions → Variables tab**.
 
 | Variable | Value | Example |
 |----------|-------|---------|
-| `INBOXED_DOMAIN` | Your domain for the API | `inboxed.example.com` |
+| `INBOXED_DOMAIN` | SMTP domain (email reception) | `mail.example.com` |
+| `INBOXED_WEB_DOMAIN` | Web domain (API + Dashboard) | `inboxed.example.com` |
 | `REGISTRATION_MODE` | Registration policy | `closed` (default), `open`, or `invite_only` |
 | `TRIAL_DURATION_DAYS` | Trial days for new orgs | `7` (default, only applies when `open`) |
 | `EMAIL_TTL_HOURS` | Email retention hours | `168` (default, 7 days) |
@@ -119,16 +120,12 @@ tunnel: <your-tunnel-id>
 credentials-file: /root/.cloudflared/<tunnel-id>.json
 
 ingress:
-  # API — kamal-proxy listens on port 80
+  # API + Dashboard — kamal-proxy routes both
   - hostname: inboxed.example.com
     service: http://localhost:80
 
-  # Dashboard (optional subdomain)
-  - hostname: dashboard.inboxed.example.com
-    service: http://localhost:8080
-
   # MCP server (optional, for external access)
-  - hostname: mcp.inboxed.example.com
+  - hostname: mcp.example.com
     service: http://localhost:3001
 
   # Catch-all
@@ -141,7 +138,7 @@ After editing, restart cloudflared:
 sudo systemctl restart cloudflared
 ```
 
-> **Note:** SMTP (port 2525) is NOT tunneled through Cloudflare — it's exposed directly. Ensure your firewall allows inbound TCP on port 2525.
+> **Note:** SMTP (`mail.example.com:2525`) is NOT tunneled through Cloudflare — it's exposed directly via an A record to your VPS IP. Ensure your firewall allows inbound TCP on port 2525. See the [DNS setup guide](dns-setup.md) for full details.
 
 ---
 

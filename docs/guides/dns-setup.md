@@ -11,29 +11,31 @@ Configure DNS and networking to expose Inboxed to the internet. This covers two 
 
 ## Architecture
 
+Two subdomains, two traffic paths:
+
 ```
                     Internet
                        │
         ┌──────────────┼──────────────┐
         │              │              │
-   HTTP (443)     SMTP (2525)         │
-        │              │              │
-   Cloudflare     Direct to VPS      │
-   Tunnel              │              │
-        │              │              │
-        ▼              ▼              │
-   ┌─────────────────────────┐        │
-   │         VPS             │        │
-   │                         │        │
-   │  cloudflared ──► :80    │        │
-   │    (tunnel)   kamal-proxy       │
-   │                  │      │        │
-   │              inboxed-web│        │
-   │                         │        │
-   │  :2525 ──► inboxed-smtp │        │
-   │   (direct)              │        │
-   └─────────────────────────┘        │
-                                      │
+  inboxed.example.com  mail.example.com
+   (HTTPS via tunnel)  (SMTP direct)
+        │              │
+   Cloudflare     Direct to VPS
+   Tunnel         port 2525
+        │              │
+        ▼              ▼
+   ┌─────────────────────────────┐
+   │            VPS              │
+   │                             │
+   │  cloudflared ──► :80        │
+   │    (tunnel)   kamal-proxy   │
+   │                 ├─► API     │
+   │                 └─► Dashboard
+   │                             │
+   │  :2525 ──► inboxed-smtp    │
+   │   (direct)                  │
+   └─────────────────────────────┘
 ```
 
 ---
@@ -46,11 +48,10 @@ Go to your domain's DNS settings in the Cloudflare dashboard.
 
 | Type | Name | Value | Proxy | Purpose |
 |------|------|-------|-------|---------|
-| CNAME | `inboxed` | `<tunnel-id>.cfargotunnel.com` | Proxied (orange) | API via tunnel |
-| CNAME | `dashboard.inboxed` | `<tunnel-id>.cfargotunnel.com` | Proxied (orange) | Dashboard via tunnel |
-| A | `smtp.inboxed` | `<VPS_IP>` | **DNS only (grey)** | SMTP direct access |
-| MX | `inboxed` | `smtp.inboxed.example.com` | — | Routes email to SMTP |
-| TXT | `inboxed` | `v=spf1 a:smtp.inboxed.example.com ~all` | — | SPF authorization |
+| CNAME | `inboxed` | `<tunnel-id>.cfargotunnel.com` | Proxied (orange) | API + Dashboard via tunnel |
+| A | `mail` | `<VPS_IP>` | **DNS only (grey)** | SMTP direct access |
+| MX | `mail` | `mail.example.com` | — | Routes email to SMTP server |
+| TXT | `mail` | `v=spf1 a:mail.example.com ~all` | — | SPF authorization |
 
 > **Critical:** The SMTP A record must have the orange cloud **OFF** (DNS only / grey). SMTP is raw TCP — Cloudflare's proxy only handles HTTP.
 
@@ -59,10 +60,13 @@ Go to your domain's DNS settings in the Cloudflare dashboard.
 | Type | Name | Value | Proxy |
 |------|------|-------|-------|
 | CNAME | `inboxed` | `abc123.cfargotunnel.com` | Proxied |
-| CNAME | `dashboard.inboxed` | `abc123.cfargotunnel.com` | Proxied |
-| A | `smtp.inboxed` | `203.0.113.42` | DNS only |
-| MX | `inboxed` | `smtp.inboxed.notdefined.dev` | — |
-| TXT | `inboxed` | `v=spf1 a:smtp.inboxed.notdefined.dev ~all` | — |
+| A | `mail` | `203.0.113.42` | DNS only |
+| MX | `mail` | `mail.notdefined.dev` | — |
+| TXT | `mail` | `v=spf1 a:mail.notdefined.dev ~all` | — |
+
+This gives you:
+- `inboxed.notdefined.dev` — Dashboard and API (HTTPS via tunnel)
+- `mail.notdefined.dev` — SMTP reception (direct TCP to VPS)
 
 ---
 
@@ -81,16 +85,12 @@ tunnel: <your-tunnel-id>
 credentials-file: /path/to/<tunnel-id>.json
 
 ingress:
-  # API — kamal-proxy routes to the Rails app
+  # API + Dashboard — kamal-proxy routes both
   - hostname: inboxed.example.com
     service: http://localhost:80
 
-  # Dashboard — Caddy serves the SPA
-  - hostname: dashboard.inboxed.example.com
-    service: http://localhost:8080
-
   # MCP server (optional — only if you want external access)
-  - hostname: mcp.inboxed.example.com
+  - hostname: mcp.example.com
     service: http://localhost:3001
 
   # Catch-all (required by cloudflared)
@@ -155,21 +155,21 @@ sudo ufw enable
 Wait a few minutes for DNS propagation, then verify:
 
 ```bash
-# API — should resolve to Cloudflare IPs (proxied)
+# API + Dashboard — should resolve to Cloudflare IPs (proxied)
 dig +short inboxed.example.com
 # → 104.21.x.x (Cloudflare)
 
 # SMTP — should resolve to your VPS IP directly
-dig +short smtp.inboxed.example.com
+dig +short mail.example.com
 # → 203.0.113.42 (your VPS)
 
 # MX — should point to the SMTP hostname
-dig +short inboxed.example.com MX
-# → 10 smtp.inboxed.example.com
+dig +short mail.example.com MX
+# → 10 mail.example.com
 
 # SPF
-dig +short inboxed.example.com TXT
-# → "v=spf1 a:smtp.inboxed.example.com ~all"
+dig +short mail.example.com TXT
+# → "v=spf1 a:mail.example.com ~all"
 ```
 
 ---
@@ -184,7 +184,7 @@ curl https://inboxed.example.com/up
 # → {"status":"ok"}
 
 # Dashboard
-curl -I https://dashboard.inboxed.example.com
+curl -I https://inboxed.example.com
 # → HTTP/2 200
 ```
 
@@ -192,13 +192,13 @@ curl -I https://dashboard.inboxed.example.com
 
 ```bash
 # Test SMTP port
-nc -z smtp.inboxed.example.com 2525
+nc -z mail.example.com 2525
 # → Connection succeeded
 
 # Send a test email
-swaks --to test@inboxed.example.com \
+swaks --to test@mail.example.com \
       --from sender@test.local \
-      --server smtp.inboxed.example.com:2525 \
+      --server mail.example.com:2525 \
       --header "Subject: Hello from Inboxed"
 ```
 
@@ -213,7 +213,7 @@ Point your application's SMTP config to the SMTP hostname:
 ```ruby
 # config/environments/development.rb
 config.action_mailer.smtp_settings = {
-  address: "smtp.inboxed.example.com",
+  address: "mail.example.com",
   port: 2525
 }
 ```
@@ -222,7 +222,7 @@ config.action_mailer.smtp_settings = {
 
 ```javascript
 const transporter = nodemailer.createTransport({
-  host: "smtp.inboxed.example.com",
+  host: "mail.example.com",
   port: 2525,
   secure: false
 });
@@ -232,7 +232,7 @@ const transporter = nodemailer.createTransport({
 
 ```python
 # settings.py
-EMAIL_HOST = "smtp.inboxed.example.com"
+EMAIL_HOST = "mail.example.com"
 EMAIL_PORT = 2525
 EMAIL_USE_TLS = False
 ```
@@ -246,9 +246,9 @@ If you don't use cloudflared, expose ports directly:
 | Type | Name | Value | Proxy | Purpose |
 |------|------|-------|-------|---------|
 | A | `inboxed` | `<VPS_IP>` | DNS only | API + Dashboard |
-| A | `smtp.inboxed` | `<VPS_IP>` | DNS only | SMTP |
-| MX | `inboxed` | `smtp.inboxed.example.com` | — | Email routing |
-| TXT | `inboxed` | `v=spf1 a:smtp.inboxed.example.com ~all` | — | SPF |
+| A | `mail` | `<VPS_IP>` | DNS only | SMTP |
+| MX | `mail` | `mail.example.com` | — | Email routing |
+| TXT | `mail` | `v=spf1 a:mail.example.com ~all` | — | SPF |
 
 In this case you'll need:
 - `sudo ufw allow 80/tcp` and `sudo ufw allow 443/tcp`
@@ -286,14 +286,14 @@ ss -tlnp | grep 2525
 sudo ufw status | grep 2525
 
 # Check from outside
-nc -z smtp.inboxed.example.com 2525
+nc -z mail.example.com 2525
 ```
 
 ### MX record not resolving
 
 ```bash
 # Verify MX
-dig +short inboxed.example.com MX
+dig +short mail.example.com MX
 
 # If empty, the record hasn't propagated yet
 # Use dnschecker.org to check global propagation
