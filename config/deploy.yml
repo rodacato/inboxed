@@ -45,6 +45,7 @@ registry:
     - KAMAL_REGISTRY_PASSWORD
 
 builder:
+  arch: amd64
   dockerfile: apps/api/Dockerfile
   context: apps/api
 
