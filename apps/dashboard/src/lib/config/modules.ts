@@ -15,11 +15,31 @@ export const MODULES: SidebarModule[] = [
 		route: (pid) => `/projects/${pid}/mail`,
 		countKey: 'email_count',
 		enabled: true
+	},
+	{
+		id: 'hooks',
+		label: 'Hooks In',
+		icon: 'webhook',
+		route: (pid) => `/projects/${pid}/hooks`,
+		countKey: 'webhook_count',
+		enabled: true
+	},
+	{
+		id: 'forms',
+		label: 'Forms',
+		icon: 'description',
+		route: (pid) => `/projects/${pid}/forms`,
+		countKey: 'form_count',
+		enabled: true
+	},
+	{
+		id: 'heartbeats',
+		label: 'Heartbeats',
+		icon: 'favorite',
+		route: (pid) => `/projects/${pid}/heartbeats`,
+		countKey: 'heartbeat_count',
+		enabled: true
 	}
-	// Phase 8 modules will be added here:
-	// { id: 'hooks', label: 'Hooks In', icon: 'webhook', route: (pid) => `/projects/${pid}/hooks`, countKey: 'request_count', enabled: false },
-	// { id: 'forms', label: 'Forms', icon: 'description', route: (pid) => `/projects/${pid}/forms`, countKey: 'form_count', enabled: false },
-	// { id: 'heartbeats', label: 'Heartbeats', icon: 'favorite', route: (pid) => `/projects/${pid}/heartbeats`, countKey: 'heartbeat_count', enabled: false },
 ];
 
 export function getEnabledModules(features?: Record<string, boolean>): SidebarModule[] {
