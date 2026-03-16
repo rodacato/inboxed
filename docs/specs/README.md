@@ -100,6 +100,7 @@ Unresolved items to discuss before moving to approved.
 | 007 | [Deploy & Self-Hosting](007-deploy-self-hosting.md) | Phase 6 | accepted | — | bin/setup, structured logging, multi-arch Docker CI/CD, documentation suite, static landing page. 10-minute setup goal. |
 | 008 | [Webhooks](008-webhooks.md) | Phase 7 | accepted | — | HTTP push notifications on email events. HMAC-SHA256 signing, exponential backoff retries, delivery log, webhook management API. |
 | 009 | [Usability & UI Scalability](009-usability.md) | Cross-cutting | accepted | — | Reusable layout primitives, modular navigation, route restructuring, toast notifications, command palette, auth abstraction, responsive design. Prepares dashboard for Phases 8+9 without layout rewrites. |
+| 010 | [HTTP Catcher: Webhooks, Forms & Heartbeats](010-http-catcher.md) | Phase 8 | accepted | — | Public catch endpoint (`/hook/:token`), three endpoint types (webhook, form, heartbeat), management API, heartbeat monitoring with alerting, dashboard modules, 7 MCP tools. Second primitive of the dev inbox. |
 
 <!--
 Template row:
