@@ -1,8 +1,37 @@
 #!/bin/bash -e
 
+# Debug: show masked DATABASE_URL (host only)
+if [ -n "$DATABASE_URL" ]; then
+  DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+  echo "DATABASE_URL host: ${DB_HOST}"
+else
+  echo "WARNING: DATABASE_URL is not set"
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare:all
+  ./bin/rails db:prepare
+
+  # Load schemas for secondary databases (queue, cable, cache) if their
+  # tables don't exist yet. These share the same DATABASE_URL as primary
+  # but db:prepare skips schema:load when the database already exists.
+  # We check for a key table from each schema before loading to avoid
+  # running destructive schema:load on every boot.
+  ./bin/rails runner "
+    unless ActiveRecord::Base.connection.table_exists?('solid_queue_jobs')
+      puts 'Loading queue schema...'
+      ActiveRecord::Tasks::DatabaseTasks.load_schema(ActiveRecord::Base.configurations.configs_for(env_name: 'production', name: 'queue'))
+    end
+    unless ActiveRecord::Base.connection.table_exists?('solid_cable_messages')
+      puts 'Loading cable schema...'
+      ActiveRecord::Tasks::DatabaseTasks.load_schema(ActiveRecord::Base.configurations.configs_for(env_name: 'production', name: 'cable'))
+    end
+    unless ActiveRecord::Base.connection.table_exists?('solid_cache_entries')
+      puts 'Loading cache schema...'
+      ActiveRecord::Tasks::DatabaseTasks.load_schema(ActiveRecord::Base.configurations.configs_for(env_name: 'production', name: 'cache'))
+    end
+    puts 'All schemas ready.'
+  "
 fi
 
 exec "${@}"
