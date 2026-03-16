@@ -101,7 +101,7 @@ Unresolved items to discuss before moving to approved.
 | 008 | [Webhooks](008-webhooks.md) | Phase 7 | accepted | — | HTTP push notifications on email events. HMAC-SHA256 signing, exponential backoff retries, delivery log, webhook management API. |
 | 009 | [Usability & UI Scalability](009-usability.md) | Cross-cutting | accepted | — | Reusable layout primitives, modular navigation, route restructuring, toast notifications, command palette, auth abstraction, responsive design. Prepares dashboard for Phases 8+9 without layout rewrites. |
 | 010 | [HTTP Catcher: Webhooks, Forms & Heartbeats](010-http-catcher.md) | Phase 8 | accepted | — | Public catch endpoint (`/hook/:token`), three endpoint types (webhook, form, heartbeat), management API, heartbeat monitoring with alerting, dashboard modules, 7 MCP tools. Second primitive of the dev inbox. |
-| 011 | [Inboxed Cloud: Free Tier](011-cloud-free-tier.md) | Phase 9 | accepted | — | Multi-tenant cloud mode (`INBOXED_MODE=cloud`), user registration with email verification, GitHub OAuth, tenant-scoped data, free tier limits with self-hosting CTAs, wildcard subdomain SMTP routing. Try-before-you-self-host funnel. |
+| 011 | [Multi-User, Organizations & Trial](011-cloud-free-tier.md) | Phase 9 | accepted | — | Unified multi-user model with organizations as tenant boundary. Setup wizard, session auth, roles (site_admin/org_admin/member), invitation system, time-based trial, configurable registration modes. No mode flag — one codebase for solo, team, and public instances. |
 
 <!--
 Template row:

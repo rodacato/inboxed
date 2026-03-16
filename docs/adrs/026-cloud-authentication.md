@@ -1,32 +1,34 @@
-# ADR-026: Cloud Authentication — Session Cookies over JWTs
+# ADR-026: Dashboard Authentication — Session Cookies with Setup Wizard
+
+> **Updated 2026-03-16:** Rewritten to remove `INBOXED_MODE` dual-mode design. Inboxed is always multi-user. The admin token becomes a one-time setup token, replaced by session-based auth after first boot.
 
 **Status:** accepted
 **Date:** 2026-03-16
 **Deciders:** Project owner
-**Panel consulted:** Security Engineer, Full-Stack Engineer, API Design Architect
+**Panel consulted:** Security Engineer, Full-Stack Engineer, API Design Architect, Product Manager
 
 ## Context
 
-Standalone Inboxed uses a single static admin token (`INBOXED_ADMIN_TOKEN`) for dashboard access and per-project API keys for programmatic access. Cloud mode adds user registration and per-user scoping. We need an authentication mechanism for cloud users.
+Inboxed needs dashboard authentication that works for all deployment scenarios: a solo developer on localhost, a team on a shared VPS, or a public instance open for registration. Rather than maintaining separate auth modes (`standalone` vs `cloud`), a unified model simplifies the codebase and avoids `if mode == ...` conditionals throughout.
 
 ### Requirements
 
-1. User registers with email + password (and optionally GitHub OAuth)
-2. Email verification required before functional access
-3. Session persists across browser tabs and refreshes
-4. Logout invalidates the session
-5. API keys remain per-project (unchanged) — cloud auth is for the dashboard only
-6. Standalone mode is unaffected — admin token still works
+1. First boot creates an admin account via a setup wizard (seeded from `INBOXED_SETUP_TOKEN`)
+2. Users authenticate with email + password, or GitHub OAuth
+3. Email verification required when outbound SMTP is configured
+4. Sessions persist across browser tabs and refreshes
+5. Logout invalidates the session server-side
+6. API keys remain per-project, unchanged — sessions are for the dashboard only
+7. No `INBOXED_MODE` flag — one auth model for all deployments
 
 ### Options Considered
 
 **A: JWT (stateless tokens in localStorage)**
 - Pro: Stateless — no server-side session storage
-- Pro: Works across subdomains trivially
 - Con: Can't be revoked without a blacklist (adds state anyway)
 - Con: XSS can steal tokens from localStorage
 - Con: Token refresh complexity (rotation, expiry, silent refresh)
-- Con: JWTs are almost always the wrong choice for server-rendered or SPA-with-same-origin-API setups
+- Con: JWTs are almost always the wrong choice for SPA-with-same-origin-API setups
 
 **B: Session cookies with Rails session store**
 - Pro: HttpOnly + Secure + SameSite=Strict — immune to XSS token theft
@@ -34,199 +36,164 @@ Standalone Inboxed uses a single static admin token (`INBOXED_ADMIN_TOKEN`) for 
 - Pro: Rails has mature, battle-tested session infrastructure
 - Pro: Works naturally with `has_secure_password`
 - Con: Requires CSRF protection for non-GET requests
-- Con: Cookie doesn't work for cross-origin API calls (but cloud API uses API keys, not sessions)
 
-**C: Token in HttpOnly cookie (custom implementation)**
-- Pro: Similar security to B
-- Con: Reinvents what Rails sessions already do
-- Con: More code, more attack surface
+**C: Keep dual-mode (`INBOXED_MODE` flag) with admin token for standalone**
+- Pro: Simpler for solo users (no registration needed)
+- Con: Every controller needs `if cloud_mode?` conditionals
+- Con: Two auth paths to test and maintain
+- Con: Static admin token is a security liability (never rotated, shared in env files)
 
 ## Decision
 
-**Option B** — Rails session cookies backed by the database (Solid Cache or ActiveRecord session store).
+**Option B** — Rails session cookies for all deployments, with a one-time setup wizard to create the first admin account.
 
-### Why Not JWTs?
+### Why Not Keep the Admin Token (Option C)?
 
-The dashboard is an SPA that talks to the same-origin Rails API. Session cookies are simpler, more secure (HttpOnly prevents XSS theft), and revocable. JWTs add complexity (refresh tokens, blacklists) without any benefit in this architecture.
+A static admin token in an env var is a security anti-pattern for anything beyond local development. It can't be rotated without restarting the server, it's often committed to `.env` files, and it provides no audit trail. Replacing it with real user accounts from day one means:
 
-API keys (per-project, Bearer token) remain the mechanism for programmatic access, CI/CD, and MCP. Sessions are only for the dashboard.
+- Session expiry and rotation happen automatically
+- Each user has their own credentials (audit trail)
+- The same auth code works for solo dev, team, and public instances
+- No `if standalone?` / `if cloud?` branching
 
-### Implementation
+### Setup Flow (First Boot)
 
-#### Session Store
+The `INBOXED_SETUP_TOKEN` env var is used exactly once — to create the first admin account:
+
+```
+1. Operator sets INBOXED_SETUP_TOKEN in env (or it's auto-generated on first run)
+2. First visit to dashboard → redirected to /setup
+3. /setup requires the setup token as proof of server access
+4. Operator creates admin account (email + password)
+5. Setup token is invalidated (setup_completed_at stored in settings)
+6. All further auth is via user sessions
+```
+
+```ruby
+# app/controllers/setup_controller.rb
+class SetupController < ApplicationController
+  before_action :ensure_setup_available
+
+  def show
+    # Render setup form
+  end
+
+  def create
+    return head :forbidden unless valid_setup_token?
+
+    user = Inboxed::Application::Services::CreateFirstAdmin.call(
+      email: params[:email],
+      password: params[:password],
+      setup_token: params[:setup_token]
+    )
+
+    session[:user_id] = user.id
+    Inboxed::Settings.set(:setup_completed_at, Time.current)
+
+    redirect_to "/projects"
+  end
+
+  private
+
+  def ensure_setup_available
+    redirect_to "/login" if Inboxed::Settings.get(:setup_completed_at).present?
+  end
+
+  def valid_setup_token?
+    expected = ENV["INBOXED_SETUP_TOKEN"]
+    return false unless expected.present?
+    ActiveSupport::SecurityUtils.secure_compare(params[:setup_token].to_s, expected)
+  end
+end
+```
+
+### Session Store
+
+Always active — no conditional based on mode:
 
 ```ruby
 # config/initializers/session_store.rb
-if ENV["INBOXED_MODE"] == "cloud"
-  Rails.application.config.session_store :active_record_store,
-    key: "_inboxed_session",
-    secure: Rails.env.production?,
-    httponly: true,
-    same_site: :strict,
-    expire_after: 7.days
-else
-  # Standalone: no session store needed (admin token auth)
-  Rails.application.config.session_store :disabled
-end
+Rails.application.config.session_store :active_record_store,
+  key: "_inboxed_session",
+  secure: Rails.env.production?,
+  httponly: true,
+  same_site: :strict,
+  expire_after: 7.days
 ```
 
-#### User Model
-
-```ruby
-class UserRecord < ApplicationRecord
-  self.table_name = "users"
-  has_secure_password
-
-  has_many :users_projects, foreign_key: :user_id
-  has_many :projects, through: :users_projects, source: :project
-
-  validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 8 }, on: :create
-
-  scope :verified, -> { where.not(verified_at: nil) }
-end
-```
-
-#### Authentication Flow
+### Authentication Flow
 
 ```
-Register (POST /auth/register)
-  → Create user (unverified)
-  → Send verification email (via Inboxed itself — dogfooding)
-  → Return 201 with { message: "Check your email" }
-
-Verify (GET /auth/verify?token=...)
-  → Validate token
-  → Set verified_at
+Setup (GET/POST /setup) — first boot only
+  → Validate setup token
+  → Create admin user (site_admin role, auto-verified)
   → Create session
   → Redirect to dashboard
+
+Register (POST /auth/register) — when registration is enabled
+  → Create user (unverified if SMTP configured, auto-verified if not)
+  → Send verification email if SMTP configured
+  → Return 201
 
 Login (POST /auth/sessions)
   → Validate email + password
-  → Check verified_at is present
-  → Create session (session[:user_id])
+  → Check verified (if verification required)
+  → Create session
   → Return 200 with user data
 
-Logout (DELETE /auth/sessions)
-  → Destroy session
-  → Return 204
-
 GitHub OAuth (GET /auth/github → callback)
-  → OAuth flow via omniauth-github
-  → Find or create user by GitHub email
-  → Auto-verified (GitHub verified the email)
+  → OAuth flow
+  → Find or create user (auto-verified)
   → Create session
   → Redirect to dashboard
 ```
 
-#### Session Controller
+### Graceful Degradation Without Outbound SMTP
+
+If `OUTBOUND_SMTP_HOST` is not configured:
+- Registration still works, but users are **auto-verified** (no email sent)
+- Password reset is unavailable (admin can reset manually)
+- The dashboard shows a notice: "Configure outbound SMTP for email verification and password reset"
+
+This means a solo developer can run Inboxed without configuring an email relay — they just create their account via setup and use it. Teams that need registration configure SMTP.
+
+### CSRF Protection
+
+Always active for session-based requests:
 
 ```ruby
-# app/controllers/auth/sessions_controller.rb
-module Auth
-  class SessionsController < ApplicationController
-    def create
-      user = UserRecord.find_by(email: params[:email])
-
-      if user&.authenticate(params[:password])
-        if user.verified_at.nil?
-          render json: { error: "email_not_verified" }, status: :forbidden
-        else
-          session[:user_id] = user.id
-          render json: { data: serialize_user(user) }
-        end
-      else
-        render json: { error: "invalid_credentials" }, status: :unauthorized
-      end
-    end
-
-    def destroy
-      reset_session
-      head :no_content
-    end
-  end
-end
+protect_from_forgery with: :exception, unless: -> { api_key_request? }
 ```
 
-#### Dashboard Auth Abstraction
+API key requests (Bearer token) skip CSRF — they don't use cookies.
 
-The auth store (spec 009) already supports `mode: 'admin' | 'user'`. In cloud mode:
+### Dashboard Auth Store
 
 ```typescript
-// authStore behavior in cloud mode
-authStore.mode = 'user';
-authStore.user = { id, email, verified: true };
-authStore.canManageAllProjects = false;
-authStore.projectIds = [user's project IDs];
-```
-
-The API client switches from Bearer token to cookie-based auth:
-- Standalone: `Authorization: Bearer <admin_token>`
-- Cloud: No Authorization header (session cookie sent automatically by browser)
-
-#### CSRF Protection
-
-Since cloud mode uses session cookies, CSRF protection is required:
-
-```ruby
-# Cloud mode adds CSRF token to responses
-# Dashboard reads from meta tag or X-CSRF-Token header
-protect_from_forgery with: :exception, if: -> { cloud_mode? && !api_request? }
-```
-
-The SPA includes the CSRF token in a meta tag rendered by the Rails layout, and the API client sends it as `X-CSRF-Token` header on non-GET requests.
-
-### Mode-Conditional Behavior
-
-```ruby
-# app/controllers/concerns/cloud_mode.rb
-module CloudMode
-  extend ActiveSupport::Concern
-
-  included do
-    helper_method :cloud_mode?, :standalone_mode?
-  end
-
-  def cloud_mode?
-    ENV["INBOXED_MODE"] == "cloud"
-  end
-
-  def standalone_mode?
-    !cloud_mode?
-  end
-
-  def current_user
-    return nil unless cloud_mode?
-    @current_user ||= UserRecord.find_by(id: session[:user_id])
-  end
-
-  def require_authentication!
-    if cloud_mode?
-      head :unauthorized unless current_user&.verified_at
-    else
-      # Standalone: admin token auth (existing behavior)
-      authenticate_admin_token!
-    end
-  end
-end
+// authStore — unified, no mode switching
+authStore.isAuthenticated = true;
+authStore.user = { id, email, role, organizationId };
+authStore.features = status.features;
+// API client uses cookie auth (automatic) for dashboard
+// API keys used separately for programmatic access
 ```
 
 ## Consequences
 
 ### Easier
 
-- **Battle-tested** — Rails session + `has_secure_password` is the most mature auth stack in Ruby
-- **Secure by default** — HttpOnly cookies prevent XSS token theft, SameSite prevents CSRF
-- **Revocable** — logout destroys the session server-side, no token invalidation complexity
-- **Simple SPA integration** — cookies are automatic, no token management in JavaScript
+- **One auth model** — no `if cloud_mode?` branching anywhere
+- **Battle-tested** — Rails session + `has_secure_password`
+- **Secure by default** — HttpOnly cookies, server-side revocation
+- **Graceful degradation** — works without SMTP relay for solo use
 
 ### Harder
 
-- **CSRF handling** — SPA needs to read and send CSRF tokens (one-time setup)
-- **Cross-origin** — if dashboard and API ever split to different domains, cookies need adjustment (not planned)
+- **Setup wizard** — one-time first-boot flow (small, but new)
+- **CSRF in SPA** — dashboard must send CSRF token on non-GET requests
 
 ### Mitigations
 
+- Setup wizard is < 50 lines of controller code
 - CSRF token served in response header, API client sends it automatically
-- Session expiry (7 days) limits window of exposure for stolen cookies
-- `Secure` flag ensures cookies only sent over HTTPS in production
+- Session expiry (7 days) limits exposure window

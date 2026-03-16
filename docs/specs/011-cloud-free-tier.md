@@ -1,35 +1,39 @@
-# Spec 011 — Inboxed Cloud: Free Tier as Self-Hosted Funnel
+# Spec 011 — Multi-User: Organizations, Invitations & Trial
 
-> Add multi-tenant cloud mode to the same codebase. User registration, email verification, tenant-scoped data, free tier limits, and a conversion funnel to self-hosting. Same Rails app, same Docker image, different ENV flag.
+> **Updated 2026-03-16:** Complete rewrite. Replaced dual-mode (`standalone`/`cloud`) design with a unified multi-user model. Inboxed is always multi-user. Organizations are the tenant. Trial is time-based, not resource-based. No `INBOXED_MODE` flag.
+
+> Add multi-user support to Inboxed. Organizations group users and projects. The site operator controls registration (open, invite-only, or closed) and trial duration. Same codebase, same Docker image — configuration via env vars, not code branches.
 
 **Phase:** 9
 **Status:** accepted
 **Created:** 2026-03-16
-**Depends on:** [001 — Architecture](001-architecture.md), [002 — SMTP Persistence](002-smtp-persistence.md), [003 — REST API](003-rest-api.md), [004 — Dashboard](004-dashboard.md), [009 — Usability](009-usability.md) (auth abstraction, feature flags), [010 — HTTP Catcher](010-http-catcher.md)
-**ADRs:** [022 — Cloud Free Tier](../adrs/022-cloud-free-tier.md), [026 — Cloud Authentication](../adrs/026-cloud-authentication.md), [027 — Tenant Isolation](../adrs/027-tenant-isolation.md), [028 — Cloud SMTP Routing](../adrs/028-cloud-smtp-routing.md)
-**Expert panel:** Security Engineer, Full-Stack Engineer, API Design Architect, DevOps Engineer, Product Manager, UX/UI Designer
+**Depends on:** [001 — Architecture](001-architecture.md), [009 — Usability](009-usability.md) (auth abstraction, feature flags)
+**ADRs:** [022 — Cloud Free Tier](../adrs/022-cloud-free-tier.md) (superseded in part), [026 — Authentication](../adrs/026-cloud-authentication.md) (rewritten), [027 — Tenant Isolation](../adrs/027-tenant-isolation.md) (rewritten), [028 — Cloud SMTP Routing](../adrs/028-cloud-smtp-routing.md), [029 — Organization & Trial](../adrs/029-organization-trial.md)
+**Expert panel:** Security Engineer, Full-Stack Engineer, API Design Architect, Product Manager, DevOps Engineer, UX/UI Designer
 
 ---
 
 ## 1. Objective
 
-Turn Inboxed into a try-before-you-self-host product. A developer registers at `cloud.inboxed.dev`, gets a working inbox in 30 seconds, hits the free tier limits in a day of real work, and follows the CTA to `docker compose up` on their own machine.
+Make Inboxed multi-user from day one. An operator installs Inboxed, creates their admin account, and can then invite team members or open registration for external users with a time-limited trial.
 
-**Core principle:** Cloud is a marketing cost (~€7-10/mo), not a revenue stream. Success = `docker pull` conversions, not cloud retention.
+**What this replaces:** The original spec 011 had two modes (`INBOXED_MODE=standalone` vs `cloud`) with separate auth flows, resource-based limits, and a public cloud instance as a marketing funnel. This rewrite eliminates the mode flag. Inboxed is always multi-user — the operator configures how open it is.
 
-**What changes:**
-- Same codebase, same Docker image — `INBOXED_MODE=cloud` activates multi-tenant behavior
-- Users, registration, email verification, session auth
-- Tenant-scoped data access (every query filtered by user's projects)
-- Free tier limits with clear messaging and self-hosting CTAs
-- Feature gates (no MCP, no HTML preview in cloud)
-- Wildcard subdomain SMTP routing (`*@{slug}.inboxed.dev`)
+### Three deployment scenarios, one codebase
 
-**What doesn't change:**
-- Standalone mode is the default and has zero multi-tenant code paths
-- API key authentication for programmatic access
-- All existing features work identically in standalone
-- Same deploy pipeline, same Docker image
+| Scenario | Registration | Trial | Example |
+|---|---|---|---|
+| **Solo dev** | Closed — setup wizard only | None | `localhost`, personal VPS |
+| **Team** | Invite-only — admin invites members | None | Company VPS, shared staging |
+| **Public instance** | Open — anyone registers | 7 days | `cloud.inboxed.dev` or any operator |
+
+Configuration:
+```bash
+REGISTRATION_MODE=open        # 'open' | 'invite_only' | 'closed'
+TRIAL_DURATION_DAYS=7         # 0 = permanent access immediately
+```
+
+**Guiding principle:** No `if mode == ...` in the code. One auth model. One tenant model. One set of controllers. Configuration via env vars.
 
 ---
 
@@ -37,29 +41,37 @@ Turn Inboxed into a try-before-you-self-host product. A developer registers at `
 
 ### What exists
 
-- **Auth abstraction** (spec 009) — `authStore` supports `mode: 'admin' | 'user'`, feature flags via `/admin/status`
-- **Feature flag system** — dashboard sidebar/tabs driven by `features` map from API
-- **Admin token auth** — `INBOXED_ADMIN_TOKEN` for dashboard, per-project API keys for programmatic access
-- **Project model** — `project_id` on every resource (inboxes, emails, endpoints, etc.)
-- **TTL cleanup** — existing background jobs for email and HTTP request expiry
-- **SMTP server** — `midi-smtp-server` with AUTH and domain routing
-- **Rate limiting** — Rack::Attack configured for API and admin endpoints
+- **Auth abstraction** (spec 009) — `authStore` with mode, features, user fields
+- **Feature flag system** — `/admin/status` returns enabled features
+- **Admin token auth** — `INBOXED_ADMIN_TOKEN` for dashboard (to be replaced)
+- **Per-project API keys** — Bearer token auth for programmatic access (unchanged)
+- **Project model** — `project_id` on every resource
+- **ActionMailer** — configured but not used for user-facing emails yet
 
 ### What this spec adds
 
-- `users` and `users_projects` database tables
+- `organizations`, `memberships`, `invitations` tables
 - `sessions` table for ActiveRecord session store
-- Registration flow with email verification
-- GitHub OAuth (optional, via omniauth)
-- Session-based dashboard auth (cloud mode only)
-- `CurrentTenant` context for row-level data scoping
-- `CloudLimits` enforcement at service layer
-- Wildcard subdomain SMTP routing
-- Per-user SMTP rate limiting
-- Limit banners in dashboard with self-hosting CTAs
-- Feature gates (MCP disabled, HTML preview disabled)
-- Tenant isolation test suite
-- Cloud-specific configuration overlay for Docker
+- `site_admin` flag on users
+- `organization_id` on projects
+- Setup wizard (first boot → create admin)
+- Registration flow with email verification (when SMTP configured)
+- GitHub OAuth (optional)
+- Invitation system (invite by email, accept via token)
+- Organization-scoped tenant isolation (`CurrentTenant`)
+- Time-based trial on organizations
+- Role-based access (site_admin, org_admin, member)
+- Outbound SMTP configuration for transactional emails
+- Updated dashboard: login, register, setup, invite, trial banners
+
+### What this spec removes (vs original spec 011)
+
+- ~~`INBOXED_MODE` env var~~ — eliminated
+- ~~`CloudMode` concern~~ — replaced by always-active auth
+- ~~`CloudLimits` with resource-based limits~~ — replaced by time-based trial
+- ~~`docker-compose.cloud.yml` overlay~~ — one compose file
+- ~~Wildcard subdomain SMTP routing~~ — moved to optional configuration (ADR-028 still applies if operator wants it)
+- ~~Feature gates (MCP disabled, HTML preview disabled)~~ — all features always available
 
 ---
 
@@ -67,24 +79,43 @@ Turn Inboxed into a try-before-you-self-host product. A developer registers at `
 
 ### 3.1 New Tables
 
-#### `users`
+#### `organizations`
+
+```sql
+CREATE TABLE organizations (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            VARCHAR NOT NULL,
+  slug            VARCHAR NOT NULL,
+  trial_ends_at   TIMESTAMPTZ,
+  settings        JSONB NOT NULL DEFAULT '{}',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT organizations_slug_unique UNIQUE (slug)
+);
+
+CREATE INDEX idx_organizations_slug ON organizations(slug);
+```
+
+#### `users` (replaces admin token)
 
 ```sql
 CREATE TABLE users (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email             VARCHAR NOT NULL,
-  password_digest   VARCHAR NOT NULL,
-  github_uid        VARCHAR,
-  github_username   VARCHAR,
-  verified_at       TIMESTAMPTZ,
-  verification_token VARCHAR,
-  verification_sent_at TIMESTAMPTZ,
-  password_reset_token VARCHAR,
-  password_reset_sent_at TIMESTAMPTZ,
-  last_sign_in_at   TIMESTAMPTZ,
-  sign_in_count     INTEGER DEFAULT 0,
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email                   VARCHAR NOT NULL,
+  password_digest         VARCHAR NOT NULL,
+  site_admin              BOOLEAN DEFAULT false,
+  github_uid              VARCHAR,
+  github_username         VARCHAR,
+  verified_at             TIMESTAMPTZ,
+  verification_token      VARCHAR,
+  verification_sent_at    TIMESTAMPTZ,
+  password_reset_token    VARCHAR,
+  password_reset_sent_at  TIMESTAMPTZ,
+  last_sign_in_at         TIMESTAMPTZ,
+  sign_in_count           INTEGER DEFAULT 0,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   CONSTRAINT users_email_unique UNIQUE (email),
   CONSTRAINT users_github_uid_unique UNIQUE (github_uid)
@@ -93,26 +124,45 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_verification_token ON users(verification_token)
   WHERE verification_token IS NOT NULL;
-CREATE INDEX idx_users_password_reset_token ON users(password_reset_token)
-  WHERE password_reset_token IS NOT NULL;
 ```
 
-#### `users_projects`
+#### `memberships`
 
 ```sql
-CREATE TABLE users_projects (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  project_id  UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  role        VARCHAR NOT NULL DEFAULT 'owner',
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+CREATE TABLE memberships (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  role            VARCHAR NOT NULL DEFAULT 'member',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  CONSTRAINT users_projects_unique UNIQUE (user_id, project_id),
-  CONSTRAINT users_projects_role_check CHECK (role IN ('owner', 'member'))
+  CONSTRAINT memberships_unique UNIQUE (user_id, organization_id),
+  CONSTRAINT memberships_role_check CHECK (role IN ('org_admin', 'member'))
 );
 
-CREATE INDEX idx_users_projects_user ON users_projects(user_id);
-CREATE INDEX idx_users_projects_project ON users_projects(project_id);
+CREATE INDEX idx_memberships_user ON memberships(user_id);
+CREATE INDEX idx_memberships_org ON memberships(organization_id);
+```
+
+#### `invitations`
+
+```sql
+CREATE TABLE invitations (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  email           VARCHAR NOT NULL,
+  role            VARCHAR NOT NULL DEFAULT 'member',
+  token           VARCHAR NOT NULL,
+  invited_by_id   UUID NOT NULL REFERENCES users(id),
+  accepted_at     TIMESTAMPTZ,
+  expires_at      TIMESTAMPTZ NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT invitations_token_unique UNIQUE (token)
+);
+
+CREATE INDEX idx_invitations_token ON invitations(token);
+CREATE INDEX idx_invitations_org_email ON invitations(organization_id, email);
 ```
 
 #### `sessions` (ActiveRecord session store)
@@ -132,9 +182,132 @@ CREATE INDEX idx_sessions_session_id ON sessions(session_id);
 CREATE INDEX idx_sessions_updated_at ON sessions(updated_at);
 ```
 
-### 3.2 Domain Layer
+### 3.2 Schema Changes to Existing Tables
 
-#### Entity
+```sql
+-- Add organization_id to projects
+ALTER TABLE projects ADD COLUMN organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
+CREATE INDEX idx_projects_organization ON projects(organization_id);
+```
+
+### 3.3 ActiveRecord Models
+
+```ruby
+# app/models/organization_record.rb
+class OrganizationRecord < ApplicationRecord
+  self.table_name = "organizations"
+
+  has_many :memberships, foreign_key: :organization_id, dependent: :destroy
+  has_many :users, through: :memberships, source: :user, class_name: "UserRecord"
+  has_many :projects, class_name: "ProjectRecord", foreign_key: :organization_id, dependent: :destroy
+  has_many :invitations, foreign_key: :organization_id, dependent: :destroy
+
+  validates :name, presence: true
+  validates :slug, presence: true, uniqueness: true
+
+  def trial?
+    trial_ends_at.present?
+  end
+
+  def trial_active?
+    trial? && trial_ends_at > Time.current
+  end
+
+  def trial_expired?
+    trial? && trial_ends_at <= Time.current
+  end
+
+  def permanent?
+    trial_ends_at.nil?
+  end
+
+  def days_remaining
+    return nil unless trial?
+    [(trial_ends_at - Time.current).to_i / 1.day, 0].max
+  end
+
+  def active?
+    permanent? || trial_active?
+  end
+end
+
+# app/models/user_record.rb
+class UserRecord < ApplicationRecord
+  self.table_name = "users"
+  has_secure_password
+
+  has_many :memberships, foreign_key: :user_id, dependent: :destroy
+  has_many :organizations, through: :memberships, source: :organization,
+           class_name: "OrganizationRecord"
+
+  validates :email, presence: true, uniqueness: true,
+            format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :password, length: { minimum: 8 }, on: :create
+
+  scope :verified, -> { where.not(verified_at: nil) }
+
+  def organization
+    organizations.first  # User belongs to one org (enforced at service level)
+  end
+
+  def role_in(org)
+    return "site_admin" if site_admin?
+    memberships.find_by(organization: org)&.role || "member"
+  end
+
+  def site_admin?
+    site_admin
+  end
+
+  def verified?
+    verified_at.present?
+  end
+end
+
+# app/models/membership_record.rb
+class MembershipRecord < ApplicationRecord
+  self.table_name = "memberships"
+
+  belongs_to :user, class_name: "UserRecord"
+  belongs_to :organization, class_name: "OrganizationRecord"
+
+  validates :role, inclusion: { in: %w[org_admin member] }
+end
+
+# app/models/invitation_record.rb
+class InvitationRecord < ApplicationRecord
+  self.table_name = "invitations"
+
+  belongs_to :organization, class_name: "OrganizationRecord"
+  belongs_to :invited_by, class_name: "UserRecord"
+
+  validates :email, presence: true
+  validates :token, presence: true, uniqueness: true
+  validates :role, inclusion: { in: %w[org_admin member] }
+
+  scope :pending, -> { where(accepted_at: nil).where("expires_at > ?", Time.current) }
+  scope :expired, -> { where("expires_at <= ?", Time.current) }
+
+  def expired?
+    expires_at <= Time.current
+  end
+
+  def accepted?
+    accepted_at.present?
+  end
+end
+
+# app/models/project_record.rb (updated)
+class ProjectRecord < ApplicationRecord
+  # ... existing code ...
+  belongs_to :organization, class_name: "OrganizationRecord", optional: true
+  # optional: true during migration period — becomes required after backfill
+end
+```
+
+### 3.4 Domain Layer
+
+#### Entities
 
 ```ruby
 # app/domain/entities/user.rb
@@ -143,19 +316,24 @@ module Inboxed::Domain::Entities
     attribute :id, Types::UUID
     attribute :email, Types::String
     attribute :verified, Types::Bool
-    attribute :github_uid, Types::String.optional
+    attribute :site_admin, Types::Bool
     attribute :github_username, Types::String.optional
     attribute :last_sign_in_at, Types::Time.optional
-    attribute :sign_in_count, Types::Integer
+    attribute :created_at, Types::Time
+  end
+end
+
+# app/domain/entities/organization.rb
+module Inboxed::Domain::Entities
+  class Organization < Dry::Struct
+    attribute :id, Types::UUID
+    attribute :name, Types::String
+    attribute :slug, Types::String
+    attribute :trial_ends_at, Types::Time.optional
     attribute :created_at, Types::Time
 
-    def verified?
-      verified
-    end
-
-    def github_linked?
-      github_uid.present?
-    end
+    def trial? = trial_ends_at.present?
+    def active? = !trial? || trial_ends_at > Time.current
   end
 end
 ```
@@ -163,177 +341,420 @@ end
 #### Events
 
 ```ruby
-# app/domain/events/user_registered.rb
-module Inboxed::Domain::Events
-  class UserRegistered < Base
-    attribute :user_id, Types::UUID
-    attribute :email, Types::String
-    attribute :registration_method, Types::String  # 'email' | 'github'
-  end
+# app/domain/events/
+class UserRegistered < Base
+  attribute :user_id, Types::UUID
+  attribute :email, Types::String
+  attribute :organization_id, Types::UUID
+  attribute :registration_method, Types::String  # 'setup' | 'email' | 'github' | 'invitation'
 end
 
-# app/domain/events/user_verified.rb
-module Inboxed::Domain::Events
-  class UserVerified < Base
-    attribute :user_id, Types::UUID
-    attribute :email, Types::String
-  end
+class UserVerified < Base
+  attribute :user_id, Types::UUID
+  attribute :email, Types::String
 end
 
-# app/domain/events/user_signed_in.rb
-module Inboxed::Domain::Events
-  class UserSignedIn < Base
-    attribute :user_id, Types::UUID
-    attribute :email, Types::String
-    attribute :method, Types::String  # 'password' | 'github'
-  end
-end
-```
-
-### 3.3 ActiveRecord Models
-
-```ruby
-# app/models/user_record.rb
-class UserRecord < ApplicationRecord
-  self.table_name = "users"
-  has_secure_password
-
-  has_many :users_projects, foreign_key: :user_id, dependent: :destroy
-  has_many :projects, through: :users_projects, source: :project,
-           class_name: "ProjectRecord"
-
-  validates :email, presence: true, uniqueness: true,
-            format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, length: { minimum: 8 }, on: :create
-
-  scope :verified, -> { where.not(verified_at: nil) }
-  scope :unverified, -> { where(verified_at: nil) }
+class UserInvited < Base
+  attribute :invitation_id, Types::UUID
+  attribute :organization_id, Types::UUID
+  attribute :email, Types::String
+  attribute :role, Types::String
+  attribute :invited_by_id, Types::UUID
 end
 
-# app/models/users_project_record.rb
-class UsersProjectRecord < ApplicationRecord
-  self.table_name = "users_projects"
+class InvitationAccepted < Base
+  attribute :invitation_id, Types::UUID
+  attribute :user_id, Types::UUID
+  attribute :organization_id, Types::UUID
+end
 
-  belongs_to :user, class_name: "UserRecord"
-  belongs_to :project, class_name: "ProjectRecord"
-
-  validates :role, inclusion: { in: %w[owner member] }
+class TrialExpired < Base
+  attribute :organization_id, Types::UUID
+  attribute :name, Types::String
 end
 ```
 
 ---
 
-## 4. Authentication
+## 4. Roles & Permissions
 
-See [ADR-026](../adrs/026-cloud-authentication.md) for the full design rationale.
+### 4.1 Permission Matrix
 
-### 4.1 Routes
+| Action | site_admin | org_admin | member | trial_expired |
+|---|---|---|---|---|
+| View projects & data | ✅ | ✅ | ✅ | ✅ (read-only) |
+| Create project | ✅ | ✅ | ❌ | ❌ |
+| Delete project | ✅ | ✅ | ❌ | ❌ |
+| Manage API keys | ✅ | ✅ | ❌ | ❌ |
+| Invite members | ✅ | ✅ | ❌ | ❌ |
+| Remove members | ✅ | ✅ | ❌ | ❌ |
+| Send email (SMTP) | ✅ | ✅ | ✅ | ❌ |
+| Create HTTP endpoints | ✅ | ✅ | ✅ | ❌ |
+| Manage org settings | ✅ | ✅ | ❌ | ❌ |
+| Manage all orgs | ✅ | ❌ | ❌ | ❌ |
+| Manage instance settings | ✅ | ❌ | ❌ | ❌ |
+| Grant permanent access | ✅ | ❌ | ❌ | ❌ |
+
+### 4.2 Authorization
 
 ```ruby
-# config/routes.rb (additions — only active in cloud mode)
-scope constraints: ->(req) { ENV["INBOXED_MODE"] == "cloud" } do
-  namespace :auth do
-    post   "register",         to: "registrations#create"
-    get    "verify",           to: "verifications#show"
-    post   "resend-verification", to: "verifications#create"
-    post   "sessions",         to: "sessions#create"
-    delete "sessions",         to: "sessions#destroy"
-    get    "me",               to: "sessions#show"
-    post   "forgot-password",  to: "passwords#create"
-    put    "reset-password",   to: "passwords#update"
+# lib/inboxed/authorization.rb
+module Inboxed
+  class Authorization
+    def initialize(user:, organization:)
+      @user = user
+      @org = organization
+      @role = user.role_in(organization)
+    end
 
-    # GitHub OAuth (optional)
-    get    "github",           to: "oauth#github"
-    get    "github/callback",  to: "oauth#github_callback"
+    def can?(action)
+      return false if trial_expired? && write_action?(action)
+      PERMISSIONS.fetch(action, []).include?(@role)
+    end
+
+    def trial_expired?
+      @org.trial_expired?
+    end
+
+    private
+
+    PERMISSIONS = {
+      view_data:          %w[site_admin org_admin member],
+      create_project:     %w[site_admin org_admin],
+      delete_project:     %w[site_admin org_admin],
+      manage_api_keys:    %w[site_admin org_admin],
+      invite_members:     %w[site_admin org_admin],
+      remove_members:     %w[site_admin org_admin],
+      manage_org:         %w[site_admin org_admin],
+      manage_instance:    %w[site_admin],
+      grant_permanent:    %w[site_admin]
+    }.freeze
+
+    def write_action?(action)
+      !%i[view_data].include?(action)
+    end
   end
 end
 ```
 
-### 4.2 Controllers
+---
 
-#### Registration
+## 5. Authentication Flows
+
+See [ADR-026](../adrs/026-cloud-authentication.md) for session cookie rationale.
+
+### 5.1 Routes
 
 ```ruby
-# app/controllers/auth/registrations_controller.rb
-module Auth
-  class RegistrationsController < ApplicationController
-    def create
-      result = Inboxed::Application::Services::RegisterUser.call(
-        email: params[:email],
-        password: params[:password]
+# config/routes.rb (additions)
+
+# Setup wizard (first boot)
+get  "setup", to: "setup#show"
+post "setup", to: "setup#create"
+
+# Auth
+namespace :auth do
+  post   "register",            to: "registrations#create"
+  get    "verify",              to: "verifications#show"
+  post   "resend-verification", to: "verifications#create"
+  post   "sessions",            to: "sessions#create"
+  get    "me",                  to: "sessions#show"
+  delete "sessions",            to: "sessions#destroy"
+  post   "forgot-password",     to: "passwords#create"
+  put    "reset-password",      to: "passwords#update"
+  get    "github",              to: "oauth#github"
+  get    "github/callback",     to: "oauth#github_callback"
+  post   "accept-invitation",   to: "invitations#accept"
+  get    "invitation",          to: "invitations#show"
+end
+
+# Organization management (org_admin+)
+namespace :admin do
+  resources :members, only: [:index, :create, :destroy]
+  resources :invitations, only: [:index, :create, :destroy]
+  resource  :organization, only: [:show, :update]
+end
+
+# Site admin
+namespace :site_admin do
+  resources :organizations, only: [:index, :show, :update, :destroy] do
+    member do
+      post :grant_permanent   # Remove trial
+    end
+  end
+  resources :users, only: [:index, :show, :destroy]
+  resource  :settings, only: [:show, :update]
+end
+```
+
+### 5.2 Setup Wizard (First Boot)
+
+```ruby
+# app/controllers/setup_controller.rb
+class SetupController < ApplicationController
+  before_action :ensure_setup_available
+
+  def show
+    render json: { setup_required: true }
+  end
+
+  def create
+    return head :forbidden unless valid_setup_token?
+
+    result = Inboxed::Application::Services::SetupInstance.call(
+      email: params[:email],
+      password: params[:password],
+      org_name: params[:org_name] || "Default",
+      setup_token: params[:setup_token]
+    )
+
+    session[:user_id] = result.user.id
+    render json: { data: serialize_user(result.user) }, status: :created
+  end
+
+  private
+
+  def ensure_setup_available
+    redirect_to "/login" if Inboxed::Settings.setup_completed?
+  end
+
+  def valid_setup_token?
+    expected = ENV["INBOXED_SETUP_TOKEN"]
+    return false unless expected.present?
+    ActiveSupport::SecurityUtils.secure_compare(params[:setup_token].to_s, expected)
+  end
+end
+```
+
+```ruby
+# app/application/services/setup_instance.rb
+module Inboxed::Application::Services
+  class SetupInstance
+    def self.call(email:, password:, org_name:, setup_token:)
+      org = OrganizationRecord.create!(
+        name: org_name,
+        slug: org_name.parameterize.presence || SecureRandom.uuid.split("-").first,
+        trial_ends_at: nil  # Permanent — this is the operator
       )
 
-      if result.success?
-        render json: {
-          message: "Check your email to verify your account",
-          email: params[:email]
-        }, status: :created
-      else
-        render json: { errors: result.errors }, status: :unprocessable_entity
-      end
-    end
-  end
-end
-```
-
-#### Email Verification
-
-```ruby
-# app/controllers/auth/verifications_controller.rb
-module Auth
-  class VerificationsController < ApplicationController
-    def show
-      result = Inboxed::Application::Services::VerifyUser.call(
-        token: params[:token]
+      user = UserRecord.create!(
+        email: email,
+        password: password,
+        site_admin: true,
+        verified_at: Time.current  # Auto-verified — they have server access
       )
 
-      if result.success?
-        session[:user_id] = result.user.id
-        redirect_to "/projects"
-      else
-        redirect_to "/login?error=invalid_verification"
-      end
-    end
+      MembershipRecord.create!(
+        user: user,
+        organization: org,
+        role: "org_admin"
+      )
 
-    def create
-      user = UserRecord.find_by(email: params[:email])
-      if user && user.verified_at.nil?
-        Inboxed::Application::Services::SendVerificationEmail.call(user: user)
-      end
-      # Always return success to prevent email enumeration
-      render json: { message: "If that email exists, we sent a verification link" }
+      Inboxed::Settings.set(:setup_completed_at, Time.current)
+
+      # Publish event
+      Inboxed::Infrastructure::EventStore::Bus.publish(
+        Inboxed::Domain::Events::UserRegistered.new(
+          user_id: user.id,
+          email: user.email,
+          organization_id: org.id,
+          registration_method: "setup"
+        ),
+        stream: "user-#{user.id}"
+      )
+
+      OpenStruct.new(user: user, organization: org)
     end
   end
 end
 ```
 
-#### Sessions
+### 5.3 Registration (Open Mode)
+
+```ruby
+# app/application/services/register_user.rb
+module Inboxed::Application::Services
+  class RegisterUser
+    def self.call(email:, password:, invitation_token: nil)
+      new(email:, password:, invitation_token:).call
+    end
+
+    def initialize(email:, password:, invitation_token:)
+      @email = email.downcase.strip
+      @password = password
+      @invitation_token = invitation_token
+    end
+
+    def call
+      validate_registration_allowed!
+
+      if @invitation_token
+        register_via_invitation
+      else
+        register_open
+      end
+    end
+
+    private
+
+    def validate_registration_allowed!
+      mode = ENV.fetch("REGISTRATION_MODE", "closed")
+      return if @invitation_token  # Invitations always work
+      raise RegistrationClosed unless mode == "open"
+    end
+
+    def register_open
+      # Create user
+      user = create_user(verified: !outbound_smtp_configured?)
+
+      # Create org with trial
+      trial_days = ENV.fetch("TRIAL_DURATION_DAYS", "7").to_i
+      org = OrganizationRecord.create!(
+        name: "#{@email.split('@').first}'s workspace",
+        slug: SecureRandom.uuid.split("-").first,
+        trial_ends_at: trial_days > 0 ? trial_days.days.from_now : nil
+      )
+
+      MembershipRecord.create!(user: user, organization: org, role: "org_admin")
+
+      # Create default project
+      create_default_project(org)
+
+      # Send verification if SMTP configured
+      SendVerificationEmail.call(user: user) if outbound_smtp_configured? && !user.verified?
+
+      publish_event(user, org, "email")
+      success(user)
+    end
+
+    def register_via_invitation
+      invitation = InvitationRecord.pending.find_by!(token: @invitation_token)
+      raise InvitationExpired if invitation.expired?
+
+      user = create_user(verified: !outbound_smtp_configured?)
+
+      MembershipRecord.create!(
+        user: user,
+        organization: invitation.organization,
+        role: invitation.role
+      )
+
+      invitation.update!(accepted_at: Time.current)
+
+      SendVerificationEmail.call(user: user) if outbound_smtp_configured? && !user.verified?
+
+      publish_event(user, invitation.organization, "invitation")
+      success(user)
+    end
+
+    def create_user(verified: false)
+      UserRecord.create!(
+        email: @email,
+        password: @password,
+        verified_at: verified ? Time.current : nil,
+        verification_token: verified ? nil : SecureRandom.urlsafe_base64(32),
+        verification_sent_at: verified ? nil : Time.current
+      )
+    end
+
+    def create_default_project(org)
+      project = ProjectRecord.create!(
+        name: "My Project",
+        slug: SecureRandom.uuid.split("-").first,
+        organization: org,
+        default_ttl_hours: 24
+      )
+
+      Inboxed::Services::IssueApiKey.call(
+        project_id: project.id,
+        label: "Default key"
+      )
+    end
+
+    def outbound_smtp_configured?
+      ENV["OUTBOUND_SMTP_HOST"].present?
+    end
+
+    def publish_event(user, org, method)
+      Inboxed::Infrastructure::EventStore::Bus.publish(
+        Inboxed::Domain::Events::UserRegistered.new(
+          user_id: user.id, email: user.email,
+          organization_id: org.id, registration_method: method
+        ),
+        stream: "user-#{user.id}"
+      )
+    end
+
+    def success(user) = OpenStruct.new(success?: true, user: user, errors: [])
+
+    class RegistrationClosed < StandardError; end
+    class InvitationExpired < StandardError; end
+  end
+end
+```
+
+### 5.4 Invitation Flow
+
+```ruby
+# app/application/services/invite_user.rb
+module Inboxed::Application::Services
+  class InviteUser
+    def self.call(organization:, email:, role:, invited_by:)
+      invitation = InvitationRecord.create!(
+        organization: organization,
+        email: email.downcase.strip,
+        role: role,
+        token: SecureRandom.urlsafe_base64(32),
+        invited_by: invited_by,
+        expires_at: 7.days.from_now
+      )
+
+      # Send invitation email if SMTP configured
+      if ENV["OUTBOUND_SMTP_HOST"].present?
+        InvitationMailer.invite(invitation).deliver_later
+      end
+
+      Inboxed::Infrastructure::EventStore::Bus.publish(
+        Inboxed::Domain::Events::UserInvited.new(
+          invitation_id: invitation.id,
+          organization_id: organization.id,
+          email: email,
+          role: role,
+          invited_by_id: invited_by.id
+        ),
+        stream: "organization-#{organization.id}"
+      )
+
+      invitation
+    end
+  end
+end
+```
+
+### 5.5 Session Authentication
 
 ```ruby
 # app/controllers/auth/sessions_controller.rb
 module Auth
   class SessionsController < ApplicationController
     def create
-      result = Inboxed::Application::Services::AuthenticateUser.call(
-        email: params[:email],
-        password: params[:password]
-      )
+      user = UserRecord.find_by(email: params[:email]&.downcase&.strip)
 
-      case result
-      in { status: :success, user: }
-        session[:user_id] = user.id
-        user.update!(last_sign_in_at: Time.current, sign_in_count: user.sign_in_count + 1)
-        render json: { data: serialize_user(user) }
-      in { status: :unverified }
-        render json: { error: "email_not_verified", message: "Please verify your email first" }, status: :forbidden
-      in { status: :invalid }
+      if user&.authenticate(params[:password])
+        if requires_verification? && !user.verified?
+          render json: { error: "email_not_verified" }, status: :forbidden
+        else
+          start_session(user)
+          render json: { data: serialize_user_with_org(user) }
+        end
+      else
         render json: { error: "invalid_credentials" }, status: :unauthorized
       end
     end
 
     def show
       if current_user
-        render json: { data: serialize_user(current_user) }
+        render json: { data: serialize_user_with_org(current_user) }
       else
         head :unauthorized
       end
@@ -343,199 +764,19 @@ module Auth
       reset_session
       head :no_content
     end
-  end
-end
-```
-
-### 4.3 Application Services
-
-```ruby
-# app/application/services/register_user.rb
-module Inboxed::Application::Services
-  class RegisterUser
-    def self.call(email:, password:)
-      new(email:, password:).call
-    end
-
-    def initialize(email:, password:)
-      @email = email.downcase.strip
-      @password = password
-    end
-
-    def call
-      return failure("Email already registered") if UserRecord.exists?(email: @email)
-      return failure("Password must be at least 8 characters") if @password.length < 8
-
-      user = UserRecord.create!(
-        email: @email,
-        password: @password,
-        verification_token: SecureRandom.urlsafe_base64(32),
-        verification_sent_at: Time.current
-      )
-
-      # Auto-create project with UUID slug
-      project = create_default_project(user)
-
-      # Send verification email
-      SendVerificationEmail.call(user: user)
-
-      # Publish event
-      publish_event(user)
-
-      success(user)
-    rescue ActiveRecord::RecordInvalid => e
-      failure(e.message)
-    end
 
     private
 
-    def create_default_project(user)
-      slug = SecureRandom.uuid.split("-").first  # e.g., "a7f3b2c1"
-      project = ProjectRecord.create!(
-        name: "My Project",
-        slug: slug,
-        default_ttl_hours: 1  # Cloud TTL: 1 hour, non-negotiable
-      )
-
-      UsersProjectRecord.create!(
-        user: user,
-        project: project,
-        role: "owner"
-      )
-
-      # Auto-create first API key
-      Inboxed::Services::IssueApiKey.call(
-        project_id: project.id,
-        label: "Default key"
-      )
-
-      project
-    end
-
-    def publish_event(user)
-      Inboxed::Infrastructure::EventStore::Bus.publish(
-        Inboxed::Domain::Events::UserRegistered.new(
-          user_id: user.id,
-          email: user.email,
-          registration_method: "email"
-        ),
-        stream: "user-#{user.id}"
-      )
-    end
-
-    def success(user) = OpenStruct.new(success?: true, user: user, errors: [])
-    def failure(msg)   = OpenStruct.new(success?: false, user: nil, errors: [msg])
-  end
-end
-```
-
-```ruby
-# app/application/services/verify_user.rb
-module Inboxed::Application::Services
-  class VerifyUser
-    def self.call(token:)
-      new(token:).call
-    end
-
-    def initialize(token:)
-      @token = token
-    end
-
-    def call
-      user = UserRecord.find_by(verification_token: @token)
-
-      return failure("Invalid or expired verification token") unless user
-      return failure("Token expired") if user.verification_sent_at < 24.hours.ago
-
-      user.update!(
-        verified_at: Time.current,
-        verification_token: nil
-      )
-
-      publish_event(user)
-      success(user)
-    end
-
-    private
-
-    def publish_event(user)
-      Inboxed::Infrastructure::EventStore::Bus.publish(
-        Inboxed::Domain::Events::UserVerified.new(
-          user_id: user.id,
-          email: user.email
-        ),
-        stream: "user-#{user.id}"
-      )
-    end
-
-    def success(user) = OpenStruct.new(success?: true, user: user, errors: [])
-    def failure(msg)   = OpenStruct.new(success?: false, user: nil, errors: [msg])
-  end
-end
-```
-
-```ruby
-# app/application/services/send_verification_email.rb
-module Inboxed::Application::Services
-  class SendVerificationEmail
-    def self.call(user:)
-      # Rate limit: max 3 verification emails per hour
-      return if user.verification_sent_at && user.verification_sent_at > 5.minutes.ago
-
-      user.update!(
-        verification_token: SecureRandom.urlsafe_base64(32),
-        verification_sent_at: Time.current
-      )
-
-      UserMailer.verification(user).deliver_later
-    end
-  end
-end
-```
-
-### 4.4 GitHub OAuth (Optional)
-
-```ruby
-# app/controllers/auth/oauth_controller.rb
-module Auth
-  class OauthController < ApplicationController
-    def github
-      redirect_to github_authorize_url, allow_other_host: true
-    end
-
-    def github_callback
-      github_user = exchange_code_for_user(params[:code])
-      return redirect_to "/login?error=github_failed" unless github_user
-
-      user = find_or_create_github_user(github_user)
+    def start_session(user)
       session[:user_id] = user.id
-      user.update!(last_sign_in_at: Time.current, sign_in_count: user.sign_in_count + 1)
-
-      redirect_to "/projects"
+      user.update!(
+        last_sign_in_at: Time.current,
+        sign_in_count: user.sign_in_count + 1
+      )
     end
 
-    private
-
-    def find_or_create_github_user(gh)
-      user = UserRecord.find_by(github_uid: gh[:id].to_s)
-      return user if user
-
-      user = UserRecord.find_by(email: gh[:email])
-      if user
-        user.update!(github_uid: gh[:id].to_s, github_username: gh[:login])
-        return user
-      end
-
-      user = UserRecord.create!(
-        email: gh[:email],
-        password: SecureRandom.hex(32),  # Random password (login via GitHub only)
-        github_uid: gh[:id].to_s,
-        github_username: gh[:login],
-        verified_at: Time.current  # GitHub verified the email
-      )
-
-      RegisterUser.new(email: "", password: "").send(:create_default_project, user)
-      user
+    def requires_verification?
+      ENV["OUTBOUND_SMTP_HOST"].present?
     end
   end
 end
@@ -543,860 +784,421 @@ end
 
 ---
 
-## 5. Tenant Isolation
+## 6. Tenant Isolation
 
-See [ADR-027](../adrs/027-tenant-isolation.md) for the full design rationale.
+See [ADR-027](../adrs/027-tenant-isolation.md) for the full rationale.
 
-### 5.1 CurrentTenant Context
+### 6.1 CurrentTenant (Always Active)
 
 ```ruby
 # lib/inboxed/current_tenant.rb
 module Inboxed
   class CurrentTenant
-    thread_mattr_accessor :user_id, :project_ids
+    thread_mattr_accessor :organization_id, :user_id, :user_role
 
-    def self.set(user:)
+    def self.set(user:, organization:)
       self.user_id = user.id
-      self.project_ids = user.projects.pluck(:id)
+      self.organization_id = organization.id
+      self.user_role = user.role_in(organization)
       yield
     ensure
       self.user_id = nil
-      self.project_ids = nil
+      self.organization_id = nil
+      self.user_role = nil
     end
 
-    def self.scope(relation)
-      if set?
-        relation.where(project_id: project_ids)
-      else
-        relation  # Standalone mode: no scoping
-      end
+    def self.scope_projects(relation)
+      return relation if site_admin?
+      raise TenantNotSet unless set?
+      relation.where(organization_id: organization_id)
     end
 
-    def self.set?
-      project_ids.present?
-    end
+    def self.set?       = organization_id.present?
+    def self.site_admin? = user_role == "site_admin"
+    def self.org_admin?  = user_role.in?(%w[site_admin org_admin])
 
-    def self.owns_project?(project_id)
-      return true unless set?  # Standalone: all projects accessible
-      project_ids.include?(project_id)
-    end
+    class TenantNotSet < StandardError; end
   end
 end
 ```
 
-### 5.2 CloudMode Concern
+### 6.2 Controller Integration
 
 ```ruby
-# app/controllers/concerns/cloud_mode.rb
-module CloudMode
-  extend ActiveSupport::Concern
-
-  included do
-    before_action :set_tenant_context, if: :cloud_mode?
-  end
-
-  def cloud_mode?
-    ENV["INBOXED_MODE"] == "cloud"
-  end
-
-  def standalone_mode?
-    !cloud_mode?
-  end
-
-  def current_user
-    return nil unless cloud_mode?
-    @current_user ||= UserRecord.find_by(id: session[:user_id])
-  end
+# app/controllers/application_controller.rb
+class ApplicationController < ActionController::API
+  include ActionController::Cookies
 
   private
 
-  def set_tenant_context
-    return unless current_user
-    Inboxed::CurrentTenant.set(user: current_user) { yield }
+  def current_user
+    @current_user ||= UserRecord.find_by(id: session[:user_id])
   end
 
-  def require_cloud_auth!
-    return unless cloud_mode?
-    head :unauthorized unless current_user&.verified_at
+  def require_auth!
+    head :unauthorized unless current_user
+  end
+
+  def require_active_org!
+    org = current_user&.organization
+    return head :unauthorized unless org
+
+    unless org.active?
+      render json: {
+        error: "trial_expired",
+        message: "Your trial has expired. Contact the administrator for permanent access.",
+        trial_ended_at: org.trial_ends_at&.iso8601
+      }, status: :forbidden
+    end
+  end
+
+  def with_tenant(&block)
+    return yield unless current_user
+
+    org = current_user.organization
+    return head :unauthorized unless org
+
+    Inboxed::CurrentTenant.set(user: current_user, organization: org, &block)
   end
 end
-```
 
-### 5.3 Admin Controller Updates
-
-The admin base controller switches behavior based on mode:
-
-```ruby
-# app/controllers/admin/base_controller.rb (updated)
+# app/controllers/admin/base_controller.rb (rewritten)
 module Admin
   class BaseController < ApplicationController
-    include CloudMode
-
-    before_action :authenticate!
-
-    private
-
-    def authenticate!
-      if cloud_mode?
-        require_cloud_auth!
-      else
-        authenticate_admin_token!  # Existing behavior
-      end
-    end
-
-    # Existing admin token auth (unchanged)
-    def authenticate_admin_token!
-      token = request.headers["Authorization"]&.delete_prefix("Bearer ")
-      expected = ENV.fetch("INBOXED_ADMIN_TOKEN")
-
-      unless token.present? && ActiveSupport::SecurityUtils.secure_compare(token, expected)
-        head :unauthorized
-      end
-    end
-  end
-end
-```
-
-### 5.4 Scoped Queries
-
-Every read model and repository that queries by `project_id` applies `CurrentTenant.scope` in cloud mode:
-
-```ruby
-# Example pattern applied to all existing read models:
-
-# app/read_models/inboxed/read_models/inbox_list.rb (updated)
-module Inboxed::ReadModels
-  class InboxList
-    def self.call(project_id:, **params)
-      # Verify user owns this project in cloud mode
-      unless Inboxed::CurrentTenant.owns_project?(project_id)
-        raise ActiveRecord::RecordNotFound
-      end
-
-      scope = InboxRecord.where(project_id: project_id)
-      # ... existing query logic
-    end
-  end
-end
-```
-
-The project list itself is scoped:
-
-```ruby
-# app/read_models/inboxed/read_models/project_list.rb
-module Inboxed::ReadModels
-  class ProjectList
-    def self.call(**params)
-      scope = Inboxed::CurrentTenant.scope(ProjectRecord.all)
-      scope.order(created_at: :desc)
-    end
-  end
-end
-```
-
----
-
-## 6. Free Tier Limits
-
-### 6.1 Limit Definitions
-
-```ruby
-# lib/inboxed/cloud_limits.rb
-module Inboxed
-  class CloudLimits
-    LIMITS = {
-      projects_per_user: 1,
-      inboxes_per_project: 5,
-      emails_per_project: 50,
-      http_endpoints_per_project: 6,  # 2 webhook + 2 form + 2 heartbeat
-      requests_per_endpoint: 20,
-      api_keys_per_project: 2,
-      ttl_hours: 1,
-      api_rate_limit_per_minute: 60,
-      smtp_rate_limit_per_hour: 10,
-      max_email_body_bytes: 100_000,
-      max_webhook_body_bytes: 262_144
-    }.freeze
-
-    def self.enforced?
-      ENV["INBOXED_MODE"] == "cloud"
-    end
-
-    def self.check!(resource, user: nil, project: nil)
-      return unless enforced?
-
-      limit_info = evaluate(resource, user:, project:)
-      return unless limit_info
-
-      if limit_info[:current] >= limit_info[:limit]
-        raise LimitExceeded.new(
-          resource: resource,
-          current: limit_info[:current],
-          limit: limit_info[:limit]
-        )
-      end
-    end
-
-    def self.usage(user:, project:)
-      return nil unless enforced?
-
-      {
-        projects: { current: user.projects.count, limit: LIMITS[:projects_per_user] },
-        inboxes: { current: project.inboxes.count, limit: LIMITS[:inboxes_per_project] },
-        emails: { current: project.emails.count, limit: LIMITS[:emails_per_project] },
-        endpoints: { current: project.http_endpoints.count, limit: LIMITS[:http_endpoints_per_project] },
-        api_keys: { current: project.api_keys.count, limit: LIMITS[:api_keys_per_project] }
-      }
-    end
+    around_action :with_tenant
+    before_action :require_auth!
 
     private
 
-    def self.evaluate(resource, user:, project:)
-      case resource
-      when :project
-        { current: user.projects.count, limit: LIMITS[:projects_per_user] }
-      when :inbox
-        { current: project.inboxes.count, limit: LIMITS[:inboxes_per_project] }
-      when :email
-        { current: project.emails.count, limit: LIMITS[:emails_per_project] }
-      when :http_endpoint
-        { current: project.http_endpoints.count, limit: LIMITS[:http_endpoints_per_project] }
-      when :api_key
-        { current: project.api_keys.count, limit: LIMITS[:api_keys_per_project] }
-      end
-    end
-  end
-
-  class LimitExceeded < StandardError
-    attr_reader :resource, :current, :limit
-
-    def initialize(resource:, current:, limit:)
-      @resource = resource
-      @current = current
-      @limit = limit
-      super(
-        "Free tier limit reached: #{resource} (#{current}/#{limit}). " \
-        "Self-host Inboxed for unlimited everything: https://github.com/your/inboxed"
-      )
+    def current_project
+      Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:project_id])
     end
   end
 end
 ```
 
-### 6.2 Limit Enforcement Points
+### 6.3 Trial Enforcement
 
-| Resource | Enforcement point | Service |
-|---|---|---|
-| Projects | Project creation | `RegisterUser`, `CreateProject` |
-| Inboxes | Inbox creation + SMTP auto-create | `CreateInbox`, SMTP handler |
-| Emails | SMTP reception | SMTP handler, `PersistEmail` |
-| HTTP endpoints | Endpoint creation | `CreateHttpEndpoint` |
-| Requests per endpoint | Request capture | `CaptureHttpRequest` |
-| API keys | Key generation | `IssueApiKey` |
-| Email body size | SMTP reception | SMTP handler |
-| Webhook body size | Catch endpoint | `HooksController` |
-| API rate | Per-request | Rack::Attack |
-| SMTP rate | Per-email | SMTP handler |
-
-### 6.3 API Error Response
-
-```json
-{
-  "error": {
-    "type": "limit_exceeded",
-    "resource": "inboxes",
-    "current": 5,
-    "limit": 5,
-    "message": "Free tier limit reached: inboxes (5/5). Self-host Inboxed for unlimited everything.",
-    "self_host_url": "https://github.com/your/inboxed",
-    "docs_url": "https://inboxed.dev/docs/self-hosting"
-  }
-}
-```
-
-HTTP status: `429 Too Many Requests` with `Retry-After: 0` (not a rate limit — permanent until self-hosted).
-
-### 6.4 Cloud Rate Limiting
+Write actions check both auth and trial status:
 
 ```ruby
-# config/initializers/rack_attack.rb (additions for cloud)
-if ENV["INBOXED_MODE"] == "cloud"
-  # Cloud API: 60 req/min per session (stricter than standalone's 300)
-  Rack::Attack.throttle("cloud/api", limit: 60, period: 60) do |req|
-    if req.path.start_with?("/admin/", "/api/v1/")
-      req.session[:user_id] || req.ip
-    end
+# app/controllers/concerns/trial_enforced.rb
+module TrialEnforced
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :require_active_org!, only: [:create, :update, :destroy]
   end
 end
 ```
+
+Read actions work even after trial expiry — users can still view their data.
 
 ---
 
-## 7. Feature Gates
+## 7. Outbound Email (Transactional)
 
-### 7.1 Disabled Features in Cloud Mode
+Inboxed needs to send emails for: verification, password reset, invitations. This uses a standard SMTP relay (Resend, Postmark, Mailgun, or any provider).
 
-| Feature | Why disabled | How disabled |
-|---|---|---|
-| **MCP server** | Key differentiator for self-hosted. Strongest conversion driver. | MCP Docker service not started in cloud compose. API returns `mcp: false` in features. |
-| **HTML email preview** | Cross-tenant XSS risk. Sandboxed iframe could still leak data via postMessage. | Dashboard shows text + headers only. `html_preview` feature flag = false. |
-| **Custom TTL** | Cloud TTL is 1 hour, non-configurable. Prevents storage abuse. | Project `default_ttl_hours` locked to 1. UI hides TTL setting. |
-| **Webhook relay/forward** | Abuse potential — cloud becomes an open HTTP proxy. | Feature not available. UI hidden. |
+**This is separate from Inboxed's SMTP catcher** — the catcher receives test emails, the relay sends system emails.
 
-### 7.2 Status Endpoint Response (Cloud)
+### 7.1 Configuration
 
-```json
-{
-  "status": "ok",
-  "version": "1.2.0",
-  "mode": "cloud",
-  "features": {
-    "mail": true,
-    "hooks": true,
-    "forms": true,
-    "heartbeats": true,
-    "mcp": false,
-    "html_preview": false,
-    "custom_ttl": false
-  },
-  "user": {
-    "id": "...",
-    "email": "dev@example.com",
-    "verified": true
-  },
-  "limits": {
-    "projects": { "current": 1, "limit": 1 },
-    "inboxes": { "current": 3, "limit": 5 },
-    "emails": { "current": 12, "limit": 50 },
-    "endpoints": { "current": 1, "limit": 6 },
-    "api_keys": { "current": 1, "limit": 2 }
-  }
-}
+```bash
+# Outbound SMTP relay for system emails
+OUTBOUND_SMTP_HOST=smtp.resend.com
+OUTBOUND_SMTP_PORT=587
+OUTBOUND_SMTP_USER=resend
+OUTBOUND_SMTP_PASS=re_xxxx
+OUTBOUND_FROM_EMAIL=noreply@yourdomain.com
 ```
 
-### 7.3 Feature Flag Implementation
+### 7.2 ActionMailer Setup
 
 ```ruby
-# lib/inboxed/features.rb
-module Inboxed
-  class Features
-    def self.enabled?(feature)
-      return true unless cloud_mode?
-
-      CLOUD_FEATURES.fetch(feature.to_sym, false)
-    end
-
-    def self.all
-      if cloud_mode?
-        CLOUD_FEATURES
-      else
-        STANDALONE_FEATURES
-      end
-    end
-
-    private
-
-    STANDALONE_FEATURES = {
-      mail: true, hooks: true, forms: true, heartbeats: true,
-      mcp: true, html_preview: true, custom_ttl: true
-    }.freeze
-
-    CLOUD_FEATURES = {
-      mail: true, hooks: true, forms: true, heartbeats: true,
-      mcp: false, html_preview: false, custom_ttl: false
-    }.freeze
-
-    def self.cloud_mode?
-      ENV["INBOXED_MODE"] == "cloud"
-    end
-  end
-end
-```
-
----
-
-## 8. SMTP Multi-Tenant Routing
-
-See [ADR-028](../adrs/028-cloud-smtp-routing.md) for the full design rationale.
-
-### 8.1 Wildcard Subdomain Routing
-
-```ruby
-# In SMTP server mail handler (updated for cloud)
-def route_recipient(recipient_address)
-  local_part, domain = recipient_address.split("@", 2)
-
-  if cloud_mode? && domain&.end_with?(".inboxed.dev")
-    route_cloud(local_part, domain)
-  else
-    route_standalone(local_part, domain)  # Existing behavior
-  end
-end
-
-def route_cloud(local_part, domain)
-  slug = domain.sub(".inboxed.dev", "")
-
-  # Reject system subdomain
-  return reject("550 5.1.1 Reserved address") if slug == "system"
-
-  project = ProjectRecord.find_by(slug: slug)
-  return reject("550 5.1.1 Unknown project") unless project
-
-  # Rate limit
-  return reject("450 4.7.1 Rate limit exceeded") if smtp_rate_exceeded?(project)
-
-  # Email count limit
-  return reject("452 4.2.2 Mailbox full") if email_limit_exceeded?(project)
-
-  # Find or create inbox (auto-create up to limit)
-  address = "#{local_part}@#{domain}"
-  inbox = find_or_create_inbox(project, address)
-  return reject("452 4.2.2 Inbox limit reached") unless inbox
-
-  accept(inbox)
-end
-
-def smtp_rate_exceeded?(project)
-  return false unless cloud_mode?
-  project.emails.where("received_at > ?", 1.hour.ago).count >= 10
-end
-
-def email_limit_exceeded?(project)
-  return false unless cloud_mode?
-  project.emails.count >= 50
-end
-
-def find_or_create_inbox(project, address)
-  inbox = InboxRecord.find_by(address: address)
-  return inbox if inbox
-
-  return nil if project.inboxes.count >= Inboxed::CloudLimits::LIMITS[:inboxes_per_project]
-
-  InboxRecord.create!(
-    project: project,
-    address: address,
-    email_count: 0
-  )
-rescue ActiveRecord::RecordNotUnique
-  InboxRecord.find_by(address: address)
-end
-```
-
-### 8.2 DNS Configuration
-
-Already covered in deploy documentation. For cloud:
-
-```
-MX    inboxed.dev          → mail.inboxed.dev  (priority 10)
-MX    *.inboxed.dev        → mail.inboxed.dev  (priority 10)
-A     mail.inboxed.dev     → <VPS IP>
-A     cloud.inboxed.dev    → <VPS IP>
-```
-
-### 8.3 Abuse Prevention
-
-| Vector | Mitigation |
-|---|---|
-| Spam relay | Registration requires email verification. Unverified accounts can't receive email. |
-| SMTP flood | 10 emails/hour per project. `fail2ban` on SMTP port. Connection rate limit in midi-smtp-server. |
-| Storage abuse | 1-hour TTL, 100KB email body cap, cleanup every 5 minutes |
-| Account farming | Rate limit registration: 3 accounts per IP per hour |
-| Enumeration | Slugs are 8-character hex UUIDs — 4 billion possible values |
-
----
-
-## 9. Dashboard Changes
-
-### 9.1 New Routes (Cloud Only)
-
-```
-src/routes/
-├── register/+page.svelte          → registration form
-├── verify/+page.svelte            → email verification landing
-├── forgot-password/+page.svelte   → password reset request
-├── reset-password/+page.svelte    → password reset form
-└── login/+page.svelte             → updated: email/password + GitHub OAuth
-```
-
-### 9.2 Login Page (Cloud Mode)
-
-```
-┌──────────────────────────────────────────────────┐
-│                                                    │
-│              [@] inboxed                           │
-│              The dev inbox                         │
-│                                                    │
-│  ┌──────────────────────────────────────────────┐  │
-│  │  Email                                        │  │
-│  │  ┌──────────────────────────────────────────┐ │  │
-│  │  │ dev@example.com                           │ │  │
-│  │  └──────────────────────────────────────────┘ │  │
-│  │  Password                                     │  │
-│  │  ┌──────────────────────────────────────────┐ │  │
-│  │  │ ••••••••••                                │ │  │
-│  │  └──────────────────────────────────────────┘ │  │
-│  │                                                │  │
-│  │  [        Sign in        ]                    │  │
-│  │                                                │  │
-│  │  ───────── or ─────────                       │  │
-│  │                                                │  │
-│  │  [  🐙  Continue with GitHub  ]               │  │
-│  │                                                │  │
-│  │  Don't have an account? Register              │  │
-│  │  Forgot your password?                        │  │
-│  └──────────────────────────────────────────────┘  │
-│                                                    │
-│  💡 Want unlimited everything?                     │
-│     Self-host with docker compose up               │
-│                                                    │
-└──────────────────────────────────────────────────┘
-```
-
-### 9.3 Registration Page
-
-```
-┌──────────────────────────────────────────────────┐
-│              [@] inboxed                           │
-│              Try free. Self-host forever.           │
-│                                                    │
-│  ┌──────────────────────────────────────────────┐  │
-│  │  Email                                        │  │
-│  │  ┌──────────────────────────────────────────┐ │  │
-│  │  │                                           │ │  │
-│  │  └──────────────────────────────────────────┘ │  │
-│  │  Password (min 8 characters)                  │  │
-│  │  ┌──────────────────────────────────────────┐ │  │
-│  │  │                                           │ │  │
-│  │  └──────────────────────────────────────────┘ │  │
-│  │                                                │  │
-│  │  [      Create account      ]                 │  │
-│  │                                                │  │
-│  │  ───────── or ─────────                       │  │
-│  │                                                │  │
-│  │  [  🐙  Sign up with GitHub  ]                │  │
-│  │                                                │  │
-│  │  Already have an account? Sign in             │  │
-│  └──────────────────────────────────────────────┘  │
-│                                                    │
-│  Free tier: 1 project • 5 inboxes • 50 emails     │
-│  • 1h retention • No MCP                           │
-│                                                    │
-└──────────────────────────────────────────────────┘
-```
-
-### 9.4 Limit Banners
-
-When a user approaches or hits a limit, banners appear in the dashboard:
-
-```
-┌─ ⚠ Free tier: 4/5 inboxes used ──────────────────────────────────────────┐
-│  Self-host Inboxed for unlimited inboxes, MCP, and more.                   │
-│  [📖 Self-hosting guide]  [🐳 docker compose up]                          │
-└───────────────────────────────────────────────────────────────────────────┘
-```
-
-```
-┌─ 🚫 Inbox limit reached (5/5) ───────────────────────────────────────────┐
-│  You've reached the free tier inbox limit. Self-host for unlimited:        │
-│  docker compose up                                              [Copy]     │
-│  [📖 Full setup guide →]                                                   │
-└───────────────────────────────────────────────────────────────────────────┘
-```
-
-#### Implementation
-
-```svelte
-<!-- $lib/components/LimitBanner.svelte -->
-<script lang="ts">
-  interface Props {
-    resource: string;
-    current: number;
-    limit: number;
-    threshold?: number;  // Show warning at this % (default: 80%)
-  }
-
-  let { resource, current, limit, threshold = 0.8 }: Props = $props();
-
-  const ratio = $derived(current / limit);
-  const isWarning = $derived(ratio >= threshold && ratio < 1);
-  const isExceeded = $derived(ratio >= 1);
-  const show = $derived(isWarning || isExceeded);
-</script>
-
-{#if show}
-  <div class="border rounded-lg p-3 mb-4 font-mono text-sm
-              {isExceeded ? 'border-error bg-error/10 text-error' : 'border-amber bg-amber/10 text-amber'}">
-    <div class="flex items-center justify-between">
-      <span>
-        {isExceeded ? '🚫' : '⚠'}
-        {resource}: {current}/{limit}
-        {isExceeded ? '— limit reached' : '— approaching limit'}
-      </span>
-      <a href="https://github.com/your/inboxed" target="_blank"
-         class="text-phosphor hover:underline text-xs">
-        Self-host for unlimited →
-      </a>
-    </div>
-  </div>
-{/if}
-```
-
-### 9.5 Dashboard Auth Flow (Cloud vs Standalone)
-
-```typescript
-// src/lib/stores/auth.store.svelte.ts (updated)
-
-// On app load:
-async function initialize() {
-  const status = await fetchStatus();
-
-  if (status.mode === 'cloud') {
-    // Cloud: check session
-    const me = await fetchMe();
-    if (me) {
-      authStore.isAuthenticated = true;
-      authStore.mode = 'user';
-      authStore.user = me;
-      authStore.features = status.features;
-      authStore.limits = status.limits;
-    } else {
-      // Redirect to /login (cloud login page)
-      goto('/login');
-    }
-  } else {
-    // Standalone: existing admin token flow
-    const token = localStorage.getItem('inboxed_admin_token');
-    if (token) {
-      authStore.isAuthenticated = true;
-      authStore.mode = 'admin';
-      authStore.token = token;
-      authStore.features = status.features;
-    } else {
-      goto('/login');
-    }
-  }
-}
-```
-
-### 9.6 Sidebar Updates (Cloud Mode)
-
-```
-┌─────────────────────────────────┐
-│  [@] inboxed cloud              │
-│─────────────────────────────────│
-│  🔍 Search                      │
-│                                 │
-│  PROJECT: My Project       [⚙]  │
-│    📧 Mail        (12/50)  ← usage shown │
-│    🔗 Hooks In     (1/6)       │
-│    📋 Forms        (0/6)       │
-│    💓 Heartbeats   (0/6)       │
-│                                 │
-│  ⚠ Free tier                   │
-│  1h retention • No MCP          │
-│  [Self-host for unlimited →]    │
-│─────────────────────────────────│
-│  [🌙]  [● Connected]           │
-│  dev@example.com  [Logout]      │
-└─────────────────────────────────┘
-```
-
-Key differences from standalone:
-- "inboxed cloud" label
-- Usage counts show `current/limit`
-- Free tier reminder in sidebar footer
-- User email instead of "Admin" label
-- No "New Project" button (cloud: 1 project max)
-
-### 9.7 Project Settings (Cloud Mode)
-
-The project settings page in cloud mode:
-- **Name:** Editable
-- **Slug:** Read-only (auto-generated UUID)
-- **Email domain:** `*.{slug}.inboxed.dev` — prominent display with copy button
-- **TTL:** "1 hour (cloud limit)" — not editable, with CTA to self-host
-- **API keys:** Show/create (up to limit)
-- **SMTP config:** Pre-filled with cloud server details
-
-```
-┌─ SMTP Configuration ──────────────────────────────────────────────────┐
-│  Point your app's SMTP at Inboxed Cloud:                               │
-│                                                                        │
-│  ┌──────────────────────────────────────────────┐                      │
-│  │ SMTP_HOST=mail.inboxed.dev                    │             [Copy]  │
-│  │ SMTP_PORT=587                                 │                     │
-│  │ SMTP_USER=inx_abc1...                         │                     │
-│  │ SMTP_PASS=<your-api-key>                      │                     │
-│  └──────────────────────────────────────────────┘                      │
-│                                                                        │
-│  Or send directly to: anything@a7f3b2c1.inboxed.dev                    │
-└───────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 10. Email Verification (Dogfooding)
-
-Inboxed Cloud sends verification and password reset emails. This is an opportunity to dogfood the product.
-
-### 10.1 ActionMailer Configuration
-
-```ruby
-# config/environments/production.rb (cloud additions)
-if ENV["INBOXED_MODE"] == "cloud"
+# config/environments/production.rb
+if ENV["OUTBOUND_SMTP_HOST"].present?
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address: ENV.fetch("OUTBOUND_SMTP_HOST", "localhost"),
-    port: ENV.fetch("OUTBOUND_SMTP_PORT", 587),
-    user_name: ENV.fetch("OUTBOUND_SMTP_USER", nil),
-    password: ENV.fetch("OUTBOUND_SMTP_PASS", nil),
+    address: ENV["OUTBOUND_SMTP_HOST"],
+    port: ENV.fetch("OUTBOUND_SMTP_PORT", 587).to_i,
+    user_name: ENV["OUTBOUND_SMTP_USER"],
+    password: ENV["OUTBOUND_SMTP_PASS"],
     authentication: :plain,
     enable_starttls: true
   }
-  config.action_mailer.default_url_options = {
-    host: "cloud.inboxed.dev",
-    protocol: "https"
-  }
 end
 ```
 
-### 10.2 Mailer
+### 7.3 Mailers
 
 ```ruby
 # app/mailers/user_mailer.rb
 class UserMailer < ApplicationMailer
-  default from: "Inboxed <noreply@inboxed.dev>"
+  default from: -> { ENV.fetch("OUTBOUND_FROM_EMAIL", "noreply@inboxed.dev") }
 
   def verification(user)
     @user = user
-    @url = "https://cloud.inboxed.dev/auth/verify?token=#{user.verification_token}"
+    @url = "#{base_url}/auth/verify?token=#{user.verification_token}"
     mail(to: user.email, subject: "Verify your Inboxed account")
   end
 
   def password_reset(user)
     @user = user
-    @url = "https://cloud.inboxed.dev/reset-password?token=#{user.password_reset_token}"
+    @url = "#{base_url}/reset-password?token=#{user.password_reset_token}"
     mail(to: user.email, subject: "Reset your Inboxed password")
+  end
+end
+
+# app/mailers/invitation_mailer.rb
+class InvitationMailer < ApplicationMailer
+  default from: -> { ENV.fetch("OUTBOUND_FROM_EMAIL", "noreply@inboxed.dev") }
+
+  def invite(invitation)
+    @invitation = invitation
+    @org = invitation.organization
+    @url = "#{base_url}/auth/invitation?token=#{invitation.token}"
+    mail(to: invitation.email, subject: "You're invited to #{@org.name} on Inboxed")
   end
 end
 ```
 
-### 10.3 Email Templates
+### 7.4 Graceful Degradation
 
-Plain text, minimal, developer-friendly:
+If `OUTBOUND_SMTP_HOST` is not set:
+- Users are **auto-verified** at registration (no email sent)
+- Password reset is unavailable (admin resets manually via site admin panel)
+- Invitations still work but the invite link must be shared manually (dashboard shows copyable link)
+- Dashboard shows notice: "Configure outbound SMTP for email verification and password reset"
+
+---
+
+## 8. Dashboard Changes
+
+### 8.1 New Routes
 
 ```
-Subject: Verify your Inboxed account
+src/routes/
+├── setup/+page.svelte              → first boot setup wizard
+├── register/+page.svelte           → registration (when open)
+├── verify/+page.svelte             → email verification landing
+├── forgot-password/+page.svelte    → password reset request
+├── reset-password/+page.svelte     → password reset form
+├── invitation/+page.svelte         → accept invitation
+├── login/+page.svelte              → email/password + GitHub OAuth
+└── settings/
+    ├── members/+page.svelte        → org member management
+    ├── invitations/+page.svelte    → pending invitations
+    └── organization/+page.svelte   → org settings
+```
 
-Hey,
+### 8.2 Setup Wizard (First Boot)
 
-Click here to verify your Inboxed account:
+```
+┌──────────────────────────────────────────────────┐
+│              [@] inboxed                           │
+│              Welcome. Let's set up your instance.  │
+│                                                    │
+│  Setup Token                                       │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ (from INBOXED_SETUP_TOKEN env var)           │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Organization Name                                 │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ My Team                                      │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Admin Email                                       │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ admin@example.com                            │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Password                                          │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ ••••••••••                                   │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  [        Create admin account        ]            │
+│                                                    │
+└──────────────────────────────────────────────────┘
+```
 
-<%= @url %>
+### 8.3 Trial Banner
 
-This link expires in 24 hours.
+```
+┌─ ⏱ Trial: 3 days remaining ──────────────────────────────────────────────┐
+│  Your trial ends on Mar 23. Contact the administrator for permanent       │
+│  access, or self-host your own instance.                                  │
+│  [📖 Self-hosting guide]                                          [Dismiss]│
+└───────────────────────────────────────────────────────────────────────────┘
+```
 
-If you didn't create an account, ignore this email.
+```
+┌─ 🚫 Trial expired ───────────────────────────────────────────────────────┐
+│  Your trial has expired. You can still view existing data.                │
+│  Contact the administrator to continue using Inboxed.                     │
+└───────────────────────────────────────────────────────────────────────────┘
+```
 
-—
-Inboxed — The dev inbox
-https://inboxed.dev
+### 8.4 Members Page (org_admin)
+
+```
+┌─ Members ─────────────────────────────────────────────────────────────────┐
+│                                                    [+ Invite member]       │
+│────────────────────────────────────────────────────────────────────────────│
+│  admin@example.com          org_admin     Joined Mar 16     (you)         │
+│  dev@example.com            member        Joined Mar 17     [Remove]      │
+│                                                                            │
+│  Pending invitations                                                       │
+│  qa@example.com             member        Expires Mar 23    [Revoke]      │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.5 Sidebar (Updated)
+
+```
+┌─────────────────────────────────────┐
+│  [@] inboxed                        │
+│─────────────────────────────────────│
+│  🔍 Search                          │
+│                                     │
+│  My Team                       [⚙]  │  ← org name
+│                                     │
+│  PROJECT: my-app               [⚙]  │
+│    📧 Mail                (12)     │
+│    🔗 Hooks In             (3)     │
+│    📋 Forms                (1)     │
+│    💓 Heartbeats           (1)     │
+│                                     │
+│  + New Project                      │
+│─────────────────────────────────────│
+│  ⏱ Trial: 3 days left              │  ← only if trial
+│─────────────────────────────────────│
+│  [🌙]  [● Connected]               │
+│  admin@example.com  [Logout]        │
+└─────────────────────────────────────┘
+```
+
+### 8.6 Auth Store (Updated)
+
+```typescript
+// src/lib/stores/auth.store.svelte.ts
+interface AuthState {
+  isAuthenticated: boolean;
+  user: {
+    id: string;
+    email: string;
+    role: 'site_admin' | 'org_admin' | 'member';
+    siteAdmin: boolean;
+  } | null;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    trial: boolean;
+    trialEndsAt: string | null;
+    trialActive: boolean;
+    daysRemaining: number | null;
+  } | null;
+  features: Record<string, boolean>;
+  setupRequired: boolean;
+}
+```
+
+### 8.7 Status Endpoint (Updated)
+
+```json
+{
+  "status": "ok",
+  "version": "1.2.0",
+  "setup_completed": true,
+  "registration_mode": "invite_only",
+  "outbound_smtp_configured": true,
+  "features": {
+    "mail": true,
+    "hooks": true,
+    "forms": true,
+    "heartbeats": true,
+    "mcp": true,
+    "html_preview": true
+  },
+  "user": {
+    "id": "...",
+    "email": "admin@example.com",
+    "role": "org_admin",
+    "site_admin": true
+  },
+  "organization": {
+    "id": "...",
+    "name": "My Team",
+    "slug": "my-team",
+    "trial": false,
+    "trial_ends_at": null
+  }
+}
 ```
 
 ---
 
-## 11. Docker Configuration (Cloud)
+## 9. Settings Model
 
-### 11.1 Cloud Compose Overlay
-
-```yaml
-# docker-compose.cloud.yml (extends base docker-compose.yml)
-services:
-  api:
-    environment:
-      INBOXED_MODE: cloud
-      INBOXED_ADMIN_TOKEN: ""  # Disabled in cloud
-      OUTBOUND_SMTP_HOST: ${OUTBOUND_SMTP_HOST}
-      OUTBOUND_SMTP_USER: ${OUTBOUND_SMTP_USER}
-      OUTBOUND_SMTP_PASS: ${OUTBOUND_SMTP_PASS}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-
-  # MCP server not started in cloud mode
-  mcp:
-    deploy:
-      replicas: 0
-```
-
-Deploy command:
-```bash
-docker compose -f docker-compose.yml -f docker-compose.cloud.yml up -d
-```
-
-### 11.2 Cloud Environment Variables
-
-```bash
-# .env.cloud.example
-INBOXED_MODE=cloud
-
-# Outbound email (for verification/password reset)
-OUTBOUND_SMTP_HOST=smtp.provider.com
-OUTBOUND_SMTP_PORT=587
-OUTBOUND_SMTP_USER=apikey
-OUTBOUND_SMTP_PASS=your-key
-
-# GitHub OAuth (optional)
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-
-# Session secret (generate with: openssl rand -hex 64)
-SECRET_KEY_BASE=
-
-# Database (same as standalone)
-DATABASE_URL=postgres://...
-```
-
----
-
-## 12. Cleanup & Maintenance
-
-### 12.1 Aggressive Cleanup (Cloud)
-
-Cloud mode uses more aggressive cleanup than standalone:
+Instance-level settings (persisted in DB, managed by site admin):
 
 ```ruby
-# app/application/jobs/cloud_cleanup_job.rb
-class CloudCleanupJob < ApplicationJob
+# lib/inboxed/settings.rb
+module Inboxed
+  class Settings
+    # Simple key-value store using a settings table or Rails credentials
+    def self.setup_completed?
+      get(:setup_completed_at).present?
+    end
+
+    def self.get(key)
+      SettingRecord.find_by(key: key.to_s)&.value
+    end
+
+    def self.set(key, value)
+      record = SettingRecord.find_or_initialize_by(key: key.to_s)
+      record.update!(value: value.to_s)
+    end
+  end
+end
+```
+
+```sql
+CREATE TABLE settings (
+  id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key   VARCHAR NOT NULL,
+  value TEXT,
+  CONSTRAINT settings_key_unique UNIQUE (key)
+);
+```
+
+---
+
+## 10. Cleanup Jobs
+
+```ruby
+# app/application/jobs/maintenance_cleanup_job.rb
+class MaintenanceCleanupJob < ApplicationJob
   queue_as :default
 
   def perform
-    return unless ENV["INBOXED_MODE"] == "cloud"
+    # Clean expired sessions
+    sessions_deleted = Session.where("updated_at < ?", 7.days.ago).delete_all
 
-    # 1. Delete expired emails (TTL: 1 hour)
-    emails_deleted = EmailRecord
-      .where("expires_at < ?", Time.current)
-      .delete_all
+    # Clean expired invitations
+    invitations_deleted = InvitationRecord.expired.where(accepted_at: nil).delete_all
 
-    # 2. Delete expired HTTP requests (TTL: 1 hour)
-    requests_deleted = HttpRequestRecord
-      .where("expires_at < ?", Time.current)
-      .delete_all
-
-    # 3. Delete unverified accounts older than 24 hours
-    users_deleted = UserRecord
-      .unverified
-      .where("created_at < ?", 24.hours.ago)
-      .destroy_all
-      .count
-
-    # 4. Clean expired sessions
-    sessions_deleted = Session
-      .where("updated_at < ?", 7.days.ago)
-      .delete_all
+    # Clean unverified users older than 48 hours (if SMTP is configured)
+    if ENV["OUTBOUND_SMTP_HOST"].present?
+      users_deleted = UserRecord.unverified.where("created_at < ?", 48.hours.ago).destroy_all.count
+    end
 
     Rails.logger.info(
-      "CloudCleanup: emails=#{emails_deleted} requests=#{requests_deleted} " \
-      "users=#{users_deleted} sessions=#{sessions_deleted}"
+      "MaintenanceCleanup: sessions=#{sessions_deleted} " \
+      "invitations=#{invitations_deleted} users=#{users_deleted || 0}"
     )
   end
 end
@@ -1404,291 +1206,279 @@ end
 
 ```yaml
 # config/recurring.yml (additions)
-cloud_cleanup:
-  class: CloudCleanupJob
-  schedule: every 5 minutes
+maintenance_cleanup:
+  class: MaintenanceCleanupJob
+  schedule: every 1 hour
 ```
 
-### 12.2 Session Cleanup
+---
 
-Sessions auto-expire after 7 days (configured in session store). The cleanup job removes stale sessions from the database.
+## 11. Technical Decisions
+
+### 11.1 Single Mode vs Dual Mode
+
+- **Options:** A) Keep `INBOXED_MODE=standalone/cloud`, B) One mode, configure via env vars
+- **Chosen:** B — one mode
+- **Why:** Eliminates all `if cloud_mode?` branching. Solo dev is just a one-person org. See panel discussion in spec history.
+- **Trade-offs:** Setup wizard required even for solo dev. Acceptable — it's 30 seconds.
+
+### 11.2 Organization vs User as Tenant
+
+- **Options:** A) User owns projects directly, B) Organization owns projects
+- **Chosen:** B — Organization as tenant. See [ADR-029](../adrs/029-organization-trial.md).
+- **Why:** Teams need shared access. Solo dev = one-person org.
+- **Trade-offs:** Extra table. Worth it for team support.
+
+### 11.3 Time-Based Trial vs Resource-Based Limits
+
+- **Options:** A) Resource limits (5 inboxes, 50 emails, etc.), B) Time-based trial (full access for X days)
+- **Chosen:** B — Time-based trial
+- **Why:** More honest — user sees the real product. Resource limits create artificial friction. Time pressure is a better conversion mechanism.
+- **Trade-offs:** No long-term free tier. Acceptable — the goal is evaluation, not permanent free hosting.
+
+### 11.4 Verification: Required vs Optional
+
+- **Options:** A) Always require email verification, B) Only if outbound SMTP is configured
+- **Chosen:** B — Conditional on SMTP configuration
+- **Why:** Solo dev shouldn't need to configure Resend to use Inboxed. Graceful degradation.
+- **Trade-offs:** Without SMTP, anyone can register with any email (no verification). Mitigated by: in that case, registration is typically closed or invite-only.
+
+### 11.5 Admin Token: Keep vs Replace
+
+- **Options:** A) Keep `INBOXED_ADMIN_TOKEN` forever, B) One-time setup token replaced by user account
+- **Chosen:** B — One-time setup token. See [ADR-026](../adrs/026-cloud-authentication.md).
+- **Why:** Static tokens are a security anti-pattern. Real user accounts provide audit trail, session expiry, rotation.
+- **Trade-offs:** Breaking change for existing users (migration path provided).
 
 ---
 
-## 13. Technical Decisions
-
-### 13.1 Session Cookies vs JWTs
-
-- **Options:** A) JWT in localStorage, B) Rails session cookies, C) Custom token in HttpOnly cookie
-- **Chosen:** B — Rails session cookies
-- **Why:** HttpOnly + Secure + SameSite cookies are immune to XSS token theft. Server-side revocation on logout. See [ADR-026](../adrs/026-cloud-authentication.md).
-- **Trade-offs:** Requires CSRF token handling in SPA.
-
-### 13.2 Tenant Isolation Strategy
-
-- **Options:** A) Application-level row scoping, B) PostgreSQL RLS, C) Schema-per-tenant
-- **Chosen:** A — Application-level scoping with mandatory test suite
-- **Why:** Simpler, adequate for expected scale (< 1000 users). Test suite provides equivalent safety. See [ADR-027](../adrs/027-tenant-isolation.md).
-- **Trade-offs:** No database-level guarantee — mitigated by exhaustive tests.
-
-### 13.3 SMTP Multi-Tenant Routing
-
-- **Options:** A) Wildcard subdomain, B) Plus addressing, C) Unique local part
-- **Chosen:** A — Wildcard subdomain with UUID slugs
-- **Why:** Clean namespace, standard MX routing, unguessable slugs. See [ADR-028](../adrs/028-cloud-smtp-routing.md).
-- **Trade-offs:** Longer email addresses. Acceptable.
-
-### 13.4 Project Auto-Creation at Registration
-
-- **Options:** A) User creates project manually after registration, B) Auto-create at registration
-- **Chosen:** B — Auto-create project + API key at registration
-- **Why:** Minimizes time-to-value. User registers → project exists → SMTP config shown → send test email. Zero extra steps.
-- **Trade-offs:** Project slug is auto-generated (UUID), not user-chosen. Acceptable — cloud slugs should be unguessable.
-
-### 13.5 GitHub OAuth: Required or Optional
-
-- **Options:** A) Email-only registration, B) GitHub-only, C) Both (GitHub optional)
-- **Chosen:** C — Both, GitHub optional
-- **Why:** Email registration has zero dependencies. GitHub OAuth adds convenience for developers who prefer it. Making GitHub optional means cloud works even without configuring OAuth credentials.
-- **Trade-offs:** Two auth paths to maintain. Minimal — the session mechanism is the same.
-
-### 13.6 Limit Enforcement: Soft vs Hard
-
-- **Options:** A) Hard limits (reject at limit), B) Soft limits (warn, allow small overages)
-- **Chosen:** A — Hard limits
-- **Why:** The limits are the conversion mechanism. Soft limits dilute the incentive to self-host. The goal is for users to hit the wall and think "I need the self-hosted version."
-- **Trade-offs:** Slightly worse UX at the limit. Mitigated by clear messaging and one-click self-hosting path.
-
----
-
-## 14. Implementation Plan
+## 12. Implementation Plan
 
 ### Step 1: Database & Models
 
-1. Create migration for `users` table
-2. Create migration for `users_projects` table
-3. Create migration for `sessions` table (ActiveRecord session store)
-4. Create `UserRecord` and `UsersProjectRecord` AR models
-5. Create domain entity `User` and events (`UserRegistered`, `UserVerified`, `UserSignedIn`)
-6. Add `has_many :users_projects` to `ProjectRecord`
-7. Run migrations, verify schema
+1. Create migration for `settings` table
+2. Create migration for `organizations` table
+3. Create migration for `users` table
+4. Create migration for `memberships` table
+5. Create migration for `invitations` table
+6. Create migration for `sessions` table
+7. Create migration to add `organization_id` to `projects`
+8. Create all AR models: `OrganizationRecord`, `UserRecord`, `MembershipRecord`, `InvitationRecord`
+9. Create domain entities and events
+10. Configure ActiveRecord session store
+11. **Verify:** Migrations run, models validate, associations work
 
-### Step 2: Mode Flag & Infrastructure
+### Step 2: Setup Wizard
 
-1. Implement `CloudMode` concern with `cloud_mode?` / `standalone_mode?` helpers
-2. Implement `Inboxed::Features` module for feature flags
-3. Implement `Inboxed::CurrentTenant` context object
-4. Configure ActiveRecord session store (conditional on cloud mode)
-5. Update status endpoint to include `mode`, `features`, `user`, `limits`
-6. **Verify:** `INBOXED_MODE=cloud` activates cloud behavior, `standalone` is unchanged
+1. Create `Inboxed::Settings` module
+2. Create `SetupController` (show + create)
+3. Create `SetupInstance` application service
+4. Add setup routes
+5. Create dashboard `/setup` page
+6. Add redirect: if setup not completed → `/setup`; if completed → `/login`
+7. **Verify:** Fresh boot → `/setup` → create admin → redirected to dashboard
 
-### Step 3: Registration & Verification
-
-1. Create `Auth::RegistrationsController`
-2. Create `Auth::VerificationsController`
-3. Create `RegisterUser` application service (with auto-create project + API key)
-4. Create `VerifyUser` application service
-5. Create `SendVerificationEmail` service
-6. Create `UserMailer` with verification and password reset templates
-7. Add auth routes (cloud-only constraint)
-8. **Verify:** Register → email sent → click link → verified → session created
-
-### Step 4: Session Auth & Login
+### Step 3: Session Auth
 
 1. Create `Auth::SessionsController` (create, show, destroy)
-2. Create `AuthenticateUser` application service
-3. Add CSRF protection for cloud mode
-4. Update `Admin::BaseController` to switch between admin token and session auth
-5. **Verify:** Login with email/password → session cookie set → subsequent requests authenticated → logout destroys session
+2. Create `Auth::RegistrationsController`
+3. Create `Auth::VerificationsController`
+4. Create `Auth::PasswordsController`
+5. Create application services: `RegisterUser`, `VerifyUser`, `AuthenticateUser`, `SendVerificationEmail`, `ResetPassword`
+6. Add CSRF protection
+7. Update admin base controller to use session auth (replace admin token)
+8. **Verify:** Register → verify → login → session works → logout
 
-### Step 5: GitHub OAuth (Optional)
+### Step 4: Tenant Isolation
 
-1. Add `omniauth-github` gem
-2. Create `Auth::OauthController` with GitHub flow
-3. Wire find-or-create user logic
-4. **Verify:** GitHub login → user created (auto-verified) → session created → redirected to dashboard
+1. Implement `Inboxed::CurrentTenant`
+2. Create `TenantScoping` middleware
+3. Update all read models to use `CurrentTenant.scope_projects`
+4. Update all admin controllers with `around_action :with_tenant`
+5. Create tenant isolation test suite
+6. **Verify:** User A cannot access Org B's data via any endpoint
 
-### Step 6: Tenant Isolation
+### Step 5: Roles & Authorization
 
-1. Implement `CurrentTenant.scope` in all read models
-2. Add `CurrentTenant.owns_project?` checks in controllers
-3. Update all admin controllers to scope queries in cloud mode
-4. Create tenant isolation test suite (`spec/security/tenant_isolation_spec.rb`)
-5. **Verify:** User A cannot access User B's projects, inboxes, emails, endpoints via any API path
+1. Implement `Inboxed::Authorization`
+2. Create `TrialEnforced` concern
+3. Add authorization checks to controllers (create, delete, manage)
+4. Add trial status check to write endpoints
+5. **Verify:** Member cannot invite. Trial expired cannot create. Site admin can see all.
 
-### Step 7: Free Tier Limits
+### Step 6: Invitations
 
-1. Implement `Inboxed::CloudLimits` module
-2. Add limit checks to: `CreateProject`, `CreateInbox`, `PersistEmail`, `CreateHttpEndpoint`, `CaptureHttpRequest`, `IssueApiKey`
-3. Add limit check to SMTP handler (email count, inbox count, rate limit)
-4. Add `LimitExceeded` error handler to render 429 with self-hosting CTA
-5. Add cloud-specific Rack::Attack rules (60 req/min)
-6. **Verify:** Create 5 inboxes → 6th returns 429 with limit message
+1. Create `InviteUser` application service
+2. Create `Auth::InvitationsController` (show, accept)
+3. Create `Admin::InvitationsController` (index, create, destroy)
+4. Create `Admin::MembersController` (index, destroy)
+5. Create `InvitationMailer`
+6. **Verify:** Invite → email sent → click link → register → joined org
 
-### Step 8: SMTP Multi-Tenant Routing
+### Step 7: Outbound Email
 
-1. Update SMTP handler with `route_cloud` method
-2. Implement wildcard subdomain parsing
-3. Implement auto-create inbox on first email
-4. Add per-project SMTP rate limiting (10/hour)
-5. Add email body size cap (100KB)
-6. **Verify:** Send email to `test@{slug}.inboxed.dev` → inbox auto-created → email stored → 11th email in hour rejected
+1. Configure ActionMailer with `OUTBOUND_SMTP_*` env vars
+2. Create `UserMailer` (verification, password reset)
+3. Create `InvitationMailer`
+4. Create email templates (plain text, minimal)
+5. Add graceful degradation (auto-verify if no SMTP)
+6. **Verify:** With Resend configured → verification email arrives. Without → user auto-verified.
 
-### Step 9: Dashboard — Auth Pages
+### Step 8: GitHub OAuth
 
-1. Create `/register` page with email/password + GitHub OAuth
-2. Create `/verify` landing page (success/error states)
-3. Create `/forgot-password` page
-4. Create `/reset-password` page
-5. Update `/login` page: show email/password form in cloud mode, admin token in standalone
-6. Update `authStore` initialization to detect mode and use session-based auth
-7. Update API client: cookie auth in cloud, Bearer token in standalone
-8. **Verify:** Full registration flow works in browser
+1. Add `omniauth-github` gem (or manual OAuth flow)
+2. Create `Auth::OauthController`
+3. Wire find-or-create user + org logic
+4. **Verify:** GitHub login → user created → session → dashboard
 
-### Step 10: Dashboard — Limit Banners & Cloud UX
+### Step 9: Dashboard Auth Pages
 
-1. Create `LimitBanner.svelte` component
-2. Add limit banners to: inbox list, email list, endpoint list, API keys page
-3. Add usage display to sidebar (`12/50 emails`)
-4. Add free tier info to sidebar footer
-5. Update project settings for cloud mode (read-only slug, locked TTL, SMTP config)
-6. Hide "New Project" button (cloud: 1 project max)
-7. Show user email in sidebar footer (instead of "Admin")
-8. Add self-hosting CTA to limit exceeded modals
-9. **Verify:** Approach limit → warning banner → hit limit → error banner with CTA
+1. Create `/setup` page (first boot wizard)
+2. Create `/login` page (email/password + GitHub)
+3. Create `/register` page (when open registration)
+4. Create `/verify` page
+5. Create `/forgot-password` and `/reset-password` pages
+6. Create `/invitation` page (accept invite)
+7. Update `authStore` with new state shape
+8. Update API client for cookie auth
+9. Update root layout auth guard
+10. **Verify:** All auth flows work in browser
 
-### Step 11: Docker & Deploy
+### Step 10: Dashboard Management Pages
 
-1. Create `docker-compose.cloud.yml` overlay
-2. Create `.env.cloud.example` with all cloud env vars
-3. Disable MCP service in cloud compose (`replicas: 0`)
-4. Configure outbound SMTP for verification emails
-5. Document DNS setup for cloud (wildcard MX + A records)
-6. **Verify:** `docker compose -f ... up` starts cloud mode, MCP not running, registration works
+1. Create `/settings/members` page
+2. Create `/settings/invitations` page
+3. Create `/settings/organization` page
+4. Add trial banner component
+5. Update sidebar with org name, user email, trial status
+6. Add site admin pages (if site_admin): org list, user list, grant permanent
+7. **Verify:** Org admin can invite, manage members, see trial status
 
-### Step 12: Cleanup & Abuse Prevention
+### Step 11: Migration from Admin Token
 
-1. Create `CloudCleanupJob` (aggressive: expired data + unverified users + stale sessions)
-2. Add to `config/recurring.yml` (every 5 minutes)
-3. Add registration rate limiting (3 accounts/IP/hour)
-4. Add `fail2ban` configuration for SMTP port
-5. **Verify:** Unverified user deleted after 24h, expired data cleaned every 5min
+1. Create migration script: existing projects → create org → create admin user from env
+2. Document migration path in CHANGELOG
+3. Deprecation notice: `INBOXED_ADMIN_TOKEN` logs a warning suggesting migration
+4. **Verify:** Existing instance upgrades without data loss
 
-### Step 13: Testing
+### Step 12: Cleanup & Testing
 
-1. RSpec: registration, verification, login, logout, password reset
-2. RSpec: tenant isolation test suite (exhaustive, every resource)
-3. RSpec: free tier limit enforcement (every limit)
-4. RSpec: SMTP cloud routing (subdomain parsing, auto-create inbox, rate limits)
-5. RSpec: feature flags (cloud vs standalone behavior)
-6. RSpec: GitHub OAuth flow
-7. Vitest: auth pages, limit banners, cloud-specific UI
-8. Integration: register → verify → login → send email → hit limit → see CTA
-9. Verify standalone mode is completely unaffected (run full existing test suite)
-10. `bundle exec standardrb` — zero offenses
-11. `svelte-check` — zero errors
+1. Create `MaintenanceCleanupJob` (sessions, expired invitations, unverified users)
+2. Add to recurring schedule
+3. RSpec: setup wizard, registration, verification, login, password reset
+4. RSpec: tenant isolation (exhaustive)
+5. RSpec: authorization (every role × every action)
+6. RSpec: trial enforcement (active, expired, permanent)
+7. RSpec: invitation flow (invite, accept, expire, revoke)
+8. Vitest: auth pages, trial banner, members page
+9. Integration: setup → invite → register → verify → use → trial expires → read-only
+10. `bundle exec standardrb` + `svelte-check` + `eslint` — zero errors
 
 ---
 
-## 15. Exit Criteria
+## 13. Exit Criteria
+
+### Setup
+
+- [ ] **EC-001:** Fresh instance redirects to `/setup`
+- [ ] **EC-002:** Setup requires valid `INBOXED_SETUP_TOKEN`
+- [ ] **EC-003:** Setup creates site_admin user + organization + session
+- [ ] **EC-004:** Setup can only run once (subsequent visits redirect to `/login`)
+- [ ] **EC-005:** After setup, `INBOXED_ADMIN_TOKEN` is no longer used for auth
 
 ### Registration & Auth
 
-- [ ] **EC-001:** `POST /auth/register` creates user with hashed password and verification token
-- [ ] **EC-002:** Verification email sent with secure token link
-- [ ] **EC-003:** `GET /auth/verify?token=...` verifies user and creates session
-- [ ] **EC-004:** Unverified user cannot login (403 with "verify email" message)
-- [ ] **EC-005:** `POST /auth/sessions` creates session cookie for verified user
-- [ ] **EC-006:** `DELETE /auth/sessions` destroys session
-- [ ] **EC-007:** `GET /auth/me` returns current user data
-- [ ] **EC-008:** Password reset flow: request → email → reset → login works
-- [ ] **EC-009:** GitHub OAuth: login → user created (auto-verified) → session created
-- [ ] **EC-010:** Registration auto-creates project with UUID slug and API key
-- [ ] **EC-011:** Auth routes return 404 in standalone mode
+- [ ] **EC-006:** `REGISTRATION_MODE=open` allows public registration
+- [ ] **EC-007:** `REGISTRATION_MODE=invite_only` requires invitation token
+- [ ] **EC-008:** `REGISTRATION_MODE=closed` returns 403 on registration
+- [ ] **EC-009:** Registration with SMTP configured sends verification email
+- [ ] **EC-010:** Registration without SMTP auto-verifies user
+- [ ] **EC-011:** Unverified user cannot login when SMTP is configured (403)
+- [ ] **EC-012:** Login creates session cookie, subsequent requests authenticated
+- [ ] **EC-013:** Logout destroys session
+- [ ] **EC-014:** Password reset flow works end-to-end
+- [ ] **EC-015:** GitHub OAuth creates user + session
+
+### Organizations & Roles
+
+- [ ] **EC-016:** Open registration creates org with trial (`TRIAL_DURATION_DAYS`)
+- [ ] **EC-017:** `TRIAL_DURATION_DAYS=0` creates permanent org
+- [ ] **EC-018:** site_admin can view and manage all organizations
+- [ ] **EC-019:** org_admin can invite members and manage org settings
+- [ ] **EC-020:** member can view data but cannot invite or manage
+- [ ] **EC-021:** site_admin can grant permanent access (remove trial)
 
 ### Tenant Isolation
 
-- [ ] **EC-012:** User A cannot list User B's projects
-- [ ] **EC-013:** User A cannot view User B's project by ID
-- [ ] **EC-014:** User A cannot list User B's inboxes
-- [ ] **EC-015:** User A cannot view User B's emails
-- [ ] **EC-016:** User A cannot access User B's HTTP endpoints
-- [ ] **EC-017:** User A cannot access User B's API keys
-- [ ] **EC-018:** SMTP: email to User B's slug doesn't appear in User A's inbox
-- [ ] **EC-019:** `CurrentTenant` raises if not set in cloud mode (fail-open impossible)
-- [ ] **EC-020:** Tenant isolation test suite passes in CI
+- [ ] **EC-022:** User in Org A cannot list Org B's projects
+- [ ] **EC-023:** User in Org A cannot view Org B's emails
+- [ ] **EC-024:** User in Org A cannot access Org B's HTTP endpoints
+- [ ] **EC-025:** User in Org A cannot access Org B's API keys
+- [ ] **EC-026:** site_admin can access all organizations' data
+- [ ] **EC-027:** `CurrentTenant` raises if not set (fail-open impossible)
+- [ ] **EC-028:** Tenant isolation test suite passes in CI
 
-### Free Tier Limits
+### Trial
 
-- [ ] **EC-021:** Cannot create more than 1 project per user
-- [ ] **EC-022:** Cannot create more than 5 inboxes per project
-- [ ] **EC-023:** Cannot receive more than 50 emails per project
-- [ ] **EC-024:** Cannot create more than 6 HTTP endpoints per project
-- [ ] **EC-025:** Cannot capture more than 20 requests per endpoint
-- [ ] **EC-026:** Cannot create more than 2 API keys per project
-- [ ] **EC-027:** SMTP rate limit: 11th email in 1 hour rejected (450)
-- [ ] **EC-028:** API rate limit: 61st request in 1 minute → 429
-- [ ] **EC-029:** Email body > 100KB rejected by SMTP
-- [ ] **EC-030:** Limit exceeded response includes self-hosting CTA URL
-- [ ] **EC-031:** Limits do not apply in standalone mode
+- [ ] **EC-029:** Trial org has full access during trial period
+- [ ] **EC-030:** Expired trial: read-only (can view, cannot create/send)
+- [ ] **EC-031:** Expired trial: SMTP rejection (cannot send emails)
+- [ ] **EC-032:** Trial banner shows days remaining
+- [ ] **EC-033:** Expired banner shows "contact admin" message
+- [ ] **EC-034:** Permanent org has no trial banner or restrictions
 
-### Feature Gates
+### Invitations
 
-- [ ] **EC-032:** MCP service not running in cloud compose
-- [ ] **EC-033:** `features.mcp = false` in cloud status response
-- [ ] **EC-034:** HTML email preview disabled in cloud (text + headers only)
-- [ ] **EC-035:** TTL locked to 1 hour in cloud (not configurable)
-- [ ] **EC-036:** All features enabled in standalone mode
+- [ ] **EC-035:** org_admin can create invitation with role
+- [ ] **EC-036:** Invitation email sent when SMTP configured
+- [ ] **EC-037:** Invitation link shows registration form pre-filled with org
+- [ ] **EC-038:** Accepted invitation joins user to org with correct role
+- [ ] **EC-039:** Expired invitation cannot be accepted (403)
+- [ ] **EC-040:** org_admin can revoke pending invitation
+- [ ] **EC-041:** Without SMTP: invitation shows copyable link in dashboard
 
-### SMTP Multi-Tenant
+### Outbound Email
 
-- [ ] **EC-037:** Email to `test@{slug}.inboxed.dev` routes to correct project
-- [ ] **EC-038:** Email to unknown slug returns 550
-- [ ] **EC-039:** Inbox auto-created on first email to new address
-- [ ] **EC-040:** Inbox auto-creation respects limit (5 max)
-- [ ] **EC-041:** SMTP rate limit enforced per project (10/hour)
+- [ ] **EC-042:** Verification email sent via configured SMTP relay
+- [ ] **EC-043:** Password reset email sent via configured SMTP relay
+- [ ] **EC-044:** Invitation email sent via configured SMTP relay
+- [ ] **EC-045:** Without SMTP config: users auto-verified, password reset unavailable
+- [ ] **EC-046:** Dashboard shows notice when SMTP not configured
 
 ### Dashboard
 
-- [ ] **EC-042:** Cloud login page shows email/password + GitHub OAuth
-- [ ] **EC-043:** Standalone login page shows admin token field (unchanged)
-- [ ] **EC-044:** Registration form works with validation errors
-- [ ] **EC-045:** Limit warning banner appears at 80% usage
-- [ ] **EC-046:** Limit exceeded banner shows self-hosting CTA
-- [ ] **EC-047:** Sidebar shows usage counts (`12/50`) in cloud mode
-- [ ] **EC-048:** Sidebar shows user email and "Logout" in cloud mode
-- [ ] **EC-049:** Project settings shows SMTP config with cloud server details
-- [ ] **EC-050:** "New Project" button hidden in cloud mode
+- [ ] **EC-047:** Setup page renders on first boot
+- [ ] **EC-048:** Login page shows email/password + optional GitHub
+- [ ] **EC-049:** Register page shows when `REGISTRATION_MODE=open`
+- [ ] **EC-050:** Members page lists org members with roles
+- [ ] **EC-051:** Invite dialog sends invitation
+- [ ] **EC-052:** Sidebar shows org name, user email, trial status
+- [ ] **EC-053:** Trial banner visible when trial active
+- [ ] **EC-054:** Site admin panel visible only to site_admin
 
-### Cleanup & Security
+### Migration
 
-- [ ] **EC-051:** Unverified accounts deleted after 24 hours
-- [ ] **EC-052:** Expired data cleaned every 5 minutes
-- [ ] **EC-053:** Stale sessions cleaned after 7 days
-- [ ] **EC-054:** Registration rate limited (3 accounts/IP/hour)
-- [ ] **EC-055:** CSRF protection active for cloud session requests
+- [ ] **EC-055:** Existing instance can upgrade without data loss
+- [ ] **EC-056:** Migration creates org from existing projects
+- [ ] **EC-057:** `INBOXED_ADMIN_TOKEN` logs deprecation warning
 
 ### Integration
 
-- [ ] **EC-056:** Full flow: register → verify → login → configure SMTP → send email → see in dashboard → hit limit → see CTA → copy self-hosting command
-- [ ] **EC-057:** Standalone mode: entire existing test suite passes unchanged
-- [ ] **EC-058:** Cloud mode: `docker compose -f ... up` starts correctly, MCP disabled
+- [ ] **EC-058:** Full flow: setup → invite → register → verify → login → use → trial expires → read-only → admin grants permanent → full access
 - [ ] **EC-059:** `bundle exec standardrb` passes
 - [ ] **EC-060:** `svelte-check` passes
 - [ ] **EC-061:** All RSpec and Vitest tests pass
 
 ---
 
-## 16. Open Questions
+## 14. Open Questions
 
-1. **Email delivery provider for verification emails:** Should we use a dedicated transactional email service (Resend, Postmark) or an outbound SMTP relay? Recommendation: configurable via `OUTBOUND_SMTP_*` env vars — let the operator choose. Document Resend as the cheapest option (~$0 for the volume we'll have).
+1. **Multiple orgs per user?** Current design: one org per user. Should a user be able to join multiple orgs (e.g., a consultant working with multiple teams)? Recommendation: not in this spec — one org keeps it simple. Add multi-org later if requested.
 
-2. **Account deletion:** Should users be able to delete their account? Recommendation: yes, add a "Delete my account" button in settings. `CASCADE` deletes handle data cleanup. Required for GDPR compliance if EU users register.
+2. **Org transfer?** Can a site admin transfer a project between orgs? Recommendation: yes, add a site admin action for this. Low priority — implement when needed.
 
-3. **Magic link login (passwordless):** Should we offer magic link login as an alternative? Recommendation: not in this spec — email + password + GitHub OAuth covers the use cases. Revisit if users request it.
+3. **Billing integration (future)?** If an operator wants to charge for access, should the trial system support Stripe integration? Recommendation: out of scope. The trial is a manual approval system. If billing demand appears, it's a separate spec.
 
-4. **Rate limit for failed logins:** How many failed login attempts before lockout? Recommendation: existing Rack::Attack rule (5 failures per 5 minutes per IP) is sufficient. No per-account lockout — that enables denial of service against specific emails.
+4. **LDAP/SAML?** Enterprise auth protocols. Recommendation: not in this spec. If enterprise users need it, add an auth adapter layer later. The session mechanism supports swapping the auth backend.
 
-5. **Monitoring dashboard:** Should we build an internal admin dashboard for monitoring cloud health (registrations, active users, storage usage)? Recommendation: not in this spec. Use `rails console` and SQL queries initially. Build a dashboard when there's enough usage to warrant it.
-
-6. **Custom domains:** Should cloud users be able to bring their own domain? Recommendation: not in this spec. Wildcard subdomain is sufficient for the free tier. Custom domains would require per-user DNS verification and certificate management — out of scope for a marketing funnel.
+5. **Audit log?** Should the system log who did what (created project, invited user, etc.)? Recommendation: the event store already captures domain events. Add a UI for viewing them in a future spec. The data is there.
