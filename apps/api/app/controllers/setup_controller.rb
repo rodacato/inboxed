@@ -8,7 +8,14 @@ class SetupController < ApplicationController
   end
 
   def create
-    return head :forbidden unless valid_setup_token?
+    unless valid_setup_token?
+      error_message = if ENV["INBOXED_SETUP_TOKEN"].blank?
+        "INBOXED_SETUP_TOKEN environment variable is not set"
+      else
+        "Invalid setup token"
+      end
+      return render json: {error: error_message}, status: :forbidden
+    end
 
     result = Inboxed::Services::SetupInstance.new.call(
       email: params[:email],
