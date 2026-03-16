@@ -271,16 +271,31 @@
 						</div>
 					{/if}
 
+					<!-- Query Params -->
+					{#if selectedRequest.query_string}
+						{@const params = new URLSearchParams(selectedRequest.query_string)}
+						<div class="mb-4">
+							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Query params</h4>
+							<div class="bg-surface-2 border border-border rounded overflow-hidden">
+								<table class="w-full text-xs font-mono">
+									<tbody>
+										{#each [...params.entries()] as [key, val]}
+											<tr class="border-b border-border last:border-0">
+												<td class="px-3 py-1.5 text-text-secondary whitespace-nowrap align-top font-medium">{key}</td>
+												<td class="px-3 py-1.5 text-text-primary break-all">{val}</td>
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					{/if}
+
 					<!-- Body -->
 					{#if selectedRequest.body}
 						<div>
 							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Body</h4>
 							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto whitespace-pre-wrap break-all max-h-96">{selectedRequest.body}</pre>
-						</div>
-					{:else}
-						<div>
-							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Body</h4>
-							<p class="text-xs font-mono text-text-dim">No body</p>
 						</div>
 					{/if}
 				{/if}
