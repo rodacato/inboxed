@@ -11,7 +11,17 @@ export default defineConfig({
 			'/api': 'http://localhost:3100',
 			'/admin': 'http://localhost:3100',
 			'/auth': 'http://localhost:3100',
-			'/setup': 'http://localhost:3100',
+			'/setup': {
+				target: 'http://localhost:3100',
+				bypass(req) {
+					// Let SvelteKit handle browser navigation (HTML requests)
+					// Only proxy API calls (JSON requests)
+					const accept = req.headers['accept'] || '';
+					if (accept.includes('text/html')) {
+						return req.url;
+					}
+				}
+			},
 			'/up': 'http://localhost:3100',
 			'/hook': 'http://localhost:3100',
 			'/cable': {

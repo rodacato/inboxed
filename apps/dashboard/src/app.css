@@ -72,3 +72,32 @@ body {
 .terminal-glow {
   text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
 }
+
+/* Landing page utilities */
+.gradient-text-green {
+  background: linear-gradient(135deg, var(--color-phosphor) 0%, var(--color-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-green {
+  box-shadow: 0 0 20px var(--color-phosphor-glow), 0 0 60px var(--color-phosphor-glow);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 153, 170, 0.15), 0 0 60px rgba(0, 153, 170, 0.08);
+}
+
+.dark .glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.08);
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
