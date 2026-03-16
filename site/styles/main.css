@@ -43,11 +43,39 @@
   text-shadow: 0 0 20px var(--color-phosphor-glow), 0 0 40px var(--color-phosphor-glow);
 }
 
+/* Green box shadow glow */
+.glow-green {
+  box-shadow: 0 0 20px var(--color-phosphor-glow), 0 0 60px var(--color-phosphor-glow);
+}
+
+/* Cyan glow */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.08);
+}
+
+/* Gradient text */
+.gradient-text-green {
+  background: linear-gradient(135deg, #39FF14 0%, #00E5FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button text on green background — avoids conflict with Tailwind text-base size utility */
+.text-on-phosphor {
+  color: var(--color-base);
+}
+
+.hover\:text-on-phosphor:hover {
+  color: var(--color-base);
+}
+
 /* Blinking cursor */
-.cursor {
+.cursor-blink {
   animation: blink 1s step-end infinite;
 }
 
 @keyframes blink {
+  from, to { opacity: 1; }
   50% { opacity: 0; }
 }
