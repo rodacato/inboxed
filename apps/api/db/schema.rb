@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_16_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_200006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -129,14 +129,69 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_100001) do
     t.index ["project_id"], name: "index_inboxes_on_project_id"
   end
 
+  create_table "invitations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.timestamptz "accepted_at"
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.string "email", null: false
+    t.timestamptz "expires_at", null: false
+    t.uuid "invited_by_id", null: false
+    t.uuid "organization_id", null: false
+    t.string "role", default: "member", null: false
+    t.string "token", null: false
+    t.index ["invited_by_id"], name: "index_invitations_on_invited_by_id"
+    t.index ["organization_id", "email"], name: "index_invitations_on_organization_id_and_email"
+    t.index ["organization_id"], name: "index_invitations_on_organization_id"
+    t.index ["token"], name: "index_invitations_on_token", unique: true
+    t.check_constraint "role::text = ANY (ARRAY['org_admin'::character varying, 'member'::character varying]::text[])", name: "invitations_role_check"
+  end
+
+  create_table "memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.uuid "organization_id", null: false
+    t.string "role", default: "member", null: false
+    t.uuid "user_id", null: false
+    t.index ["organization_id"], name: "index_memberships_on_organization_id"
+    t.index ["user_id", "organization_id"], name: "index_memberships_on_user_id_and_organization_id", unique: true
+    t.index ["user_id"], name: "index_memberships_on_user_id"
+    t.check_constraint "role::text = ANY (ARRAY['org_admin'::character varying, 'member'::character varying]::text[])", name: "memberships_role_check"
+  end
+
+  create_table "organizations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.jsonb "settings", default: {}, null: false
+    t.string "slug", null: false
+    t.timestamptz "trial_ends_at"
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_organizations_on_slug", unique: true
+  end
+
   create_table "projects", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "default_ttl_hours"
     t.integer "max_inbox_count", default: 100, null: false
     t.string "name", null: false
+    t.uuid "organization_id"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "idx_projects_organization"
+    t.index ["organization_id"], name: "index_projects_on_organization_id"
     t.index ["slug"], name: "index_projects_on_slug", unique: true
+  end
+
+  create_table "sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "data"
+    t.string "session_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["session_id"], name: "index_sessions_on_session_id", unique: true
+    t.index ["updated_at"], name: "index_sessions_on_updated_at"
+  end
+
+  create_table "settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "key", null: false
+    t.text "value"
+    t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
   create_table "snapshots", force: :cascade do |t|
@@ -147,6 +202,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_100001) do
     t.string "stream_name", null: false
     t.integer "stream_position", null: false
     t.index ["stream_name"], name: "index_snapshots_on_stream_name", unique: true
+  end
+
+  create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "github_uid"
+    t.string "github_username"
+    t.timestamptz "last_sign_in_at"
+    t.string "password_digest", null: false
+    t.timestamptz "password_reset_sent_at"
+    t.string "password_reset_token"
+    t.integer "sign_in_count", default: 0, null: false
+    t.boolean "site_admin", default: false
+    t.datetime "updated_at", null: false
+    t.timestamptz "verification_sent_at"
+    t.string "verification_token"
+    t.timestamptz "verified_at"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["github_uid"], name: "index_users_on_github_uid", unique: true, where: "(github_uid IS NOT NULL)"
+    t.index ["password_reset_token"], name: "index_users_on_password_reset_token", unique: true, where: "(password_reset_token IS NOT NULL)"
+    t.index ["verification_token"], name: "index_users_on_verification_token", unique: true, where: "(verification_token IS NOT NULL)"
   end
 
   create_table "webhook_deliveries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -187,6 +263,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_100001) do
   add_foreign_key "http_endpoints", "projects"
   add_foreign_key "http_requests", "http_endpoints"
   add_foreign_key "inboxes", "projects"
+  add_foreign_key "invitations", "organizations", on_delete: :cascade
+  add_foreign_key "invitations", "users", column: "invited_by_id"
+  add_foreign_key "memberships", "organizations", on_delete: :cascade
+  add_foreign_key "memberships", "users", on_delete: :cascade
+  add_foreign_key "projects", "organizations", on_delete: :cascade
   add_foreign_key "webhook_deliveries", "webhook_endpoints"
   add_foreign_key "webhook_endpoints", "projects"
 end
