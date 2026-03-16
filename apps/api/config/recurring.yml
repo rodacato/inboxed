@@ -29,3 +29,7 @@ production:
     class: HttpRequestCleanupJob
     queue: default
     schedule: every 5 minutes
+  maintenance_cleanup:
+    class: MaintenanceCleanupJob
+    queue: default
+    schedule: every 1 hour

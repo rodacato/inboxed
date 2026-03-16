@@ -7,6 +7,7 @@ module ErrorRenderable
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
     rescue_from ActiveRecord::RecordInvalid, with: :render_validation_error
     rescue_from ActionController::ParameterMissing, with: :render_bad_request
+    rescue_from Inboxed::CurrentTenant::TenantNotSet, with: :render_unauthorized
   end
 
   private
@@ -33,6 +34,6 @@ module ErrorRenderable
   end
 
   def render_unauthorized(message = "Unauthorized")
-    render json: {error: message}, status: :unauthorized
+    render json: {error: message.to_s}, status: :unauthorized
   end
 end

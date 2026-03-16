@@ -2,8 +2,11 @@
 
 module Admin
   class ProjectsController < BaseController
+    include TrialEnforced
+
     def index
-      projects = ProjectRecord.order(created_at: :desc)
+      projects = Inboxed::CurrentTenant.scope_projects(ProjectRecord)
+        .order(created_at: :desc)
         .limit(pagination_limit)
 
       render json: {
@@ -12,7 +15,7 @@ module Admin
     end
 
     def show
-      project = ProjectRecord.find(params[:id])
+      project = Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:id])
       render json: {project: serialize_project(project)}
     end
 
@@ -23,7 +26,8 @@ module Admin
         name: project_params[:name],
         slug: project_params[:slug],
         default_ttl_hours: project_params[:default_ttl_hours]&.to_i,
-        max_inbox_count: project_params.fetch(:max_inbox_count, 100).to_i
+        max_inbox_count: project_params.fetch(:max_inbox_count, 100).to_i,
+        organization_id: current_user.organization&.id
       )
 
       project = ProjectRecord.find(id)
@@ -31,14 +35,14 @@ module Admin
     end
 
     def update
-      project = ProjectRecord.find(params[:id])
+      project = Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:id])
       project_params = params.require(:project).permit(:name, :default_ttl_hours, :max_inbox_count)
       project.update!(project_params)
       render json: {project: serialize_project(project)}
     end
 
     def destroy
-      project = ProjectRecord.find(params[:id])
+      project = Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:id])
       InboxRecord.where(project_id: project.id).find_each do |inbox|
         Inboxed::Services::DeleteInbox.new.call(inbox_id: inbox.id)
       end

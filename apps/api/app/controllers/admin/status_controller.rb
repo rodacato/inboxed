@@ -1,17 +1,43 @@
+# frozen_string_literal: true
+
 module Admin
   class StatusController < BaseController
     def show
-      render json: {
+      response = {
         service: "inboxed-api",
-        version: "0.1.0",
+        version: "0.2.0",
         status: "ok",
-        mode: "standalone",
+        setup_completed: Inboxed::Settings.setup_completed?,
+        registration_mode: ENV.fetch("REGISTRATION_MODE", "closed"),
+        outbound_smtp_configured: outbound_smtp_configured?,
         timestamp: Time.current.iso8601,
         environment: Rails.env,
-        features: feature_flags,
+        features: Inboxed::Features.all,
         database: database_status,
         redis: redis_status
       }
+
+      if current_user
+        response[:user] = {
+          id: current_user.id,
+          email: current_user.email,
+          role: current_user.role_in(current_user.organization),
+          site_admin: current_user.site_admin?
+        }
+
+        org = current_user.organization
+        if org
+          response[:organization] = {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            trial: org.trial?,
+            trial_ends_at: org.trial_ends_at&.iso8601
+          }
+        end
+      end
+
+      render json: response
     end
 
     private
@@ -23,19 +49,8 @@ module Admin
       "error: #{e.message}"
     end
 
-    def feature_flags
-      {
-        mail: true,
-        hooks: ENV.fetch("INBOXED_FEATURE_HOOKS", "true") == "true",
-        forms: ENV.fetch("INBOXED_FEATURE_FORMS", "true") == "true",
-        heartbeats: ENV.fetch("INBOXED_FEATURE_HEARTBEATS", "true") == "true",
-        mcp: true
-      }
-    end
-
     def redis_status
       ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
-      require "net/http"
       "configured"
     rescue => e
       "error: #{e.message}"

@@ -34,6 +34,16 @@ class Rack::Attack
     end
   end
 
+  # Registration rate limit: 5 accounts per IP per hour
+  throttle("auth/register", limit: 5, period: 1.hour) do |req|
+    req.ip if req.path == "/auth/register" && req.post?
+  end
+
+  # Auth endpoint rate limit: 10 attempts per 5 min per IP
+  throttle("auth/login", limit: 10, period: 5.minutes) do |req|
+    req.ip if req.path.start_with?("/auth/") && req.post?
+  end
+
   self.throttled_responder = lambda do |env|
     match_data = env["rack.attack.match_data"] || {}
     limit = match_data[:limit] || 0

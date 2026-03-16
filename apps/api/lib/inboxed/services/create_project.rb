@@ -7,7 +7,7 @@ module Inboxed
         @event_store = event_store
       end
 
-      def call(name:, slug:, default_ttl_hours: nil, max_inbox_count: 100)
+      def call(name:, slug:, default_ttl_hours: nil, max_inbox_count: 100, organization_id: nil)
         id = SecureRandom.uuid
 
         aggregate = Aggregates::ProjectAggregate.new(id)
@@ -23,7 +23,8 @@ module Inboxed
           name: name,
           slug: slug,
           default_ttl_hours: default_ttl_hours,
-          max_inbox_count: max_inbox_count
+          max_inbox_count: max_inbox_count,
+          organization_id: organization_id
         )
 
         aggregate.clear_pending_events

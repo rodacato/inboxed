@@ -1,0 +1,13 @@
+Hey,
+
+You've been invited to join <%= @org.name %> on Inboxed.
+
+Click here to accept the invitation:
+
+<%= @url %>
+
+This invitation expires on <%= @invitation.expires_at.strftime("%B %d, %Y") %>.
+
+--
+Inboxed — The dev inbox
+https://inboxed.dev

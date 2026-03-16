@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
-module Admin
+module SiteAdmin
   class BaseController < ApplicationController
     include Paginatable
     include ErrorRenderable
 
-    around_action :with_tenant
     before_action :require_auth!
+    before_action :require_site_admin!
 
     private
 
-    def current_project
-      Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:project_id])
+    def require_site_admin!
+      unless current_user&.site_admin?
+        render json: {error: "Forbidden"}, status: :forbidden
+      end
     end
   end
 end
