@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEndpoint } from '../hooks.service';
+	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import type { HttpEndpoint, CreateEndpointParams } from '../hooks.types';
 
 	let {
@@ -18,6 +19,13 @@
 	let responseMode = $state('json');
 	let redirectUrl = $state('');
 	let creating = $state(false);
+	let error = $state('');
+
+	const typeOptions = [
+		{ value: 'webhook' as const, label: 'Webhook', icon: 'webhook', desc: 'Catch HTTP requests' },
+		{ value: 'form' as const, label: 'Form', icon: 'description', desc: 'Capture form submissions' },
+		{ value: 'heartbeat' as const, label: 'Heartbeat', icon: 'favorite', desc: 'Monitor cron jobs' }
+	];
 
 	function reset() {
 		endpointType = 'webhook';
@@ -26,10 +34,12 @@
 		responseMode = 'json';
 		redirectUrl = '';
 		creating = false;
+		error = '';
 	}
 
 	async function handleSubmit() {
 		creating = true;
+		error = '';
 		try {
 			const params: CreateEndpointParams = {
 				endpoint_type: endpointType,
@@ -48,37 +58,25 @@
 			onCreate?.(res.endpoint);
 			open = false;
 			reset();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to create endpoint';
+			toastStore.add({ type: 'error', title: 'Creation failed', description: error });
 		} finally {
 			creating = false;
 		}
 	}
 
 	function close() {
+		if (creating) return;
 		open = false;
 		reset();
 	}
-
-	const typeOptions = [
-		{ value: 'webhook', label: 'Webhook', icon: 'webhook', desc: 'Catch HTTP webhook requests' },
-		{
-			value: 'form',
-			label: 'Form',
-			icon: 'description',
-			desc: 'Capture HTML form submissions'
-		},
-		{
-			value: 'heartbeat',
-			label: 'Heartbeat',
-			icon: 'favorite',
-			desc: 'Monitor cron job health'
-		}
-	] as const;
 </script>
 
 {#if open}
 	<div class="fixed inset-0 z-50 bg-black/50" role="presentation" onclick={close}></div>
 	<div
-		class="fixed inset-x-0 top-[15%] z-[51] mx-auto w-full max-w-md"
+		class="fixed inset-x-0 top-[15%] z-51 mx-auto w-full max-w-md"
 		role="dialog"
 		aria-label="Create endpoint"
 	>
@@ -94,6 +92,11 @@
 			</div>
 
 			<div class="px-6 py-4 space-y-4">
+				{#if error}
+					<div class="text-xs font-mono text-error bg-error/10 border border-error/20 rounded px-3 py-2">{error}</div>
+				{/if}
+
+				<!-- Type selector -->
 				<div>
 					<!-- svelte-ignore a11y_label_has_associated_control -->
 					<label class="block text-xs font-mono text-text-dim uppercase mb-2">Type</label>
@@ -108,9 +111,7 @@
 									: 'border-border hover:bg-surface-2'}"
 							>
 								<span class="material-symbols-outlined text-lg block mb-1">{opt.icon}</span>
-								<span class="text-sm font-mono font-medium text-text-primary block"
-									>{opt.label}</span
-								>
+								<span class="text-sm font-mono font-medium text-text-primary block">{opt.label}</span>
 								<span class="text-[10px] font-mono text-text-dim">{opt.desc}</span>
 							</button>
 						{/each}
@@ -118,9 +119,7 @@
 				</div>
 
 				<div>
-					<label for="ep-label" class="block text-xs font-mono text-text-dim uppercase mb-1"
-						>Label</label
-					>
+					<label for="ep-label" class="block text-xs font-mono text-text-dim uppercase mb-1">Label</label>
 					<input
 						id="ep-label"
 						type="text"
@@ -132,11 +131,7 @@
 
 				{#if endpointType === 'heartbeat'}
 					<div>
-						<label
-							for="ep-interval"
-							class="block text-xs font-mono text-text-dim uppercase mb-1"
-							>Expected interval (seconds)</label
-						>
+						<label for="ep-interval" class="block text-xs font-mono text-text-dim uppercase mb-1">Expected interval (seconds)</label>
 						<input
 							id="ep-interval"
 							type="number"
@@ -149,9 +144,7 @@
 
 				{#if endpointType === 'form'}
 					<div>
-						<label for="ep-response-mode" class="block text-xs font-mono text-text-dim uppercase mb-1"
-							>Response mode</label
-						>
+						<label for="ep-response-mode" class="block text-xs font-mono text-text-dim uppercase mb-1">Response mode</label>
 						<select
 							id="ep-response-mode"
 							bind:value={responseMode}
@@ -164,11 +157,7 @@
 					</div>
 					{#if responseMode === 'redirect'}
 						<div>
-							<label
-								for="ep-redirect"
-								class="block text-xs font-mono text-text-dim uppercase mb-1"
-								>Redirect URL</label
-							>
+							<label for="ep-redirect" class="block text-xs font-mono text-text-dim uppercase mb-1">Redirect URL</label>
 							<input
 								id="ep-redirect"
 								type="url"

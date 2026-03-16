@@ -2,10 +2,12 @@
 	import { page } from '$app/stores';
 	import { getEnabledModules } from '$lib/config/modules';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import CreateEndpointDialog from '../../../features/hooks/components/CreateEndpointDialog.svelte';
 
 	let { children } = $props();
 	const projectId = $derived($page.params.projectId ?? '');
 	const modules = $derived(getEnabledModules(authStore.features));
+	let showCreate = $state(false);
 
 	const tabs = $derived([
 		...modules.map((m) => ({
@@ -25,14 +27,13 @@
 	function isActive(href: string): boolean {
 		const path = $page.url.pathname;
 		if (href.endsWith('/settings')) return path.startsWith(href);
-		// For modules, match the module prefix
 		return path.startsWith(href);
 	}
 </script>
 
 <div class="flex flex-col h-full overflow-hidden">
 	<!-- Module tab bar -->
-	<nav class="flex border-b border-border bg-surface px-4 shrink-0 overflow-x-auto">
+	<nav class="flex items-center border-b border-border bg-surface px-4 shrink-0 overflow-x-auto">
 		{#each tabs as tab (tab.id)}
 			<a
 				href={tab.href}
@@ -45,6 +46,13 @@
 				{tab.label}
 			</a>
 		{/each}
+		<div class="flex-1"></div>
+		<button
+			onclick={() => (showCreate = true)}
+			class="px-3 py-1.5 bg-phosphor text-base rounded text-xs font-mono font-medium hover:brightness-110"
+		>
+			+ Create
+		</button>
 	</nav>
 
 	<!-- Module content -->
@@ -52,3 +60,5 @@
 		{@render children()}
 	</div>
 </div>
+
+<CreateEndpointDialog {projectId} bind:open={showCreate} />

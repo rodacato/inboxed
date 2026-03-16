@@ -6,9 +6,7 @@ export interface Project {
 	max_inbox_count: number;
 	inbox_count: number;
 	email_count: number;
-	webhook_count: number;
-	form_count: number;
-	heartbeat_count: number;
+	hook_request_count: number;
 	created_at: string;
 }
 

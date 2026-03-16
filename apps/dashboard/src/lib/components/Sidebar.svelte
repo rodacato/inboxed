@@ -26,12 +26,6 @@
 	const realtime = getRealtimeStore();
 	let unsubscribers: (() => void)[] = [];
 
-	const ENDPOINT_TYPE_COUNT_KEY: Record<string, string> = {
-		webhook: 'webhook_count',
-		form: 'form_count',
-		heartbeat: 'heartbeat_count'
-	};
-
 	function subscribeToProjects(projs: Project[]) {
 		// Clean up previous subscriptions
 		unsubscribers.forEach((u) => u());
@@ -43,10 +37,7 @@
 					const delta = (msg.email_count_delta as number) ?? 1;
 					projectsStore.incrementCount(project.id, 'email_count', delta);
 				} else if (msg.type === 'request_captured') {
-					const countKey = ENDPOINT_TYPE_COUNT_KEY[msg.endpoint_type as string];
-					if (countKey) {
-						projectsStore.incrementCount(project.id, countKey, 1);
-					}
+					projectsStore.incrementCount(project.id, 'hook_request_count', 1);
 				} else if (msg.type === 'inbox_created') {
 					projectsStore.incrementCount(project.id, 'inbox_count', 1);
 				}

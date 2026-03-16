@@ -15,6 +15,9 @@
 	import { projectsStore } from '$lib/stores/projects.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import CreateEndpointDialog from '../../../../features/hooks/components/CreateEndpointDialog.svelte';
+	import EditEndpointDialog from '../../../../features/hooks/components/EditEndpointDialog.svelte';
+	import TryEndpointDialog from '../../../../features/hooks/components/TryEndpointDialog.svelte';
 	import type { Project, ApiKey } from '../../../../features/projects/projects.types';
 	import type { Inbox } from '../../../../features/inboxes/inboxes.types';
 	import type { HttpEndpoint } from '../../../../features/hooks/hooks.types';
@@ -32,6 +35,9 @@
 	let newToken = $state<string | null>(null);
 	let copied = $state(false);
 	let copiedSnippet = $state<string | null>(null);
+	let showCreateEndpoint = $state(false);
+	let editingEndpoint = $state<HttpEndpoint | null>(null);
+	let tryingEndpoint = $state<HttpEndpoint | null>(null);
 	let unsubscribe: (() => void) | undefined;
 
 	const smtp = $derived(authStore.smtp);
@@ -41,22 +47,12 @@
 		apiKeys.length > 0 ? `${apiKeys[0].token_prefix}...` : '<your-api-key>'
 	);
 
-	const webhookEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'webhook'));
-	const formEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'form'));
-	const heartbeatEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'heartbeat'));
-	const webhookToken = $derived(webhookEndpoint?.token ?? '<endpoint-token>');
-	const formToken = $derived(formEndpoint?.token ?? '<endpoint-token>');
-	const heartbeatToken = $derived(heartbeatEndpoint?.token ?? '<endpoint-token>');
-
-	type QuickStartTab = 'smtp' | 'curl' | 'webhook' | 'form' | 'heartbeat';
+	type QuickStartTab = 'smtp' | 'curl';
 	let activeTab = $state<QuickStartTab>('smtp');
 
 	const quickStartTabs: { id: QuickStartTab; label: string; icon: string; iconColor: string }[] = [
 		{ id: 'smtp', label: 'SMTP', icon: 'mail', iconColor: 'text-phosphor' },
-		{ id: 'curl', label: 'Test Email', icon: 'terminal', iconColor: 'text-cyan' },
-		{ id: 'webhook', label: 'Webhook', icon: 'webhook', iconColor: 'text-phosphor' },
-		{ id: 'form', label: 'Form', icon: 'description', iconColor: 'text-phosphor' },
-		{ id: 'heartbeat', label: 'Heartbeat', icon: 'favorite', iconColor: 'text-error' }
+		{ id: 'curl', label: 'Test Email', icon: 'terminal', iconColor: 'text-cyan' }
 	];
 
 	const snippets = $derived(project ? {
@@ -69,31 +65,17 @@
 			code: `curl --url "smtp://${smtpHost}:${smtpPort}" \\\n  --user "${project.slug}:${apiKeyHint}" \\\n  --mail-from "test@example.com" \\\n  --mail-rcpt "hello@${project.slug}.test" \\\n  --upload-file - <<EOF\nFrom: test@example.com\nTo: hello@${project.slug}.test\nSubject: Hello from Inboxed\n\nYour first test email!\nEOF`,
 			description: 'Send your first email via curl.',
 			hint: apiKeys.length === 0 ? 'You\'ll need an API key first — create one below.' : null
-		},
-		webhook: {
-			code: `curl -X POST https://${smtpHost}/hook/${webhookToken} \\\n  -H "Content-Type: application/json" \\\n  -d '{"event": "test"}'`,
-			description: 'Catch HTTP requests from your app.',
-			hint: webhookEndpoint
-				? `Using endpoint${webhookEndpoint.label ? ` "${webhookEndpoint.label}"` : ''} — <a href="/projects/${projectId}/hooks" class="text-phosphor hover:underline">manage endpoints</a>`
-				: `Create an endpoint in <a href="/projects/${projectId}/hooks" class="text-phosphor hover:underline">Hooks In</a> to get your token.`
-		},
-		form: {
-			code: `<form action="https://${smtpHost}/hook/${formToken}" method="POST">\n  <input name="email" />\n  <button type="submit">Send</button>\n</form>`,
-			description: 'Catch HTML form submissions.',
-			hint: formEndpoint
-				? `Using endpoint${formEndpoint.label ? ` "${formEndpoint.label}"` : ''} — <a href="/projects/${projectId}/forms" class="text-phosphor hover:underline">manage endpoints</a>`
-				: `Create an endpoint in <a href="/projects/${projectId}/forms" class="text-phosphor hover:underline">Forms</a> to get your token.`
-		},
-		heartbeat: {
-			code: `# In your crontab:\n*/5 * * * * curl -s https://${smtpHost}/hook/${heartbeatToken}`,
-			description: 'Monitor cron jobs and background tasks.',
-			hint: heartbeatEndpoint
-				? `Using monitor${heartbeatEndpoint.label ? ` "${heartbeatEndpoint.label}"` : ''} — <a href="/projects/${projectId}/heartbeats" class="text-phosphor hover:underline">manage monitors</a>`
-				: `Create a monitor in <a href="/projects/${projectId}/heartbeats" class="text-phosphor hover:underline">Heartbeats</a> to get your token.`
 		}
 	} : null);
 
 	const activeSnippet = $derived(snippets ? snippets[activeTab] : null);
+
+	const endpointTypeIcons: Record<string, string> = {
+		webhook: 'webhook',
+		form: 'description',
+		heartbeat: 'favorite'
+	};
+
 
 	async function copySnippet(text: string, key: string) {
 		await navigator.clipboard.writeText(text);
@@ -251,11 +233,7 @@
 							</button>
 						</div>
 						{#if activeSnippet.hint}
-							<p class="text-[10px] font-mono mt-2 {activeTab === 'smtp' || activeTab === 'curl'
-								? 'text-amber'
-								: (activeTab === 'webhook' && webhookEndpoint) || (activeTab === 'form' && formEndpoint) || (activeTab === 'heartbeat' && heartbeatEndpoint)
-									? 'text-text-secondary'
-									: 'text-amber'}">
+							<p class="text-[10px] font-mono mt-2 text-amber">
 								{@html activeSnippet.hint}
 							</p>
 						{/if}
@@ -361,6 +339,74 @@
 			{/if}
 		</section>
 
+		<!-- Endpoints -->
+		<section class="mb-8">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-lg font-display font-bold text-text-primary">Endpoints</h3>
+				<button
+					onclick={() => (showCreateEndpoint = true)}
+					class="px-3 py-1.5 bg-phosphor text-base rounded text-xs font-mono font-medium hover:brightness-110"
+				>
+					+ Create
+				</button>
+			</div>
+
+			{#if endpoints.length === 0}
+				<EmptyState
+					icon="webhook"
+					title="No endpoints yet"
+					description="Create an endpoint to start catching webhooks, form submissions, or heartbeats."
+				/>
+			{:else}
+				<div class="rounded-lg border border-border overflow-hidden">
+					<table class="w-full text-sm">
+						<thead class="bg-surface-2">
+							<tr class="text-left text-xs font-mono text-text-dim uppercase">
+								<th class="px-4 py-3">Label</th>
+								<th class="px-4 py-3">Type</th>
+								<th class="px-4 py-3">Token</th>
+								<th class="px-4 py-3">Requests</th>
+								<th class="px-4 py-3 w-12"></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each endpoints as ep (ep.id)}
+								<tr class="border-t border-border hover:bg-surface-2/50">
+									<td class="px-4 py-3 font-mono text-text-primary">{ep.label || '—'}</td>
+									<td class="px-4 py-3">
+										<span class="inline-flex items-center gap-1.5 text-text-secondary">
+											<span class="material-symbols-outlined text-sm">{endpointTypeIcons[ep.endpoint_type] ?? 'link'}</span>
+											<span class="text-xs font-mono">{ep.endpoint_type}</span>
+										</span>
+									</td>
+									<td class="px-4 py-3 font-mono text-text-secondary text-xs">{ep.token}</td>
+									<td class="px-4 py-3 font-mono text-text-secondary">{ep.request_count}</td>
+									<td class="px-4 py-3">
+										<div class="flex items-center gap-1">
+											<button
+												onclick={() => (tryingEndpoint = ep)}
+												class="text-text-dim hover:text-phosphor transition-colors"
+												title="Try it"
+											>
+												<span class="material-symbols-outlined text-lg">terminal</span>
+											</button>
+											<button
+												onclick={() => (editingEndpoint = ep)}
+												class="text-text-dim hover:text-text-primary transition-colors"
+												title="Edit endpoint"
+											>
+												<span class="material-symbols-outlined text-lg">settings</span>
+											</button>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		</section>
+
 		<!-- Inboxes -->
 		<section>
 			<h3 class="text-lg font-display font-bold text-text-primary mb-4">Inboxes</h3>
@@ -403,4 +449,17 @@
 			{/if}
 		</section>
 	</div>
+
+	<CreateEndpointDialog
+		{projectId}
+		bind:open={showCreateEndpoint}
+		onCreate={(ep) => { endpoints = [ep, ...endpoints]; }}
+	/>
+	<EditEndpointDialog
+		{projectId}
+		bind:endpoint={editingEndpoint}
+		onUpdate={(ep) => { endpoints = endpoints.map((e) => e.id === ep.id ? ep : e); }}
+		onDelete={(ep) => { endpoints = endpoints.filter((e) => e.id !== ep.id); }}
+	/>
+	<TryEndpointDialog bind:endpoint={tryingEndpoint} />
 {/if}

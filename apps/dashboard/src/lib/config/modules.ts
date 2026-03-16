@@ -18,26 +18,10 @@ export const MODULES: SidebarModule[] = [
 	},
 	{
 		id: 'hooks',
-		label: 'Hooks In',
+		label: 'Hooks',
 		icon: 'webhook',
 		route: (pid) => `/projects/${pid}/hooks`,
-		countKey: 'webhook_count',
-		enabled: true
-	},
-	{
-		id: 'forms',
-		label: 'Forms',
-		icon: 'description',
-		route: (pid) => `/projects/${pid}/forms`,
-		countKey: 'form_count',
-		enabled: true
-	},
-	{
-		id: 'heartbeats',
-		label: 'Heartbeats',
-		icon: 'favorite',
-		route: (pid) => `/projects/${pid}/heartbeats`,
-		countKey: 'heartbeat_count',
+		countKey: 'hook_request_count',
 		enabled: true
 	}
 ];

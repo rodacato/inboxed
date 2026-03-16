@@ -69,6 +69,31 @@ export async function purgeEndpointRequests(
 	return result.deleted_count;
 }
 
+export async function fetchProjectRequests(
+	projectId: string,
+	params?: { endpoint_token?: string; method?: string; limit?: number; after?: string }
+): Promise<{ requests: HttpRequestSummary[]; pagination: Pagination }> {
+	const qs = new URLSearchParams();
+	if (params?.endpoint_token) qs.set('endpoint_token', params.endpoint_token);
+	if (params?.method) qs.set('method', params.method);
+	if (params?.limit) qs.set('limit', String(params.limit));
+	if (params?.after) qs.set('after', params.after);
+	const query = qs.toString() ? `?${qs}` : '';
+
+	return (await apiClient(
+		`/admin/projects/${projectId}/requests${query}`
+	)) as { requests: HttpRequestSummary[]; pagination: Pagination };
+}
+
+export async function fetchProjectRequest(
+	projectId: string,
+	requestId: string
+): Promise<{ request: HttpRequestDetail }> {
+	return (await apiClient(
+		`/admin/projects/${projectId}/requests/${requestId}`
+	)) as { request: HttpRequestDetail };
+}
+
 export async function fetchRequests(
 	projectId: string,
 	token: string,

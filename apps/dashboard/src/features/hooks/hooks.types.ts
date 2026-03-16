@@ -19,6 +19,13 @@ export interface HttpEndpoint {
 	updated_at: string;
 }
 
+export interface EndpointInfo {
+	token: string;
+	label: string | null;
+	endpoint_type: 'webhook' | 'form' | 'heartbeat';
+	url?: string;
+}
+
 export interface HttpRequestSummary {
 	id: string;
 	method: string;
@@ -27,6 +34,7 @@ export interface HttpRequestSummary {
 	ip_address: string | null;
 	size_bytes: number;
 	received_at: string;
+	endpoint?: EndpointInfo;
 }
 
 export interface HttpRequestDetail extends HttpRequestSummary {
