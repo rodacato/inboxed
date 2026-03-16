@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { fetchEndpoints, deleteEndpoint } from '../../../../features/hooks/hooks.service';
+	import { fetchEndpoints } from '../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../features/realtime/realtime.store.svelte';
 	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import type { HttpEndpoint } from '../../../../features/hooks/hooks.types';

@@ -4,13 +4,11 @@
 
 	let {
 		emailId,
-		projectId,
-		inboxId,
 		onDeleted
 	}: {
 		emailId: string;
-		projectId: string;
-		inboxId: string;
+		projectId?: string;
+		inboxId?: string;
 		onDeleted?: () => void;
 	} = $props();
 

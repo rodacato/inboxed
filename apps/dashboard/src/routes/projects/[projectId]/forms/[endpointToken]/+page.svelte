@@ -1,16 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import {
 		fetchEndpoint,
 		fetchRequests,
-		fetchRequest,
-		deleteRequest,
-		purgeEndpointRequests,
-		deleteEndpoint
+		fetchRequest
 	} from '../../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../../features/realtime/realtime.store.svelte';
-	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import type {
 		HttpEndpoint,
 		HttpRequestSummary,

@@ -11,20 +11,7 @@
 
 	let { listWidth = 'w-96', showDetail = false, list, detail, empty }: Props = $props();
 
-	let mobileShowDetail = $state(false);
-
-	// Sync mobile detail visibility with showDetail prop
-	$effect(() => {
-		mobileShowDetail = showDetail;
-	});
-
-	export function showMobileDetail() {
-		mobileShowDetail = true;
-	}
-
-	export function hideMobileDetail() {
-		mobileShowDetail = false;
-	}
+	let mobileShowDetail = $derived(showDetail);
 </script>
 
 <div class="flex h-full overflow-hidden">

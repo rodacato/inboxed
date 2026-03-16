@@ -34,8 +34,7 @@
 		onLoadMore,
 		loading = false,
 		headerActions,
-		items,
-		emptyState
+		items
 	}: Props = $props();
 </script>
 

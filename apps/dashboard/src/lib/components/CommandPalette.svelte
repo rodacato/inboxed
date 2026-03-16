@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { commandStore, type Command } from '$lib/stores/commands.store.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	let query = $state('');
 	let selectedIndex = $state(0);
@@ -8,7 +9,7 @@
 	const filtered = $derived(commandStore.search(query));
 
 	const grouped = $derived.by(() => {
-		const groups = new Map<string, Command[]>();
+		const groups = new SvelteMap<string, Command[]>();
 		for (const cmd of filtered) {
 			const list = groups.get(cmd.category) ?? [];
 			list.push(cmd);
@@ -61,7 +62,6 @@
 
 {#if commandStore.isOpen}
 	<!-- Backdrop -->
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="fixed inset-0 z-60 bg-black/50" role="presentation" onclick={() => commandStore.hide()}></div>
 
 	<!-- Palette -->
@@ -99,7 +99,7 @@
 								{categoryLabels[category] ?? category}
 							</p>
 						</div>
-						{#each cmds as cmd, i (cmd.id)}
+						{#each cmds as cmd (cmd.id)}
 							{@const globalIndex = flatList.indexOf(cmd)}
 							<button
 								onclick={() => execute(cmd)}

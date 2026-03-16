@@ -76,7 +76,6 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="fixed inset-0 z-50 bg-black/50" role="presentation" onclick={close}></div>
 	<div
 		class="fixed inset-x-0 top-[15%] z-51 mx-auto w-full max-w-md"

@@ -7,13 +7,11 @@
 		deleteEndpoint
 	} from '../../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../../features/realtime/realtime.store.svelte';
-	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import type {
 		HttpEndpoint,
 		HttpRequestSummary
 	} from '../../../../../features/hooks/hooks.types';
 	import type { Pagination } from '../../../../../features/projects/projects.types';
-	import FilterableList from '$lib/components/FilterableList.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import HeartbeatStatusBadge from '../../../../../features/hooks/components/HeartbeatStatusBadge.svelte';
 

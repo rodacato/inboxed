@@ -10,6 +10,8 @@ export interface Command {
 let commands = $state<Command[]>([]);
 let open = $state(false);
 
+import { SvelteSet } from 'svelte/reactivity';
+
 export const commandStore = {
 	get items() {
 		return commands;
@@ -36,7 +38,7 @@ export const commandStore = {
 	},
 
 	registerMany(newCommands: Command[]) {
-		const ids = new Set(newCommands.map((c) => c.id));
+		const ids = new SvelteSet(newCommands.map((c) => c.id));
 		commands = [...commands.filter((c) => !ids.has(c.id)), ...newCommands];
 	},
 

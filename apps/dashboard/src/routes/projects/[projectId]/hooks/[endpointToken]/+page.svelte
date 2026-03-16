@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import {
 		fetchEndpoint,
 		fetchRequests,
 		fetchRequest,
 		deleteRequest,
-		purgeEndpointRequests,
-		deleteEndpoint
+		purgeEndpointRequests
 	} from '../../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../../features/realtime/realtime.store.svelte';
 	import { toastStore } from '$lib/stores/toast.store.svelte';
@@ -112,13 +110,6 @@
 		toastStore.add({ type: 'info', title: 'All requests purged' });
 	}
 
-	async function handleDeleteEndpoint() {
-		if (!endpoint) return;
-		if (!confirm(`Delete endpoint "${endpoint.label || endpoint.token.slice(0, 8)}" and ALL its data?`)) return;
-		await deleteEndpoint(projectId, endpointToken);
-		goto(`/projects/${projectId}/hooks`);
-	}
-
 	async function loadMore() {
 		if (!pagination?.has_more || !pagination.next_cursor) return;
 		loadingMore = true;
@@ -190,7 +181,7 @@
 							{#if endpoint}
 								<pre class="text-xs font-mono text-text-secondary bg-surface-2 p-3 rounded mt-2 text-left">curl -X POST {endpoint.url || `/hook/${endpoint.token}`} \
   -H "Content-Type: application/json" \
-  -d '{"{"}test": true{"}"}'</pre>
+  -d '&#123;"test": true&#125;'</pre>
 							{/if}
 						{/snippet}
 					</EmptyState>

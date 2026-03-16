@@ -17,7 +17,7 @@
 	let sidebarCollapsed = $state(false);
 	const realtime = getRealtimeStore();
 
-	const PUBLIC_ROUTES = ['/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation', '/setup/complete'];
+	const PUBLIC_ROUTES = ['/', '/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation', '/setup/complete', '/privacy', '/terms'];
 
 	function isPublicRoute(pathname: string): boolean {
 		return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
@@ -91,7 +91,6 @@
 
 		<!-- Mobile sidebar drawer -->
 		{#if sidebarOpen}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div class="fixed inset-0 z-40 bg-black/50 md:hidden" role="presentation" onclick={closeMobileSidebar}></div>
 			<div class="fixed inset-y-0 left-0 z-50 md:hidden">
 				<Sidebar wsConnected={realtime.connected} onNavigate={closeMobileSidebar} />

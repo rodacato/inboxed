@@ -7,6 +7,7 @@
 	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import type { EmailSummary } from '../../../../../../features/emails/emails.types';
 	import type { Pagination } from '../../../../../../features/projects/projects.types';
+	import { SvelteSet } from 'svelte/reactivity';
 	import SplitPane from '$lib/components/SplitPane.svelte';
 	import FilterableList from '$lib/components/FilterableList.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -21,7 +22,7 @@
 	let loading = $state(true);
 	let loadingMore = $state(false);
 	let unsubscribeFn: (() => void) | undefined;
-	let newEmailIds = $state(new Set<string>());
+	let newEmailIds = new SvelteSet<string>();
 	let selectedEmailId = $state<string | null>(null);
 
 	$effect(() => {
@@ -33,7 +34,7 @@
 		pagination = null;
 		loading = true;
 		selectedEmailId = null;
-		newEmailIds = new Set();
+		newEmailIds.clear();
 		unsubscribeFn?.();
 		unsubscribeFn = undefined;
 
@@ -56,7 +57,7 @@
 			if (msg.type === 'email_received') {
 				const email = msg.email as EmailSummary;
 				emails = [email, ...emails];
-				newEmailIds = new Set([...newEmailIds, email.id]);
+				newEmailIds.add(email.id);
 				selectedEmailId = email.id;
 				toastStore.add({
 					type: 'success',
@@ -102,9 +103,7 @@
 	function selectEmail(id: string) {
 		selectedEmailId = id;
 		if (newEmailIds.has(id)) {
-			const next = new Set(newEmailIds);
-			next.delete(id);
-			newEmailIds = next;
+			newEmailIds.delete(id);
 		}
 	}
 

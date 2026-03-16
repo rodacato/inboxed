@@ -1,15 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { fetchEndpoints, fetchRequest, deleteEndpoint } from '../../../../features/hooks/hooks.service';
+	import { fetchEndpoints, deleteEndpoint } from '../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../features/realtime/realtime.store.svelte';
 	import { toastStore } from '$lib/stores/toast.store.svelte';
-	import type { HttpEndpoint, HttpRequestDetail } from '../../../../features/hooks/hooks.types';
+	import type { HttpEndpoint } from '../../../../features/hooks/hooks.types';
 	import type { Pagination } from '../../../../features/projects/projects.types';
 	import SplitPane from '$lib/components/SplitPane.svelte';
 	import FilterableList from '$lib/components/FilterableList.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import HeadersTable from '../../../../features/hooks/components/HeadersTable.svelte';
-	import RequestBodyViewer from '../../../../features/hooks/components/RequestBodyViewer.svelte';
 	import CreateEndpointDialog from '../../../../features/hooks/components/CreateEndpointDialog.svelte';
 
 	const projectId = $derived($page.params.projectId ?? '');
@@ -19,7 +17,6 @@
 	let pagination = $state<Pagination | null>(null);
 	let loading = $state(true);
 	let selectedEndpoint = $state<HttpEndpoint | null>(null);
-	let selectedRequest = $state<HttpRequestDetail | null>(null);
 	let showCreate = $state(false);
 	let unsubscribe: (() => void) | undefined;
 
@@ -29,7 +26,6 @@
 		endpoints = [];
 		loading = true;
 		selectedEndpoint = null;
-		selectedRequest = null;
 		unsubscribe?.();
 
 		loadEndpoints(pid);
@@ -66,7 +62,6 @@
 
 	async function handleSelectEndpoint(ep: HttpEndpoint) {
 		selectedEndpoint = ep;
-		selectedRequest = null;
 	}
 
 	async function handleDeleteEndpoint(ep: HttpEndpoint) {
@@ -75,7 +70,6 @@
 		endpoints = endpoints.filter((e) => e.id !== ep.id);
 		if (selectedEndpoint?.id === ep.id) {
 			selectedEndpoint = null;
-			selectedRequest = null;
 		}
 	}
 
@@ -117,7 +111,7 @@
 						{#snippet content()}
 							<pre class="text-xs font-mono text-text-secondary bg-surface-2 p-3 rounded mt-2 text-left">curl -X POST https://your-domain/hook/&lt;token&gt; \
   -H "Content-Type: application/json" \
-  -d '{"{"}event": "test"{"}"}'</pre>
+  -d '&#123;"event": "test"&#125;'</pre>
 						{/snippet}
 					</EmptyState>
 				{:else}
