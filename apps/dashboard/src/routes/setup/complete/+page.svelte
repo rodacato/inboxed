@@ -7,10 +7,10 @@
 	let copied = $state<string | null>(null);
 
 	const smtpSnippet = $derived(
-		data ? `SMTP_HOST=${data.smtp.host}\nSMTP_PORT=${data.smtp.port}\nSMTP_USERNAME=inboxed\nSMTP_PASSWORD=${data.apiKey.token}` : ''
+		data ? `SMTP_HOST=${data.smtp.host}\nSMTP_PORT=${data.smtp.port}\nSMTP_USERNAME=${data.project.slug}\nSMTP_PASSWORD=${data.apiKey.token}` : ''
 	);
 	const curlSnippet = $derived(
-		data ? `curl --url "smtp://${data.smtp.host}:${data.smtp.port}" \\\n  --user "inboxed:${data.apiKey.token}" \\\n  --mail-from "test@example.com" \\\n  --mail-rcpt "hello@${data.project.slug}.test" \\\n  --upload-file - <<EOF\nFrom: test@example.com\nTo: hello@${data.project.slug}.test\nSubject: Hello from Inboxed\n\nYour first test email!\nEOF` : ''
+		data ? `curl --url "smtp://${data.smtp.host}:${data.smtp.port}" \\\n  --user "${data.project.slug}:${data.apiKey.token}" \\\n  --mail-from "test@example.com" \\\n  --mail-rcpt "hello@${data.project.slug}.test" \\\n  --upload-file - <<EOF\nFrom: test@example.com\nTo: hello@${data.project.slug}.test\nSubject: Hello from Inboxed\n\nYour first test email!\nEOF` : ''
 	);
 
 	onMount(() => {

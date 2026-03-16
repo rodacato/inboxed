@@ -12,8 +12,8 @@
 
 	onMount(async () => {
 		try {
-			const res = (await apiClient('/admin/organization')) as { organization: { name: string } };
-			orgName = res.organization.name;
+			const res = (await apiClient('/admin/organization')) as { data: { name: string } };
+			orgName = res.data.name;
 		} catch {
 			// ignore
 		}

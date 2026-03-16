@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchProjects, createProject } from '../../features/projects/projects.service';
-	import type { Project } from '../../features/projects/projects.types';
+	import { createProject } from '../../features/projects/projects.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import { projectsStore } from '$lib/stores/projects.store.svelte';
 
-	let projects = $state<Project[]>([]);
+	const projects = $derived(projectsStore.projects);
 	let loading = $state(true);
 	let showCreate = $state(false);
 	let newName = $state('');
@@ -15,8 +15,9 @@
 	const smtp = $derived(authStore.smtp);
 
 	onMount(async () => {
-		const res = await fetchProjects();
-		projects = res.projects;
+		if (!projectsStore.loaded) {
+			await projectsStore.load();
+		}
 		loading = false;
 	});
 
@@ -39,7 +40,7 @@
 		creating = true;
 		try {
 			const res = await createProject({ name: newName, slug: newSlug });
-			projects = [res.project, ...projects];
+			projectsStore.add(res.project);
 			showCreate = false;
 			newName = '';
 			newSlug = '';

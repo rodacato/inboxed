@@ -11,6 +11,8 @@
 	} from '../../../../features/projects/projects.service';
 	import { fetchInboxes } from '../../../../features/inboxes/inboxes.service';
 	import { getRealtimeStore } from '../../../../features/realtime/realtime.store.svelte';
+	import { projectsStore } from '$lib/stores/projects.store.svelte';
+	import { authStore } from '$lib/stores/auth.store.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { Project, ApiKey } from '../../../../features/projects/projects.types';
 	import type { Inbox } from '../../../../features/inboxes/inboxes.types';
@@ -26,7 +28,29 @@
 	let creatingKey = $state(false);
 	let newToken = $state<string | null>(null);
 	let copied = $state(false);
+	let copiedSnippet = $state<string | null>(null);
 	let unsubscribe: (() => void) | undefined;
+
+	const smtp = $derived(authStore.smtp);
+	const smtpHost = $derived(smtp?.host ?? 'localhost');
+	const smtpPort = $derived(smtp?.port ?? 2525);
+	const apiKeyHint = $derived(
+		apiKeys.length > 0 ? `${apiKeys[0].token_prefix}...` : '<your-api-key>'
+	);
+
+	const snippets = $derived(project ? {
+		smtp: `SMTP_HOST=${smtpHost}\nSMTP_PORT=${smtpPort}\nSMTP_USERNAME=${project.slug}\nSMTP_PASSWORD=${apiKeyHint}`,
+		curl: `curl --url "smtp://${smtpHost}:${smtpPort}" \\\n  --user "${project.slug}:${apiKeyHint}" \\\n  --mail-from "test@example.com" \\\n  --mail-rcpt "hello@${project.slug}.test" \\\n  --upload-file - <<EOF\nFrom: test@example.com\nTo: hello@${project.slug}.test\nSubject: Hello from Inboxed\n\nYour first test email!\nEOF`,
+		webhook: `curl -X POST https://${smtpHost}/hook/<endpoint-token> \\\n  -H "Content-Type: application/json" \\\n  -d '{"event": "test"}'`,
+		form: `<form action="https://${smtpHost}/hook/<endpoint-token>" method="POST">\n  <input name="email" />\n  <button type="submit">Send</button>\n</form>`,
+		heartbeat: `# In your crontab:\n*/5 * * * * curl -s https://${smtpHost}/hook/<endpoint-token>`
+	} : null);
+
+	async function copySnippet(text: string, key: string) {
+		await navigator.clipboard.writeText(text);
+		copiedSnippet = key;
+		setTimeout(() => { copiedSnippet = null; }, 2000);
+	}
 
 	onMount(async () => {
 		const [projRes, keysRes, inboxRes] = await Promise.all([
@@ -78,6 +102,7 @@
 		if (!confirm(`Delete project "${project?.name}" and ALL its data? This cannot be undone.`))
 			return;
 		await deleteProject(projectId);
+		projectsStore.remove(projectId);
 		goto('/projects');
 	}
 
@@ -140,6 +165,91 @@
 				</p>
 			</div>
 		</div>
+
+		<!-- Quick Start -->
+		{#if snippets}
+			<section class="mb-8">
+				<h3 class="text-lg font-display font-bold text-text-primary mb-4">Quick Start</h3>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+					<!-- SMTP Config -->
+					<div class="p-4 rounded-lg border border-border bg-surface">
+						<div class="flex items-center gap-2 mb-2">
+							<span class="material-symbols-outlined text-phosphor text-base">mail</span>
+							<h4 class="text-xs font-mono font-bold text-text-dim uppercase tracking-widest">SMTP Configuration</h4>
+						</div>
+						<p class="text-xs text-text-secondary font-mono mb-3">Point your app's SMTP config here.</p>
+						<div class="relative">
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto">{snippets.smtp}</pre>
+							<button
+								onclick={() => copySnippet(snippets!.smtp, 'smtp')}
+								class="absolute top-2 right-2 px-2 py-0.5 bg-surface border border-border rounded text-[10px] font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+							>
+								{copiedSnippet === 'smtp' ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+						{#if apiKeys.length === 0}
+							<p class="text-[10px] font-mono text-amber mt-2">Create an API key below to use as SMTP_PASSWORD.</p>
+						{/if}
+					</div>
+
+					<!-- Send Test Email -->
+					<div class="p-4 rounded-lg border border-border bg-surface">
+						<div class="flex items-center gap-2 mb-2">
+							<span class="material-symbols-outlined text-cyan text-base">terminal</span>
+							<h4 class="text-xs font-mono font-bold text-text-dim uppercase tracking-widest">Send Test Email</h4>
+						</div>
+						<p class="text-xs text-text-secondary font-mono mb-3">Send your first email via curl.</p>
+						<div class="relative">
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto">{snippets.curl}</pre>
+							<button
+								onclick={() => copySnippet(snippets!.curl, 'curl')}
+								class="absolute top-2 right-2 px-2 py-0.5 bg-surface border border-border rounded text-[10px] font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+							>
+								{copiedSnippet === 'curl' ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+					</div>
+
+					<!-- Webhook -->
+					<div class="p-4 rounded-lg border border-border bg-surface">
+						<div class="flex items-center gap-2 mb-2">
+							<span class="material-symbols-outlined text-phosphor text-base">webhook</span>
+							<h4 class="text-xs font-mono font-bold text-text-dim uppercase tracking-widest">Webhook</h4>
+						</div>
+						<p class="text-xs text-text-secondary font-mono mb-3">Catch HTTP requests from your app.</p>
+						<div class="relative">
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto">{snippets.webhook}</pre>
+							<button
+								onclick={() => copySnippet(snippets!.webhook, 'webhook')}
+								class="absolute top-2 right-2 px-2 py-0.5 bg-surface border border-border rounded text-[10px] font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+							>
+								{copiedSnippet === 'webhook' ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+						<p class="text-[10px] font-mono text-text-dim mt-2">Create an endpoint in <a href="/projects/{projectId}/hooks" class="text-phosphor hover:underline">Hooks In</a> to get a real token.</p>
+					</div>
+
+					<!-- Heartbeat -->
+					<div class="p-4 rounded-lg border border-border bg-surface">
+						<div class="flex items-center gap-2 mb-2">
+							<span class="material-symbols-outlined text-error text-base">favorite</span>
+							<h4 class="text-xs font-mono font-bold text-text-dim uppercase tracking-widest">Heartbeat</h4>
+						</div>
+						<p class="text-xs text-text-secondary font-mono mb-3">Monitor cron jobs and background tasks.</p>
+						<div class="relative">
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto">{snippets.heartbeat}</pre>
+							<button
+								onclick={() => copySnippet(snippets!.heartbeat, 'heartbeat')}
+								class="absolute top-2 right-2 px-2 py-0.5 bg-surface border border-border rounded text-[10px] font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+							>
+								{copiedSnippet === 'heartbeat' ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+						<p class="text-[10px] font-mono text-text-dim mt-2">Create a monitor in <a href="/projects/{projectId}/heartbeats" class="text-phosphor hover:underline">Heartbeats</a> to get a real token.</p>
+					</div>
+				</div>
+			</section>
+		{/if}
 
 		<!-- API Keys -->
 		<section class="mb-8">

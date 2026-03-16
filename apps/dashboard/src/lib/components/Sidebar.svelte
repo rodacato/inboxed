@@ -7,7 +7,7 @@
 	import { commandStore } from '$lib/stores/commands.store.svelte';
 	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import { getEnabledModules } from '$lib/config/modules';
-	import { fetchProjects } from '../../features/projects/projects.service';
+	import { projectsStore } from '$lib/stores/projects.store.svelte';
 	import type { Project } from '../../features/projects/projects.types';
 
 	let {
@@ -19,13 +19,12 @@
 	const theme = getTheme();
 	const modules = $derived(getEnabledModules(authStore.features));
 
-	let projects = $state<Project[]>([]);
+	const projects = $derived(projectsStore.projects);
 
 	onMount(async () => {
 		try {
-			const res = await fetchProjects();
-			projects = res.projects;
-			registerCommands(res.projects);
+			const loaded = await projectsStore.load();
+			registerCommands(loaded);
 		} catch {
 			// ignore
 		}
