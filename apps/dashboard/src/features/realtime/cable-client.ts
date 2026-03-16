@@ -4,9 +4,16 @@ export interface CableMessage {
 }
 
 export function createCable() {
-	const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-	const host = window.location.host;
-	const url = `${protocol}//${host}/cable`;
+	const apiUrl = import.meta.env.VITE_API_URL || '';
+	let url: string;
+	if (apiUrl) {
+		const parsed = new URL(apiUrl);
+		const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+		url = `${protocol}//${parsed.host}/cable`;
+	} else {
+		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+		url = `${protocol}//${window.location.host}/cable`;
+	}
 
 	let ws: WebSocket | null = null;
 	let reconnectAttempts = 0;

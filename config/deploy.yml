@@ -34,7 +34,7 @@ servers:
 # Cloudflared handles TLS — kamal-proxy only routes internally
 proxy:
   ssl: false
-  host: <%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
+  host: api.<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
   app_port: 3000
 
 registry:
@@ -54,7 +54,7 @@ env:
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: true
     INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "mail.example.com") %>
-    INBOXED_BASE_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
+    INBOXED_BASE_URL: https://api.<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
     DASHBOARD_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
     REGISTRATION_MODE: <%= ENV.fetch("REGISTRATION_MODE", "closed") %>
     TRIAL_DURATION_DAYS: <%= ENV.fetch("TRIAL_DURATION_DAYS", "7") %>
@@ -77,9 +77,6 @@ accessories:
     image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-dashboard
     host: <%= ENV["HOST_IP"] %>
     port: "8080:80"
-    env:
-      clear:
-        BACKEND_HOST: <%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
 
   mcp:
     image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-mcp
@@ -87,7 +84,7 @@ accessories:
     port: "3001:3001"
     env:
       clear:
-        INBOXED_API_URL: http://inboxed-web:3000
+        INBOXED_API_URL: https://api.<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
       secret:
         - INBOXED_MCP_KEY
 

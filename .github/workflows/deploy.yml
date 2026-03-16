@@ -55,6 +55,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/inboxed-dashboard:latest
             ghcr.io/${{ github.repository_owner }}/inboxed-dashboard:${{ github.sha }}
+          build-args: |
+            VITE_API_URL=https://api.${{ vars.INBOXED_WEB_DOMAIN }}
           cache-from: type=gha,scope=dashboard
           cache-to: type=gha,mode=max,scope=dashboard
 
