@@ -53,8 +53,17 @@ export async function register(email: string, password: string, invitationToken?
 	return { verificationRequired: res.data.verification_required };
 }
 
-export async function setup(setupToken: string, orgName: string, email: string, password: string): Promise<void> {
-	await apiClient('/setup', {
+interface SetupResponse {
+	data: LoginResponse['data'];
+	setup: {
+		project: { id: string; name: string; slug: string };
+		api_key: { id: string; token: string; token_prefix: string; label: string };
+		smtp: { host: string; port: number };
+	};
+}
+
+export async function setup(setupToken: string, orgName: string, email: string, password: string): Promise<SetupResponse['setup']> {
+	const res = (await apiClient('/setup', {
 		method: 'POST',
 		body: JSON.stringify({
 			setup_token: setupToken,
@@ -62,7 +71,22 @@ export async function setup(setupToken: string, orgName: string, email: string, 
 			email,
 			password
 		})
-	});
+	})) as SetupResponse;
+
+	const user: AuthUser = {
+		id: res.data.id,
+		email: res.data.email,
+		role: res.data.role as AuthUser['role'],
+		siteAdmin: res.data.site_admin
+	};
+
+	const organization = res.data.organization
+		? mapOrganization(res.data.organization)
+		: null;
+
+	authStore.setAuthenticated(user, organization);
+
+	return res.setup;
 }
 
 export async function verifyEmail(token: string): Promise<boolean> {

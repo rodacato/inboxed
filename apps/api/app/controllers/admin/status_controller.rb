@@ -15,6 +15,10 @@ module Admin
         timestamp: Time.current.iso8601,
         environment: Rails.env,
         features: Inboxed::Features.all,
+        smtp: {
+          host: ENV.fetch("INBOXED_DOMAIN", "localhost"),
+          port: ENV.fetch("INBOXED_SMTP_PORT", "2525").to_i
+        },
         database: database_status,
         redis: redis_status
       }

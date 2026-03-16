@@ -27,11 +27,17 @@ export interface AppFeatures {
 	[key: string]: boolean;
 }
 
+export interface SmtpConfig {
+	host: string;
+	port: number;
+}
+
 interface AuthState {
 	isAuthenticated: boolean;
 	user: AuthUser | null;
 	organization: AuthOrganization | null;
 	features: AppFeatures;
+	smtp: SmtpConfig | null;
 	setupRequired: boolean;
 	registrationMode: string;
 	outboundSmtpConfigured: boolean;
@@ -51,6 +57,7 @@ let state = $state<AuthState>({
 	user: null,
 	organization: null,
 	features: { ...DEFAULT_FEATURES },
+	smtp: null,
 	setupRequired: false,
 	registrationMode: 'closed',
 	outboundSmtpConfigured: false,
@@ -89,6 +96,10 @@ export const authStore = {
 
 	get registrationMode() {
 		return state.registrationMode;
+	},
+
+	get smtp() {
+		return state.smtp;
 	},
 
 	get outboundSmtpConfigured() {
@@ -148,6 +159,7 @@ export const authStore = {
 				registration_mode?: string;
 				outbound_smtp_configured?: boolean;
 				features?: Record<string, boolean>;
+				smtp?: { host: string; port: number };
 				user?: {
 					id: string;
 					email: string;
@@ -163,6 +175,7 @@ export const authStore = {
 				registrationMode: res.registration_mode ?? 'closed',
 				outboundSmtpConfigured: res.outbound_smtp_configured ?? false,
 				features: { ...DEFAULT_FEATURES, ...(res.features ?? {}) },
+				smtp: res.smtp ?? null,
 				user: res.user ? mapUser(res.user) : state.user,
 				organization: res.organization
 					? mapOrganization(res.organization)

@@ -1,13 +1,35 @@
 :80 {
-    root * /srv
-    file_server
-    try_files {path} /index.html
-
     handle /api/* {
         reverse_proxy api:3000
     }
 
     handle /admin/* {
         reverse_proxy api:3000
+    }
+
+    handle /auth/* {
+        reverse_proxy api:3000
+    }
+
+    handle /setup {
+        reverse_proxy api:3000
+    }
+
+    handle /cable {
+        reverse_proxy api:3000
+    }
+
+    handle /up {
+        reverse_proxy api:3000
+    }
+
+    handle /hook/* {
+        reverse_proxy api:3000
+    }
+
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
     }
 }

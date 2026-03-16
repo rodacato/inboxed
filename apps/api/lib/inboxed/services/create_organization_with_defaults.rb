@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "ostruct"
+
 module Inboxed
   module Services
     class CreateOrganizationWithDefaults
@@ -21,9 +23,9 @@ module Inboxed
           default_ttl_hours: 24
         )
 
-        IssueApiKey.new.call(project_id: project.id, label: "Default key")
+        api_key = IssueApiKey.new.call(project_id: project.id, label: "Default key")
 
-        org
+        OpenStruct.new(organization: org, project: project, api_key: api_key)
       end
     end
   end

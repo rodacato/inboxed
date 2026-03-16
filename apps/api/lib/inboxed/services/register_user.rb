@@ -38,7 +38,7 @@ module Inboxed
 
       def register_open
         user = create_user
-        org = CreateOrganizationWithDefaults.new.call(name: "#{@email.split("@").first}'s workspace", user: user)
+        org = CreateOrganizationWithDefaults.new.call(name: "#{@email.split("@").first}'s workspace", user: user).organization
         send_verification(user)
         publish_event(user, org, "email")
         success(user)

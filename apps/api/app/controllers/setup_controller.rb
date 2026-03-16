@@ -17,7 +17,30 @@ class SetupController < ApplicationController
     )
 
     session[:user_id] = result.user.id
-    render json: {data: serialize_user_with_org(result.user)}, status: :created
+
+    smtp_host = ENV.fetch("INBOXED_DOMAIN", "localhost")
+    smtp_port = ENV.fetch("INBOXED_SMTP_PORT", "2525")
+
+    render json: {
+      data: serialize_user_with_org(result.user),
+      setup: {
+        project: {
+          id: result.project.id,
+          name: result.project.name,
+          slug: result.project.slug
+        },
+        api_key: {
+          id: result.api_key[:id],
+          token: result.api_key[:token],
+          token_prefix: result.api_key[:token_prefix],
+          label: result.api_key[:label]
+        },
+        smtp: {
+          host: smtp_host,
+          port: smtp_port.to_i
+        }
+      }
+    }, status: :created
   end
 
   private

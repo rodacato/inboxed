@@ -10,28 +10,28 @@ RSpec.describe Inboxed::Services::CreateOrganizationWithDefaults do
   after { ENV.delete("TRIAL_DURATION_DAYS") }
 
   it "creates org with slug, membership, project, and API key" do
-    org = service.call(name: "New Org", user: user)
+    result = service.call(name: "New Org", user: user)
 
-    expect(org).to be_persisted
-    expect(org.slug).to be_present
-    expect(MembershipRecord.where(user: user, organization: org).count).to eq(1)
+    expect(result.organization).to be_persisted
+    expect(result.organization.slug).to be_present
+    expect(result.project).to be_persisted
+    expect(result.api_key[:token]).to be_present
+    expect(MembershipRecord.where(user: user, organization: result.organization).count).to eq(1)
 
-    project = ProjectRecord.find_by(organization: org)
-    expect(project).to be_present
-    expect(ApiKeyRecord.where(project: project).count).to eq(1)
+    expect(ApiKeyRecord.where(project: result.project).count).to eq(1)
   end
 
   it "respects trial_days parameter" do
-    org = service.call(name: "Trial Org", user: user, trial_days: 14)
+    result = service.call(name: "Trial Org", user: user, trial_days: 14)
 
-    expect(org.trial?).to be true
-    expect(org.days_remaining).to be_between(13, 14)
+    expect(result.organization.trial?).to be true
+    expect(result.organization.days_remaining).to be_between(13, 14)
   end
 
   it "creates permanent org when trial_days=0" do
-    org = service.call(name: "Permanent Org", user: user, trial_days: 0)
+    result = service.call(name: "Permanent Org", user: user, trial_days: 0)
 
-    expect(org.permanent?).to be true
-    expect(org.trial_ends_at).to be_nil
+    expect(result.organization.permanent?).to be true
+    expect(result.organization.trial_ends_at).to be_nil
   end
 end

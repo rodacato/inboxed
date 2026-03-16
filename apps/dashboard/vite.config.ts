@@ -10,6 +10,10 @@ export default defineConfig({
 		proxy: {
 			'/api': 'http://localhost:3100',
 			'/admin': 'http://localhost:3100',
+			'/auth': 'http://localhost:3100',
+			'/setup': 'http://localhost:3100',
+			'/up': 'http://localhost:3100',
+			'/hook': 'http://localhost:3100',
 			'/cable': {
 				target: 'ws://localhost:3100',
 				ws: true

@@ -17,12 +17,14 @@ module Inboxed
           verified_at: Time.current
         )
 
-        org = CreateOrganizationWithDefaults.new.call(
+        result = CreateOrganizationWithDefaults.new.call(
           name: org_name,
           user: user,
           role: "org_admin",
           trial_days: 0
         )
+
+        org = result.organization
 
         # Override slug with a readable one from the org name
         readable_slug = org_name.parameterize.presence || org.slug
@@ -44,7 +46,12 @@ module Inboxed
           ]
         )
 
-        OpenStruct.new(user: user, organization: org)
+        OpenStruct.new(
+          user: user,
+          organization: org,
+          project: result.project,
+          api_key: result.api_key
+        )
       end
     end
   end

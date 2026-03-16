@@ -17,7 +17,7 @@
 	let sidebarCollapsed = $state(false);
 	const realtime = getRealtimeStore();
 
-	const PUBLIC_ROUTES = ['/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation'];
+	const PUBLIC_ROUTES = ['/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation', '/setup/complete'];
 
 	function isPublicRoute(pathname: string): boolean {
 		return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
@@ -149,6 +149,7 @@
 		</div>
 	</div>
 
-	<ToastContainer />
 	<CommandPalette />
 {/if}
+
+<ToastContainer />

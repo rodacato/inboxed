@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { setup, getErrorMessage } from '../../features/auth/auth.service';
+	import { onboardingStore } from '$lib/stores/onboarding.store.svelte';
 
 	let setupToken = $state('');
 	let orgName = $state('');
@@ -14,8 +16,18 @@
 		error = '';
 
 		try {
-			await setup(setupToken, orgName || `${email.split('@')[0]}'s workspace`, email, password);
-			window.location.href = '/projects';
+			const result = await setup(setupToken, orgName || `${email.split('@')[0]}'s workspace`, email, password);
+			onboardingStore.set({
+				project: result.project,
+				apiKey: {
+					id: result.api_key.id,
+					token: result.api_key.token,
+					tokenPrefix: result.api_key.token_prefix,
+					label: result.api_key.label
+				},
+				smtp: result.smtp
+			});
+			goto('/setup/complete');
 		} catch (err) {
 			error = getErrorMessage(err);
 		} finally {

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fetchProjects, createProject } from '../../features/projects/projects.service';
 	import type { Project } from '../../features/projects/projects.types';
+	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	let projects = $state<Project[]>([]);
 	let loading = $state(true);
@@ -9,12 +10,22 @@
 	let newName = $state('');
 	let newSlug = $state('');
 	let creating = $state(false);
+	let copied = $state(false);
+
+	const smtp = $derived(authStore.smtp);
 
 	onMount(async () => {
 		const res = await fetchProjects();
 		projects = res.projects;
 		loading = false;
 	});
+
+	async function copySmtp() {
+		if (!smtp) return;
+		await navigator.clipboard.writeText(`SMTP_HOST=${smtp.host}\nSMTP_PORT=${smtp.port}`);
+		copied = true;
+		setTimeout(() => { copied = false; }, 2000);
+	}
 
 	function autoSlug() {
 		newSlug = newName
@@ -115,9 +126,38 @@
 	{#if loading}
 		<p class="text-text-dim font-mono text-sm">Loading projects...</p>
 	{:else if projects.length === 0}
-		<div class="text-center py-20">
+		<div class="max-w-md mx-auto py-16 text-center">
 			<span class="material-symbols-outlined text-5xl text-text-dim mb-4">folder_open</span>
-			<p class="text-text-secondary font-mono">No projects yet. Create one to get started.</p>
+			<h3 class="text-lg font-display font-bold text-text-primary mb-2">No projects yet</h3>
+			<p class="text-text-secondary font-mono text-sm mb-6">Create a project to start catching test emails.</p>
+
+			<button
+				onclick={() => (showCreate = true)}
+				class="inline-flex items-center gap-2 px-5 py-2.5 bg-phosphor text-base rounded-lg text-sm font-mono font-medium hover:brightness-110 transition-all mb-8"
+			>
+				<span class="material-symbols-outlined text-lg">add</span>
+				Create your first project
+			</button>
+
+			{#if smtp}
+				<div class="text-left p-4 rounded-lg border border-border bg-surface">
+					<div class="flex items-center gap-2 mb-2">
+						<span class="material-symbols-outlined text-phosphor text-base">mail</span>
+						<h4 class="text-xs font-mono text-text-dim uppercase tracking-widest">SMTP Config</h4>
+					</div>
+					<p class="text-xs text-text-secondary font-mono mb-2">Point your app here to catch emails:</p>
+					<div class="relative">
+						<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary">SMTP_HOST={smtp.host}
+SMTP_PORT={smtp.port}</pre>
+						<button
+							onclick={copySmtp}
+							class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-surface border border-border rounded text-xs font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+						>
+							{copied ? 'Copied!' : 'Copy'}
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

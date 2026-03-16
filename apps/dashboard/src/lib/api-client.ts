@@ -23,7 +23,7 @@ export async function apiClient(path: string, options: RequestInit = {}): Promis
 
 	if (res.status === 401) {
 		if (typeof window !== 'undefined' && !path.startsWith('/auth/') && window.location.pathname !== '/login') {
-			window.location.href = '/login';
+			window.location.href = '/login?reason=session_expired';
 		}
 		throw new ApiError(401, { error: 'Unauthorized' });
 	}
