@@ -95,31 +95,31 @@
 					<div class="w-12 h-12 bg-cyan/10 rounded-xl flex items-center justify-center mb-6">
 						<span class="material-symbols-outlined text-cyan" style="font-size: 24px;">webhook</span>
 					</div>
-					<h3 class="text-xl font-bold font-display mb-3">Webhooks</h3>
+					<h3 class="text-xl font-bold font-display mb-3">HTTP Hooks</h3>
 					<p class="text-text-secondary text-sm leading-relaxed">
-						Catch external webhooks. Debug Stripe, GitHub, or Twilio events. Inspect method, headers, body, query params.
+						Catch webhooks, form submissions, and heartbeats in one unified stream. Inspect any HTTP verb, headers, body, and query params.
 					</p>
 				</div>
 
-				<!-- Forms -->
+				<!-- MCP -->
 				<div class="p-8 bg-surface border border-border rounded-2xl group hover:border-amber/40 transition-all">
 					<div class="w-12 h-12 bg-amber/10 rounded-xl flex items-center justify-center mb-6">
-						<span class="material-symbols-outlined text-amber" style="font-size: 24px;">dynamic_form</span>
+						<span class="material-symbols-outlined text-amber" style="font-size: 24px;">psychology</span>
 					</div>
-					<h3 class="text-xl font-bold font-display mb-3">Dev Forms</h3>
+					<h3 class="text-xl font-bold font-display mb-3">MCP Native</h3>
 					<p class="text-text-secondary text-sm leading-relaxed">
-						Point your frontend forms at Inboxed. See JSON payloads without a backend. Perfect for prototyping.
+						AI agents read your mailbox and webhook payloads. Extract OTPs, click magic links, assert on events &mdash; all via MCP.
 					</p>
 				</div>
 
-				<!-- Heartbeats -->
+				<!-- API -->
 				<div class="p-8 bg-surface border border-border rounded-2xl group hover:border-phosphor/40 transition-all">
 					<div class="w-12 h-12 bg-phosphor/10 rounded-xl flex items-center justify-center mb-6">
-						<span class="material-symbols-outlined text-phosphor" style="font-size: 24px;">monitor_heart</span>
+						<span class="material-symbols-outlined text-phosphor" style="font-size: 24px;">api</span>
 					</div>
-					<h3 class="text-xl font-bold font-display mb-3">Heartbeats</h3>
+					<h3 class="text-xl font-bold font-display mb-3">REST API</h3>
 					<p class="text-text-secondary text-sm leading-relaxed">
-						Monitor cron jobs and background workers. Expect a ping every N minutes &mdash; get alerted when it doesn't arrive.
+						Full API with long-polling. Use the TypeScript or Ruby client in your CI/CD pipeline. No hardcoded sleeps.
 					</p>
 				</div>
 			</div>
@@ -206,15 +206,11 @@
 						</div>
 						<div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm hover:bg-surface">
 							<span class="material-symbols-outlined" style="font-size: 18px;">webhook</span>
-							Webhooks
+							Hooks (3)
 						</div>
 						<div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm hover:bg-surface">
-							<span class="material-symbols-outlined" style="font-size: 18px;">dynamic_form</span>
-							Forms
-						</div>
-						<div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm hover:bg-surface">
-							<span class="material-symbols-outlined" style="font-size: 18px;">monitor_heart</span>
-							Heartbeats
+							<span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+							Settings
 						</div>
 					</aside>
 
@@ -307,7 +303,7 @@
 					<p class="text-neutral-300"><span class="text-[#39FF14]">$</span> git clone {githubUrl} && cd inboxed</p>
 					<p class="text-neutral-300"><span class="text-[#39FF14]">$</span> bin/setup && docker compose up -d</p>
 					<p class="mt-4 text-[#39FF14]">&#10003; PostgreSQL ready</p>
-					<p class="text-[#39FF14]">&#10003; API ready on :3000</p>
+					<p class="text-[#39FF14]">&#10003; API ready on :3100</p>
 					<p class="text-[#39FF14]">&#10003; Dashboard ready on :80</p>
 					<p class="text-[#00E5FF]">&#10003; SMTP ready on :2525</p>
 					<p class="text-[#00E5FF]">&#10003; MCP server ready</p>
@@ -335,9 +331,9 @@
 						AI agent integration via Model Context Protocol.
 					</h2>
 					<p class="text-text-secondary text-lg mb-8">
-						Let your AI agents "read" the emails your app sends. Perfect for
-						automating E2E testing flows that require OTP extraction or magic
-						link clicks.
+						Let your AI agents read emails and webhook payloads. Perfect for
+						automating E2E testing flows that require OTP extraction, magic
+						link clicks, or webhook assertion.
 					</p>
 					<ul class="space-y-4">
 						<li class="flex items-start gap-3">
@@ -378,22 +374,25 @@
 			</div>
 
 			<!-- MCP tools grid -->
-			<div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-				<div class="bg-surface rounded-xl p-4 border border-border text-center">
-					<div class="font-mono text-sm text-cyan mb-1">list_inboxes</div>
-					<div class="text-text-dim text-xs">Browse all inboxes</div>
-				</div>
-				<div class="bg-surface rounded-xl p-4 border border-border text-center">
-					<div class="font-mono text-sm text-cyan mb-1">wait_for_email</div>
-					<div class="text-text-dim text-xs">Long-poll for new mail</div>
-				</div>
-				<div class="bg-surface rounded-xl p-4 border border-border text-center">
-					<div class="font-mono text-sm text-cyan mb-1">extract_code</div>
-					<div class="text-text-dim text-xs">Get OTP from email</div>
-				</div>
-				<div class="bg-surface rounded-xl p-4 border border-border text-center">
-					<div class="font-mono text-sm text-cyan mb-1">get_email</div>
-					<div class="text-text-dim text-xs">Full email details</div>
+			<div class="mt-16">
+				<h4 class="text-xs font-mono text-text-dim uppercase tracking-widest text-center mb-6">15 tools available</h4>
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+					<div class="bg-surface rounded-xl p-4 border border-border text-center">
+						<div class="font-mono text-sm text-cyan mb-1">wait_for_email</div>
+						<div class="text-text-dim text-xs">Long-poll for new mail</div>
+					</div>
+					<div class="bg-surface rounded-xl p-4 border border-border text-center">
+						<div class="font-mono text-sm text-cyan mb-1">extract_code</div>
+						<div class="text-text-dim text-xs">Get OTP from email</div>
+					</div>
+					<div class="bg-surface rounded-xl p-4 border border-border text-center">
+						<div class="font-mono text-sm text-cyan mb-1">wait_for_request</div>
+						<div class="text-text-dim text-xs">Long-poll for webhooks</div>
+					</div>
+					<div class="bg-surface rounded-xl p-4 border border-border text-center">
+						<div class="font-mono text-sm text-cyan mb-1">list_requests</div>
+						<div class="text-text-dim text-xs">Browse captured hooks</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -432,7 +431,7 @@
 						<span class="text-[10px] text-text-dim">Long polling</span>
 					</div>
 					<pre class="text-xs text-text-secondary font-mono leading-relaxed"><span class="text-text-dim"># Pause test until email arrives</span>
-curl localhost:3000/api/v1/emails/wait \
+curl localhost:3100/api/v1/emails/wait \
   -H <span class="text-amber">"Authorization: Bearer sk_..."</span> \
   -d <span class="text-amber">"to=signup@test"</span> \
   -d <span class="text-amber">"timeout=30"</span>
@@ -446,11 +445,11 @@ curl localhost:3000/api/v1/emails/wait \
 			<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
 				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
 					<span class="font-mono text-sm text-amber">npm</span>
-					<span class="font-mono text-sm text-text-secondary">@inboxed/client</span>
+					<span class="font-mono text-sm text-text-secondary">inboxed</span>
 				</div>
 				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
 					<span class="font-mono text-sm text-error">gem</span>
-					<span class="font-mono text-sm text-text-secondary">inboxed-ruby</span>
+					<span class="font-mono text-sm text-text-secondary">inboxed</span>
 				</div>
 				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
 					<span class="font-mono text-sm text-cyan">curl</span>
@@ -494,8 +493,8 @@ curl localhost:3000/api/v1/emails/wait \
 							<td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td>
 						</tr>
 						<tr class="border-b border-border/50">
-							<td class="p-5">Form Catcher</td>
-							<td class="p-5 text-phosphor">&#10003; Built-in</td>
+							<td class="p-5">HTTP Hooks (webhooks, forms, heartbeats)</td>
+							<td class="p-5 text-phosphor">&#10003; Unified</td>
 							<td class="p-5 text-text-dim">&mdash; None</td>
 							<td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td>
 						</tr>
@@ -507,7 +506,7 @@ curl localhost:3000/api/v1/emails/wait \
 						</tr>
 						<tr class="border-b border-border/50">
 							<td class="p-5">Client Libraries</td>
-							<td class="p-5 text-phosphor font-mono text-xs">TS + Ruby</td>
+							<td class="p-5 text-phosphor font-mono text-xs">npm + gem</td>
 							<td class="p-5 text-text-dim">&mdash;</td>
 							<td class="p-5 text-text-dim hidden sm:table-cell">&mdash;</td>
 						</tr>
@@ -669,7 +668,7 @@ curl localhost:3000/api/v1/emails/wait \
 						<span class="font-display font-bold text-xl tracking-tight">inboxed</span>
 					</div>
 					<p class="text-text-secondary text-sm leading-relaxed max-w-xs">
-						Open source SMTP server for modern development teams. Trap, inspect, and automate.
+						Open source dev inbox for emails, webhooks, and HTTP requests. Trap, inspect, and automate.
 					</p>
 				</div>
 				<div>
@@ -702,7 +701,7 @@ curl localhost:3000/api/v1/emails/wait \
 			</div>
 
 			<div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border text-[10px] text-text-dim uppercase tracking-[0.2em] font-mono">
-				<p>&copy; 2025 Inboxed. Built by <a href="https://notdefined.dev" class="text-text-secondary hover:text-phosphor transition-colors">notdefined.dev</a></p>
+				<p>&copy; 2026 Inboxed. Built by <a href="https://notdefined.dev" class="text-text-secondary hover:text-phosphor transition-colors">notdefined.dev</a></p>
 				<div class="flex items-center gap-6 mt-4 md:mt-0">
 					<a href="/login" class="text-text-secondary hover:text-phosphor transition-colors">Sign in</a>
 					<a href="/register" class="text-phosphor">Try Free</a>

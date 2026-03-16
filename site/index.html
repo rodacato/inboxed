@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inboxed — The dev inbox. Self-hosted SMTP debugging.</title>
-  <meta name="description" content="Self-hosted SMTP server for developers and QA. Catch test emails, inspect via API and dashboard, extract OTPs with AI agents via MCP. Open source.">
+  <title>Inboxed — The dev inbox. Emails, webhooks, and HTTP requests.</title>
+  <meta name="description" content="Self-hosted dev inbox for emails, webhooks, and HTTP requests. Inspect via API and dashboard, extract OTPs with AI agents via MCP. Open source.">
   <meta name="theme-color" content="#0D0F0E">
 
   <!-- Open Graph -->
   <meta property="og:title" content="Inboxed — The dev inbox">
-  <meta property="og:description" content="Catch test emails, inspect via API, extract OTPs with AI agents. Self-hosted, open source.">
+  <meta property="og:description" content="Catch emails, webhooks, and HTTP requests. Inspect via API, extract OTPs with AI agents. Self-hosted, open source.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://inboxed.notdefined.dev">
   <meta property="og:image" content="https://inboxed.notdefined.dev/assets/og-image.png">
@@ -17,7 +17,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Inboxed — The dev inbox">
-  <meta name="twitter:description" content="Catch test emails, inspect via API, extract OTPs with AI agents. Self-hosted, open source.">
+  <meta name="twitter:description" content="Catch emails, webhooks, and HTTP requests. Inspect via API, extract OTPs with AI agents. Self-hosted, open source.">
   <meta name="twitter:image" content="https://inboxed.notdefined.dev/assets/og-image.png">
 
   <link rel="canonical" href="https://inboxed.notdefined.dev">
@@ -122,24 +122,24 @@
           <div class="w-12 h-12 bg-cyan/10 rounded-xl flex items-center justify-center mb-6">
             <svg class="h-6 w-6 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
           </div>
-          <h3 class="text-xl font-bold font-display mb-3">Webhooks</h3>
-          <p class="text-text-secondary text-sm leading-relaxed font-body">Catch external webhooks. Debug Stripe, GitHub, or Twilio events. Inspect method, headers, body, query params.</p>
+          <h3 class="text-xl font-bold font-display mb-3">HTTP Hooks</h3>
+          <p class="text-text-secondary text-sm leading-relaxed font-body">Catch webhooks, form submissions, and heartbeats in one unified stream. Inspect any HTTP verb, headers, body, and query params.</p>
         </div>
 
         <div class="p-8 bg-surface border border-border rounded-2xl hover:border-amber/40 transition-all">
           <div class="w-12 h-12 bg-amber/10 rounded-xl flex items-center justify-center mb-6">
-            <svg class="h-6 w-6 text-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+            <svg class="h-6 w-6 text-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
           </div>
-          <h3 class="text-xl font-bold font-display mb-3">Dev Forms</h3>
-          <p class="text-text-secondary text-sm leading-relaxed font-body">Point your frontend forms at Inboxed. See JSON payloads without a backend. Perfect for prototyping.</p>
+          <h3 class="text-xl font-bold font-display mb-3">MCP Native</h3>
+          <p class="text-text-secondary text-sm leading-relaxed font-body">AI agents read your mailbox and webhook payloads. Extract OTPs, click magic links, assert on events &mdash; all via MCP.</p>
         </div>
 
         <div class="p-8 bg-surface border border-border rounded-2xl hover:border-phosphor/40 transition-all">
           <div class="w-12 h-12 bg-phosphor/10 rounded-xl flex items-center justify-center mb-6">
-            <svg class="h-6 w-6 text-phosphor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+            <svg class="h-6 w-6 text-phosphor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
           </div>
-          <h3 class="text-xl font-bold font-display mb-3">Heartbeats</h3>
-          <p class="text-text-secondary text-sm leading-relaxed font-body">Monitor cron jobs and background workers. Expect a ping every N minutes &mdash; get alerted when it doesn't arrive.</p>
+          <h3 class="text-xl font-bold font-display mb-3">REST API</h3>
+          <p class="text-text-secondary text-sm leading-relaxed font-body">Full API with long-polling. Use the TypeScript or Ruby client in your CI/CD pipeline. No hardcoded sleeps.</p>
         </div>
       </div>
     </div>
@@ -213,15 +213,11 @@
             </div>
             <div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm font-body">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke-width="1.5"/></svg>
-              Webhooks
+              Hooks (3)
             </div>
             <div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm font-body">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414" stroke-width="1.5"/></svg>
-              Forms
-            </div>
-            <div class="flex items-center gap-2 p-2.5 rounded-lg text-text-secondary text-sm font-body">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682" stroke-width="1.5"/></svg>
-              Heartbeats
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke-width="1.5"/></svg>
+              Settings
             </div>
           </aside>
           <!-- Message list -->
@@ -295,7 +291,7 @@
           <p class="text-neutral-300"><span class="text-[#39FF14]">$</span> git clone https://github.com/notdefined-dev/inboxed &amp;&amp; cd inboxed</p>
           <p class="text-neutral-300"><span class="text-[#39FF14]">$</span> bin/setup &amp;&amp; docker compose up -d</p>
           <p class="mt-4 text-[#39FF14]">&check; PostgreSQL ready</p>
-          <p class="text-[#39FF14]">&check; API ready on :3000</p>
+          <p class="text-[#39FF14]">&check; API ready on :3100</p>
           <p class="text-[#39FF14]">&check; Dashboard ready on :80</p>
           <p class="text-[#00E5FF]">&check; SMTP ready on :2525</p>
           <p class="text-[#00E5FF]">&check; MCP server ready</p>
@@ -320,7 +316,7 @@
           </div>
           <h2 class="font-display text-4xl md:text-5xl font-bold mb-6 leading-tight">AI agent integration via Model Context Protocol.</h2>
           <p class="text-text-secondary text-lg font-body mb-8">
-            Let your AI agents "read" the emails your app sends. Perfect for automating E2E testing flows that require OTP extraction or magic link clicks.
+            Let your AI agents read emails and webhook payloads. Perfect for automating E2E testing flows that require OTP extraction, magic link clicks, or webhook assertion.
           </p>
           <ul class="space-y-4 font-body">
             <li class="flex items-start gap-3"><span class="text-cyan font-bold font-mono">01.</span><span>Claude Code and Cursor can browse your dev mailbox.</span></li>
@@ -349,22 +345,25 @@
         </div>
       </div>
       <!-- MCP tools -->
-      <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-surface rounded-xl p-4 border border-border text-center">
-          <div class="font-mono text-sm text-cyan mb-1">list_inboxes</div>
-          <div class="text-text-dim text-xs font-body">Browse all inboxes</div>
-        </div>
-        <div class="bg-surface rounded-xl p-4 border border-border text-center">
-          <div class="font-mono text-sm text-cyan mb-1">wait_for_email</div>
-          <div class="text-text-dim text-xs font-body">Long-poll for new mail</div>
-        </div>
-        <div class="bg-surface rounded-xl p-4 border border-border text-center">
-          <div class="font-mono text-sm text-cyan mb-1">extract_code</div>
-          <div class="text-text-dim text-xs font-body">Get OTP from email</div>
-        </div>
-        <div class="bg-surface rounded-xl p-4 border border-border text-center">
-          <div class="font-mono text-sm text-cyan mb-1">get_email</div>
-          <div class="text-text-dim text-xs font-body">Full email details</div>
+      <div class="mt-16">
+        <h4 class="text-xs font-mono text-text-dim uppercase tracking-widest text-center mb-6">15 tools available</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-surface rounded-xl p-4 border border-border text-center">
+            <div class="font-mono text-sm text-cyan mb-1">wait_for_email</div>
+            <div class="text-text-dim text-xs font-body">Long-poll for new mail</div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 border border-border text-center">
+            <div class="font-mono text-sm text-cyan mb-1">extract_code</div>
+            <div class="text-text-dim text-xs font-body">Get OTP from email</div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 border border-border text-center">
+            <div class="font-mono text-sm text-cyan mb-1">wait_for_request</div>
+            <div class="text-text-dim text-xs font-body">Long-poll for webhooks</div>
+          </div>
+          <div class="bg-surface rounded-xl p-4 border border-border text-center">
+            <div class="font-mono text-sm text-cyan mb-1">list_requests</div>
+            <div class="text-text-dim text-xs font-body">Browse captured hooks</div>
+          </div>
         </div>
       </div>
     </div>
@@ -401,7 +400,7 @@
             <span class="text-[10px] text-text-dim font-body">Long polling</span>
           </div>
           <pre class="text-xs text-text-secondary font-mono leading-relaxed"><span class="text-text-dim"># Pause test until email arrives</span>
-curl localhost:3000/api/v1/emails/wait \
+curl localhost:3100/api/v1/emails/wait \
   -H "Authorization: Bearer sk_..." \
   -d "to=signup@test" \
   -d "timeout=30"
@@ -413,11 +412,11 @@ curl localhost:3000/api/v1/emails/wait \
       <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
         <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
           <span class="font-mono text-sm text-amber">npm</span>
-          <span class="font-mono text-sm text-text-secondary">@inboxed/client</span>
+          <span class="font-mono text-sm text-text-secondary">inboxed</span>
         </div>
         <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
           <span class="font-mono text-sm" style="color:#FF3B30">gem</span>
-          <span class="font-mono text-sm text-text-secondary">inboxed-ruby</span>
+          <span class="font-mono text-sm text-text-secondary">inboxed</span>
         </div>
         <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
           <span class="font-mono text-sm text-cyan">curl</span>
@@ -445,9 +444,9 @@ curl localhost:3000/api/v1/emails/wait \
             <tr class="border-b border-border/50"><td class="p-5">Self-Hosted</td><td class="p-5 text-phosphor">&check; Yes</td><td class="p-5 text-text-dim">&mdash; Cloud only</td><td class="p-5 text-phosphor hidden sm:table-cell">&check; Yes</td></tr>
             <tr class="border-b border-border/50"><td class="p-5">MCP / AI Agents</td><td class="p-5 text-phosphor">&check; Native</td><td class="p-5 text-text-dim">&mdash; None</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
             <tr class="border-b border-border/50"><td class="p-5">Webhook Debugging</td><td class="p-5 text-phosphor">&check; Integrated</td><td class="p-5 text-text-dim">&mdash; External</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
-            <tr class="border-b border-border/50"><td class="p-5">Form Catcher</td><td class="p-5 text-phosphor">&check; Built-in</td><td class="p-5 text-text-dim">&mdash; None</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
+            <tr class="border-b border-border/50"><td class="p-5">HTTP Hooks (webhooks, forms, heartbeats)</td><td class="p-5 text-phosphor">&check; Unified</td><td class="p-5 text-text-dim">&mdash; None</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
             <tr class="border-b border-border/50"><td class="p-5">Data Persistence</td><td class="p-5 text-phosphor">&check; PostgreSQL</td><td class="p-5 text-text-dim">Cloud storage</td><td class="p-5 text-text-dim hidden sm:table-cell">In-memory</td></tr>
-            <tr class="border-b border-border/50"><td class="p-5">Client Libraries</td><td class="p-5 text-phosphor font-mono text-xs">TS + Ruby</td><td class="p-5 text-text-dim">&mdash;</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash;</td></tr>
+            <tr class="border-b border-border/50"><td class="p-5">Client Libraries</td><td class="p-5 text-phosphor font-mono text-xs">npm + gem</td><td class="p-5 text-text-dim">&mdash;</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash;</td></tr>
             <tr><td class="p-5">Price</td><td class="p-5 text-phosphor font-bold">Free / MIT</td><td class="p-5 text-text-dim">$15-50/mo</td><td class="p-5 text-phosphor hidden sm:table-cell">Free / MIT</td></tr>
           </tbody>
         </table>
@@ -532,7 +531,7 @@ curl localhost:3000/api/v1/emails/wait \
             <span class="text-phosphor font-bold text-xl font-mono">[@]</span>
             <span class="font-display font-bold tracking-tight text-xl">inboxed</span>
           </div>
-          <p class="text-text-secondary text-sm leading-relaxed max-w-xs font-body">Open source SMTP server for modern development teams. Trap, inspect, and automate.</p>
+          <p class="text-text-secondary text-sm leading-relaxed max-w-xs font-body">Open source dev inbox for emails, webhooks, and HTTP requests. Trap, inspect, and automate.</p>
         </div>
         <div>
           <h5 class="font-bold mb-6 text-sm uppercase tracking-widest font-display">Product</h5>
@@ -563,7 +562,7 @@ curl localhost:3000/api/v1/emails/wait \
         </div>
       </div>
       <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border text-[10px] text-text-dim uppercase tracking-[0.2em] font-mono">
-        <p>&copy; 2025 Inboxed. Built by <a href="https://notdefined.dev" class="text-text-secondary hover:text-phosphor transition-colors">notdefined.dev</a></p>
+        <p>&copy; 2026 Inboxed. Built by <a href="https://notdefined.dev" class="text-text-secondary hover:text-phosphor transition-colors">notdefined.dev</a></p>
         <p class="mt-4 md:mt-0">No real inboxes were harmed.</p>
       </div>
     </div>
