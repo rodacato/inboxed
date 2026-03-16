@@ -152,7 +152,7 @@ INBOXED_MCP_KEY=${INBOXED_MCP_KEY}
 # ── Email & Storage ──────────────────────────────────────────
 EMAIL_TTL_HOURS=168
 INBOXED_MAX_EMAILS_PER_PROJECT=10000
-INBOXED_MAX_MESSAGE_SIZE_MB=25
+INBOXED_MAX_MESSAGE_SIZE_MB=3
 
 # ── Outbound SMTP (optional — for verification, invitations) ─
 # OUTBOUND_SMTP_HOST=

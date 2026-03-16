@@ -4,7 +4,7 @@ require "midi-smtp-server"
 
 module Inboxed
   class SmtpServer < MidiSmtpServer::Smtpd
-    MAX_MESSAGE_SIZE = ENV.fetch("INBOXED_MAX_MESSAGE_SIZE_MB", "25").to_i * 1024 * 1024
+    MAX_MESSAGE_SIZE = ENV.fetch("INBOXED_MAX_MESSAGE_SIZE_MB", "3").to_i * 1024 * 1024
     MAX_RECIPIENTS = ENV.fetch("SMTP_MAX_RECIPIENTS", "100").to_i
     SMTP_RATE_LIMIT = ENV.fetch("SMTP_RATE_LIMIT_PER_MIN", "60").to_i
     SMTP_RATE_WINDOW = 60 # seconds
