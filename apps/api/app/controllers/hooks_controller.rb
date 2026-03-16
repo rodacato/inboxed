@@ -51,7 +51,7 @@ class HooksController < ApplicationController
       path: params[:path],
       query_string: request.query_string,
       headers: extract_headers,
-      body: request.body.read(@endpoint.max_body_bytes),
+      body: safe_read_body,
       content_type: request.content_type,
       ip_address: request.remote_ip,
       size_bytes: request.content_length || 0
@@ -114,6 +114,12 @@ class HooksController < ApplicationController
       attributes: %w[href src alt title class id style name type value placeholder
                      action method charset content rel media]
     )
+  end
+
+  def safe_read_body
+    raw = request.raw_post
+    return nil if raw.blank?
+    raw.truncate_bytes(@endpoint.max_body_bytes)
   end
 
   def default_thank_you_html

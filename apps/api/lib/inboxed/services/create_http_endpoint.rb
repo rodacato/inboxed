@@ -13,7 +13,7 @@ module Inboxed
           endpoint_type: params[:endpoint_type] || "webhook",
           label: params[:label],
           description: params[:description],
-          allowed_methods: params[:allowed_methods] || ["POST"],
+          allowed_methods: params[:allowed_methods] || HttpEndpointRecord::VALID_HTTP_METHODS,
           allowed_ips: params[:allowed_ips] || [],
           max_body_bytes: params[:max_body_bytes] || 262_144,
           response_mode: params[:response_mode] || "json",
