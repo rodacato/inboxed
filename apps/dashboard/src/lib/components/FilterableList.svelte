@@ -19,6 +19,7 @@
 		onLoadMore?: () => void;
 		loading?: boolean;
 		headerActions?: Snippet;
+		subHeader?: Snippet;
 		items: Snippet;
 		emptyState?: Snippet;
 	}
@@ -34,6 +35,7 @@
 		onLoadMore,
 		loading = false,
 		headerActions,
+		subHeader,
 		items
 	}: Props = $props();
 </script>
@@ -45,13 +47,19 @@
 			<h2 class="text-sm font-display font-bold text-text-primary">{title}</h2>
 			<div class="flex items-center gap-2">
 				{#if totalCount !== undefined}
-					<span class="text-[10px] font-mono text-text-dim">{totalCount} total</span>
+					<span class="text-[10px] font-mono text-text-dim">{totalCount}</span>
 				{/if}
 				{#if headerActions}
 					{@render headerActions()}
 				{/if}
 			</div>
 		</div>
+
+		{#if subHeader}
+			<div class="mt-2 flex justify-center">
+				{@render subHeader()}
+			</div>
+		{/if}
 
 		<!-- Filter chips -->
 		{#if filters && filters.length > 1}
