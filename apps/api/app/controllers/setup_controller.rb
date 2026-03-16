@@ -20,7 +20,7 @@ class SetupController < ApplicationController
     result = Inboxed::Services::SetupInstance.new.call(
       email: params[:email],
       password: params[:password],
-      org_name: params[:org_name] || "Default"
+      org_name: params[:organization_name] || "Default"
     )
 
     session[:user_id] = result.user.id
@@ -48,6 +48,8 @@ class SetupController < ApplicationController
         }
       }
     }, status: :created
+  rescue ActiveRecord::RecordInvalid => e
+    render json: {error: e.message}, status: :unprocessable_entity
   end
 
   private

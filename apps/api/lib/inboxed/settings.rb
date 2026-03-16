@@ -3,7 +3,7 @@
 module Inboxed
   class Settings
     def self.setup_completed?
-      get(:setup_completed_at).present?
+      get(:setup_completed_at).present? || UserRecord.where(site_admin: true).exists?
     end
 
     def self.get(key)
