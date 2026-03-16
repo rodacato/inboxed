@@ -13,6 +13,58 @@ _Nothing yet._
 
 ---
 
+## [0.2.0] - 2026-03-16
+
+### Added
+
+#### Core
+- Multi-user data model with organizations, users, memberships, and roles
+- Session-based cookie authentication with tenant isolation
+- Invitation system for team member management
+- HTTP Catcher module: public catch endpoint, management API, and heartbeat monitoring
+- MCP server tools for HTTP Catcher (create, list, wait, extract, heartbeat)
+- Project-level requests API with semantic token prefixes
+
+#### Dashboard
+- Auth pages (login, signup) with session-based cookie auth
+- Member management, trial banner, and sidebar updates
+- HTTP Catcher UI: unified hooks view with type filters (webhooks, forms, heartbeats)
+- Button group filter redesign with two-line header layout
+- Module-aware sidebar with per-module counts and real-time updates
+- Settings hub with sidebar navigation and dedicated pages
+- Tabbed Quick Start layout with real endpoint tokens in snippets
+- Reusable layout primitives (SplitPane, FilterableList, EmptyState)
+- Toast notifications and command palette UI
+- Request detail view with parsed query params, copy buttons, and JSON formatting
+- Landing page with Stitch-inspired design
+- Privacy policy and terms of service pages
+- Favicon generated from logo icon
+
+#### Infrastructure
+- Improved deploy workflow with pre-flight checks and consolidated jobs
+- Separated SMTP and web domains with updated DNS guide
+- Comprehensive specs for multi-user system (291 examples, 0 failures)
+- Integration test script and testing guide
+
+### Fixed
+- Accept all HTTP verbs by default and fix body capture
+- Dashboard reactivity and data mapping issues
+- Setup flow bugs (param mismatch, missing transaction, stale state)
+- Infinite redirect loop on login page
+- Solid Queue/Cable/Cache schema loading in production
+- Kamal deploy config issues and dashboard build errors
+- ESLint errors (32 resolved)
+- Critical and high-severity security findings
+- Missing Caddy/vite proxy routes and post-setup onboarding flow
+- Tailwind z-index bracket notation
+
+### Changed
+- Restructured dashboard routes with module tabs and /mail namespace
+- Extracted shared services, removed dead code, deduplicated logic
+- Aligned env vars across configs for unified multi-user model
+
+---
+
 ## [0.1.0] - 2026-03-16
 
 First public release of Inboxed — a developer-first email testing platform.

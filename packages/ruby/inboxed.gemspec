@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "inboxed"
-  spec.version       = "0.1.0"
+  spec.version       = "0.2.0"
   spec.authors       = ["Inboxed"]
   spec.summary       = "Lightweight client for the Inboxed email testing API"
   spec.description   = "HTTP client with extraction helpers for verifying emails in automated tests. Works with RSpec, Minitest, Capybara, or any Ruby test framework."
