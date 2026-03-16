@@ -1,0 +1,375 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Integration test for Inboxed — tests SMTP, Webhook, Form & Heartbeat flows.
+# Prerequisites: API (port 3100), SMTP (port 2525), and Solid Queue worker running.
+# Usage: bin/integration-test
+
+API="${INBOXED_API_URL:-http://localhost:3100}"
+ADMIN_TOKEN="${INBOXED_ADMIN_TOKEN:-changeme}"
+PASS=0
+FAIL=0
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+pass() { PASS=$((PASS + 1)); echo -e "  ${GREEN}PASS${NC} $1"; }
+fail() { FAIL=$((FAIL + 1)); echo -e "  ${RED}FAIL${NC} $1: $2"; }
+
+assert_eq() {
+  if [ "$1" = "$2" ]; then pass "$3"; else fail "$3" "expected '$2', got '$1'"; fi
+}
+
+assert_not_empty() {
+  if [ -n "$1" ]; then pass "$2"; else fail "$2" "was empty"; fi
+}
+
+cleanup() {
+  if [ -n "${PROJECT_ID:-}" ]; then
+    curl -sf -X DELETE -H "Authorization: Bearer $ADMIN_TOKEN" \
+      "$API/admin/projects/$PROJECT_ID" > /dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+echo -e "${BOLD}Inboxed Integration Test${NC}"
+echo "API: $API"
+echo ""
+
+# ── 1. Health check ──────────────────────────────────────────
+echo -e "${BOLD}1. Health check${NC}"
+STATUS=$(curl -sf -H "Authorization: Bearer $ADMIN_TOKEN" "$API/admin/status" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])" 2>/dev/null || echo "")
+assert_eq "$STATUS" "ok" "Admin status returns ok"
+
+# ── 2. Create project ───────────────────────────────────────
+echo -e "${BOLD}2. Create project${NC}"
+SLUG="integration-test-$(date +%s)"
+PROJECT=$(curl -sf -X POST "$API/admin/projects" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"project\":{\"name\":\"Integration Test\",\"slug\":\"$SLUG\"}}")
+PROJECT_ID=$(echo "$PROJECT" | python3 -c "import sys,json; print(json.load(sys.stdin)['project']['id'])" 2>/dev/null || echo "")
+assert_not_empty "$PROJECT_ID" "Project created"
+
+# ── 3. Create API key ───────────────────────────────────────
+echo -e "${BOLD}3. Create API key${NC}"
+KEY_RESP=$(curl -sf -X POST "$API/admin/projects/$PROJECT_ID/api_keys" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"api_key":{"label":"integration"}}')
+API_KEY=$(echo "$KEY_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['api_key']['token'])" 2>/dev/null || echo "")
+assert_not_empty "$API_KEY" "API key issued"
+
+# ── 4. Auth guard ────────────────────────────────────────────
+echo -e "${BOLD}4. Auth guard${NC}"
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API/api/v1/inboxes")
+assert_eq "$HTTP_CODE" "401" "No token returns 401"
+
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer invalid" "$API/api/v1/inboxes")
+assert_eq "$HTTP_CODE" "401" "Bad token returns 401"
+
+# ── 5. Send OTP email via SMTP ───────────────────────────────
+echo -e "${BOLD}5. Send email via SMTP${NC}"
+OTP_CODE="482913"
+RECIPIENT="test-$$@mail.notdefined.dev"
+
+SMTP_EXIT=0
+curl -s --url "smtp://localhost:2525" \
+  --user "$API_KEY:$API_KEY" \
+  --mail-from "no-reply@cognito.amazonaws.com" \
+  --mail-rcpt "$RECIPIENT" \
+  -T - <<EOF || SMTP_EXIT=$?
+From: no-reply@cognito.amazonaws.com
+To: $RECIPIENT
+Subject: Your verification code is $OTP_CODE
+Content-Type: text/html; charset=UTF-8
+MIME-Version: 1.0
+
+<html><body>
+<p>Your Amazon Cognito verification code is: <strong>$OTP_CODE</strong></p>
+<p>It expires in 10 minutes.</p>
+</body></html>
+EOF
+
+assert_eq "$SMTP_EXIT" "0" "SMTP accepted the email"
+
+# ── 6. Wait for processing ───────────────────────────────────
+echo -e "${BOLD}6. Wait for Solid Queue${NC}"
+sleep "${QUEUE_WAIT:-5}"
+pass "Waited ${QUEUE_WAIT:-5}s for job processing"
+
+# ── 7. List inboxes ──────────────────────────────────────────
+echo -e "${BOLD}7. List inboxes${NC}"
+INBOXES=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/inboxes")
+INBOX_COUNT=$(echo "$INBOXES" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$INBOX_COUNT" "1" "One inbox created"
+
+INBOX_ID=$(echo "$INBOXES" | python3 -c "import sys,json; print(json.load(sys.stdin)['inboxes'][0]['id'])" 2>/dev/null || echo "")
+assert_not_empty "$INBOX_ID" "Inbox has an ID"
+
+# ── 8. List emails ───────────────────────────────────────────
+echo -e "${BOLD}8. List emails${NC}"
+EMAILS=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/inboxes/$INBOX_ID/emails")
+EMAIL_COUNT=$(echo "$EMAILS" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$EMAIL_COUNT" "1" "One email in inbox"
+
+EMAIL_ID=$(echo "$EMAILS" | python3 -c "import sys,json; print(json.load(sys.stdin)['emails'][0]['id'])" 2>/dev/null || echo "")
+
+# ── 9. Email detail + OTP extraction ─────────────────────────
+echo -e "${BOLD}9. Email detail + OTP extraction${NC}"
+DETAIL=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/emails/$EMAIL_ID")
+
+FROM=$(echo "$DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['email']['from'])" 2>/dev/null || echo "")
+assert_eq "$FROM" "no-reply@cognito.amazonaws.com" "From address parsed"
+
+SUBJECT=$(echo "$DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['email']['subject'])" 2>/dev/null || echo "")
+assert_eq "$SUBJECT" "Your verification code is $OTP_CODE" "Subject parsed"
+
+EXTRACTED_OTP=$(echo "$DETAIL" | python3 -c "
+import sys, json, re
+email = json.load(sys.stdin)['email']
+body = email.get('body_html', '') or email.get('body_text', '')
+text = re.sub(r'<[^>]+>', ' ', body)
+codes = re.findall(r'\b\d{4,8}\b', text)
+print(codes[0] if codes else '')
+" 2>/dev/null || echo "")
+assert_eq "$EXTRACTED_OTP" "$OTP_CODE" "OTP extracted from body"
+
+# ── 10. Raw MIME ──────────────────────────────────────────────
+echo -e "${BOLD}10. Raw MIME download${NC}"
+RAW=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/emails/$EMAIL_ID/raw")
+RAW_HAS_SUBJECT=$(echo "$RAW" | grep -c "verification code" || true)
+assert_eq "$([ "$RAW_HAS_SUBJECT" -gt 0 ] && echo "yes" || echo "no")" "yes" "Raw source contains subject"
+
+# ── 11. Search ────────────────────────────────────────────────
+echo -e "${BOLD}11. Full-text search${NC}"
+SEARCH=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/search?q=verification")
+SEARCH_COUNT=$(echo "$SEARCH" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$SEARCH_COUNT" "1" "Search finds the email"
+
+# ── 12. Delete email ──────────────────────────────────────────
+echo -e "${BOLD}12. Delete email${NC}"
+DEL_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/emails/$EMAIL_ID")
+assert_eq "$DEL_CODE" "204" "Email deleted via API"
+
+EMAILS_AFTER=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/inboxes/$INBOX_ID/emails")
+AFTER_COUNT=$(echo "$EMAILS_AFTER" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$AFTER_COUNT" "0" "Inbox is empty after delete"
+
+# ── 13. Delete inbox ──────────────────────────────────────────
+echo -e "${BOLD}13. Delete inbox${NC}"
+DEL_INBOX=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/inboxes/$INBOX_ID")
+assert_eq "$DEL_INBOX" "204" "Inbox deleted via API"
+
+# ══════════════════════════════════════════════════════════════
+# HTTP Catcher: Webhooks, Forms & Heartbeats
+# ══════════════════════════════════════════════════════════════
+
+# ── 14. Create webhook endpoint ───────────────────────────────
+echo -e "${BOLD}14. Create webhook endpoint${NC}"
+WH_RESP=$(curl -sf -X POST "$API/api/v1/endpoints" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint":{"endpoint_type":"webhook","label":"Integration Webhook"}}')
+WH_TOKEN=$(echo "$WH_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint']['token'])" 2>/dev/null || echo "")
+assert_not_empty "$WH_TOKEN" "Webhook endpoint created"
+
+# ── 15. Send webhook POST to public catch endpoint ────────────
+echo -e "${BOLD}15. Send webhook POST${NC}"
+WH_CATCH=$(curl -sf -X POST "$API/hook/$WH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "X-GitHub-Event: push" \
+  -d '{"ref":"refs/heads/main","commits":[{"message":"fix: patch"}]}')
+WH_OK=$(echo "$WH_CATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok', False))" 2>/dev/null || echo "")
+assert_eq "$WH_OK" "True" "Webhook catch returns ok"
+
+WH_REQ_ID=$(echo "$WH_CATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id', ''))" 2>/dev/null || echo "")
+assert_not_empty "$WH_REQ_ID" "Webhook catch returns request ID"
+
+# ── 16. Send webhook with query string and custom path ────────
+echo -e "${BOLD}16. Send webhook with path and query${NC}"
+WH_CATCH2_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X PUT \
+  "$API/hook/$WH_TOKEN/api/deploy?env=staging" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"deploying"}')
+assert_eq "$WH_CATCH2_CODE" "200" "Webhook with subpath returns 200"
+
+# ── 17. List captured webhook requests ────────────────────────
+echo -e "${BOLD}17. List webhook requests${NC}"
+sleep "${QUEUE_WAIT:-2}"
+WH_REQS=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$WH_TOKEN/requests")
+WH_REQ_COUNT=$(echo "$WH_REQS" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$WH_REQ_COUNT" "2" "Two webhook requests captured"
+
+# ── 18. Inspect webhook request detail ────────────────────────
+echo -e "${BOLD}18. Webhook request detail${NC}"
+WH_REQ_DETAIL=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$WH_TOKEN/requests/$WH_REQ_ID")
+WH_METHOD=$(echo "$WH_REQ_DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['request']['method'])" 2>/dev/null || echo "")
+assert_eq "$WH_METHOD" "POST" "Request method is POST"
+
+WH_BODY=$(echo "$WH_REQ_DETAIL" | python3 -c "import sys,json; d=json.load(sys.stdin)['request']; b=json.loads(d['body']); print(b['ref'])" 2>/dev/null || echo "")
+assert_eq "$WH_BODY" "refs/heads/main" "Request body captured correctly"
+
+WH_HEADER=$(echo "$WH_REQ_DETAIL" | python3 -c "
+import sys,json
+headers = json.load(sys.stdin)['request']['headers']
+# Headers may be dict or list of pairs
+if isinstance(headers, dict):
+    print(headers.get('x-github-event', headers.get('X-GitHub-Event', '')))
+else:
+    val = next((v for k,v in headers if k.lower() == 'x-github-event'), '')
+    print(val)
+" 2>/dev/null || echo "")
+assert_eq "$WH_HEADER" "push" "Custom header captured"
+
+# ── 19. Webhook auth guard — no public access to requests ─────
+echo -e "${BOLD}19. Webhook auth guard${NC}"
+WH_NOAUTH=$(curl -s -o /dev/null -w "%{http_code}" "$API/api/v1/endpoints/$WH_TOKEN/requests")
+assert_eq "$WH_NOAUTH" "401" "Requests list requires auth"
+
+# ── 20. Create form endpoint ──────────────────────────────────
+echo -e "${BOLD}20. Create form endpoint${NC}"
+FORM_RESP=$(curl -sf -X POST "$API/api/v1/endpoints" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint":{"endpoint_type":"form","label":"Contact Form","response_mode":"json"}}')
+FORM_TOKEN=$(echo "$FORM_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint']['token'])" 2>/dev/null || echo "")
+assert_not_empty "$FORM_TOKEN" "Form endpoint created"
+
+FORM_TYPE=$(echo "$FORM_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint']['endpoint_type'])" 2>/dev/null || echo "")
+assert_eq "$FORM_TYPE" "form" "Endpoint type is form"
+
+# ── 21. Submit form via URL-encoded POST ──────────────────────
+echo -e "${BOLD}21. Submit form (URL-encoded)${NC}"
+FORM_CATCH=$(curl -sf -X POST "$API/hook/$FORM_TOKEN" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "name=Jane+Doe&email=jane%40example.com&message=Hello+from+integration+test")
+FORM_OK=$(echo "$FORM_CATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok', False))" 2>/dev/null || echo "")
+assert_eq "$FORM_OK" "True" "Form submission returns ok"
+
+# ── 22. Submit form via multipart ─────────────────────────────
+echo -e "${BOLD}22. Submit form (multipart)${NC}"
+FORM_MULTI_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X POST "$API/hook/$FORM_TOKEN" \
+  -F "name=John Smith" \
+  -F "email=john@example.com" \
+  -F "subject=Bug Report")
+assert_eq "$FORM_MULTI_CODE" "200" "Multipart form accepted"
+
+# ── 23. Verify form submissions captured ──────────────────────
+echo -e "${BOLD}23. Verify form requests${NC}"
+sleep "${QUEUE_WAIT:-2}"
+FORM_REQS=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$FORM_TOKEN/requests")
+FORM_REQ_COUNT=$(echo "$FORM_REQS" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$FORM_REQ_COUNT" "2" "Two form submissions captured"
+
+FORM_REQ_ID=$(echo "$FORM_REQS" | python3 -c "import sys,json; print(json.load(sys.stdin)['requests'][0]['id'])" 2>/dev/null || echo "")
+FORM_REQ_DETAIL=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$FORM_TOKEN/requests/$FORM_REQ_ID")
+FORM_REQ_CT=$(echo "$FORM_REQ_DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['request']['content_type'])" 2>/dev/null || echo "")
+assert_not_empty "$FORM_REQ_CT" "Form request has content type"
+
+# ── 24. Create heartbeat endpoint ─────────────────────────────
+echo -e "${BOLD}24. Create heartbeat endpoint${NC}"
+HB_RESP=$(curl -sf -X POST "$API/api/v1/endpoints" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint":{"endpoint_type":"heartbeat","label":"Cron Heartbeat","expected_interval_seconds":60}}')
+HB_TOKEN=$(echo "$HB_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint']['token'])" 2>/dev/null || echo "")
+assert_not_empty "$HB_TOKEN" "Heartbeat endpoint created"
+
+HB_INTERVAL=$(echo "$HB_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint']['expected_interval_seconds'])" 2>/dev/null || echo "")
+assert_eq "$HB_INTERVAL" "60" "Heartbeat interval set to 60s"
+
+# ── 25. Send heartbeat ping ───────────────────────────────────
+echo -e "${BOLD}25. Send heartbeat ping${NC}"
+HB_CATCH=$(curl -sf -X POST "$API/hook/$HB_TOKEN")
+HB_OK=$(echo "$HB_CATCH" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok', False))" 2>/dev/null || echo "")
+assert_eq "$HB_OK" "True" "Heartbeat ping accepted"
+
+# ── 26. Verify heartbeat status ───────────────────────────────
+echo -e "${BOLD}26. Heartbeat status${NC}"
+sleep "${QUEUE_WAIT:-2}"
+HB_DETAIL=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$HB_TOKEN")
+HB_STATUS=$(echo "$HB_DETAIL" | python3 -c "import sys,json; print(json.load(sys.stdin)['endpoint'].get('heartbeat_status', json.load(sys.stdin)['endpoint'].get('status', '')))" 2>/dev/null || echo "")
+# After a ping, heartbeat should be healthy (or pending → healthy)
+assert_not_empty "$HB_STATUS" "Heartbeat has a status"
+
+HB_REQ_COUNT=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$HB_TOKEN/requests" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$HB_REQ_COUNT" "1" "Heartbeat ping recorded as request"
+
+# ── 27. List endpoints (all types) ────────────────────────────
+echo -e "${BOLD}27. List all endpoints${NC}"
+ALL_EP=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints")
+ALL_EP_COUNT=$(echo "$ALL_EP" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$ALL_EP_COUNT" "3" "Three endpoints total"
+
+# ── 28. Filter endpoints by type ──────────────────────────────
+echo -e "${BOLD}28. Filter endpoints by type${NC}"
+WH_ONLY=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints?type=webhook")
+WH_ONLY_COUNT=$(echo "$WH_ONLY" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$WH_ONLY_COUNT" "1" "Filter returns one webhook"
+
+FORM_ONLY=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints?type=form")
+FORM_ONLY_COUNT=$(echo "$FORM_ONLY" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$FORM_ONLY_COUNT" "1" "Filter returns one form"
+
+HB_ONLY=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints?type=heartbeat")
+HB_ONLY_COUNT=$(echo "$HB_ONLY" | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$HB_ONLY_COUNT" "1" "Filter returns one heartbeat"
+
+# ── 29. Purge webhook requests ────────────────────────────────
+echo -e "${BOLD}29. Purge webhook requests${NC}"
+PURGE_CODE=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints/$WH_TOKEN/purge")
+assert_eq "$PURGE_CODE" "204" "Webhook requests purged"
+
+WH_AFTER_PURGE=$(curl -sf -H "Authorization: Bearer $API_KEY" \
+  "$API/api/v1/endpoints/$WH_TOKEN/requests" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$WH_AFTER_PURGE" "0" "No requests after purge"
+
+# ── 30. Delete all endpoints ──────────────────────────────────
+echo -e "${BOLD}30. Delete endpoints${NC}"
+DEL_WH=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints/$WH_TOKEN")
+assert_eq "$DEL_WH" "204" "Webhook endpoint deleted"
+
+DEL_FORM=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints/$FORM_TOKEN")
+assert_eq "$DEL_FORM" "204" "Form endpoint deleted"
+
+DEL_HB=$(curl -sf -o /dev/null -w "%{http_code}" -X DELETE \
+  -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints/$HB_TOKEN")
+assert_eq "$DEL_HB" "204" "Heartbeat endpoint deleted"
+
+# Verify all gone
+EP_AFTER=$(curl -sf -H "Authorization: Bearer $API_KEY" "$API/api/v1/endpoints" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['pagination']['total_count'])" 2>/dev/null || echo "0")
+assert_eq "$EP_AFTER" "0" "No endpoints remain"
+
+# ── 31. Catch endpoint returns 404 for deleted token ──────────
+echo -e "${BOLD}31. Deleted endpoint returns 404${NC}"
+GONE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API/hook/$WH_TOKEN")
+assert_eq "$GONE_CODE" "404" "Deleted webhook token returns 404"
+
+# ── Results ───────────────────────────────────────────────────
+echo ""
+TOTAL=$((PASS + FAIL))
+if [ "$FAIL" -eq 0 ]; then
+  echo -e "${GREEN}${BOLD}All $TOTAL tests passed!${NC}"
+else
+  echo -e "${RED}${BOLD}$FAIL/$TOTAL tests failed${NC}"
+  exit 1
+fi
