@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class HooksController < ApplicationController
-  skip_forgery_protection
-
   before_action :find_endpoint
   before_action :check_method_allowed
   before_action :check_ip_allowed

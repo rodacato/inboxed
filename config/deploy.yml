@@ -9,14 +9,15 @@
 
 service: inboxed
 
-image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-api
+ssh:
+  user: deploy
+
+image: <%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-api
 
 servers:
   web:
     hosts:
       - <%= ENV["HOST_IP"] %>
-    options:
-      network: "kamal"
     env:
       clear:
         SOLID_QUEUE_IN_PUMA: true
@@ -26,7 +27,6 @@ servers:
       - <%= ENV["HOST_IP"] %>
     cmd: bundle exec rails runner "Inboxed::SmtpServer.start"
     options:
-      network: "kamal"
       publish:
         - "${INBOXED_SMTP_PORT:-2525}:2525"
         - "${INBOXED_SMTPS_PORT:-465}:465"
@@ -74,8 +74,6 @@ accessories:
     image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-dashboard
     host: <%= ENV["HOST_IP"] %>
     port: "8080:80"
-    options:
-      network: "kamal"
 
   mcp:
     image: ghcr.io/<%= ENV.fetch("GITHUB_REPOSITORY", "your-org/inboxed").split("/").first %>/inboxed-mcp
@@ -86,10 +84,8 @@ accessories:
         INBOXED_API_URL: http://inboxed-web:3000
       secret:
         - INBOXED_MCP_KEY
-    options:
-      network: "kamal"
 
-  db:
+  postgres:
     image: postgres:16-alpine
     host: <%= ENV["HOST_IP"] %>
     port: "127.0.0.1:5432:5432"
@@ -101,8 +97,6 @@ accessories:
         - POSTGRES_PASSWORD
     directories:
       - data:/var/lib/postgresql/data
-    options:
-      network: "kamal"
 
   redis:
     image: redis:7-alpine
@@ -110,5 +104,3 @@ accessories:
     port: "127.0.0.1:6379:6379"
     directories:
       - data:/data
-    options:
-      network: "kamal"
