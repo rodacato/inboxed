@@ -229,6 +229,25 @@
 						<p class="text-[10px] font-mono text-text-dim mt-2">Create an endpoint in <a href="/projects/{projectId}/hooks" class="text-phosphor hover:underline">Hooks In</a> to get a real token.</p>
 					</div>
 
+					<!-- Form -->
+					<div class="p-4 rounded-lg border border-border bg-surface">
+						<div class="flex items-center gap-2 mb-2">
+							<span class="material-symbols-outlined text-phosphor text-base">description</span>
+							<h4 class="text-xs font-mono font-bold text-text-dim uppercase tracking-widest">Form Endpoint</h4>
+						</div>
+						<p class="text-xs text-text-secondary font-mono mb-3">Catch HTML form submissions.</p>
+						<div class="relative">
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto">{snippets.form}</pre>
+							<button
+								onclick={() => copySnippet(snippets!.form, 'form')}
+								class="absolute top-2 right-2 px-2 py-0.5 bg-surface border border-border rounded text-[10px] font-mono text-text-dim hover:text-text-primary hover:border-phosphor transition-colors"
+							>
+								{copiedSnippet === 'form' ? 'Copied!' : 'Copy'}
+							</button>
+						</div>
+						<p class="text-[10px] font-mono text-text-dim mt-2">Create an endpoint in <a href="/projects/{projectId}/forms" class="text-phosphor hover:underline">Forms</a> to get a real token.</p>
+					</div>
+
 					<!-- Heartbeat -->
 					<div class="p-4 rounded-lg border border-border bg-surface">
 						<div class="flex items-center gap-2 mb-2">
