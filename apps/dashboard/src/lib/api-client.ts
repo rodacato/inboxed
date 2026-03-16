@@ -39,6 +39,8 @@ export async function apiClient(path: string, options: RequestInit = {}): Promis
 	return res.json();
 }
 
+// These functions are kept for backward compatibility and used by authStore internally.
+// New code should use authStore instead of calling these directly.
 export function getStoredToken(): string | null {
 	if (typeof window === 'undefined') return null;
 	return localStorage.getItem('inboxed_admin_token');
