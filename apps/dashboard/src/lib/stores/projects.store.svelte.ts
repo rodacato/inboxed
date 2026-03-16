@@ -23,6 +23,11 @@ export const projectsStore = {
 	add(project: Project) {
 		projects = [project, ...projects];
 	},
+	incrementCount(projectId: string, countKey: string, delta: number = 1) {
+		projects = projects.map((p) =>
+			p.id === projectId ? { ...p, [countKey]: (p[countKey as keyof Project] as number ?? 0) + delta } : p
+		);
+	},
 	reset() {
 		projects = [];
 		loaded = false;

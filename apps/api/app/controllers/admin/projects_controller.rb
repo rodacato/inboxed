@@ -61,6 +61,10 @@ module Admin
         default_ttl_hours: record.default_ttl_hours,
         max_inbox_count: record.max_inbox_count,
         inbox_count: InboxRecord.where(project_id: record.id).count,
+        email_count: EmailRecord.joins(:inbox).where(inboxes: {project_id: record.id}).count,
+        webhook_count: HttpEndpointRecord.where(project_id: record.id, endpoint_type: "webhook").count,
+        form_count: HttpEndpointRecord.where(project_id: record.id, endpoint_type: "form").count,
+        heartbeat_count: HttpEndpointRecord.where(project_id: record.id, endpoint_type: "heartbeat").count,
         created_at: record.created_at.iso8601
       }
     end

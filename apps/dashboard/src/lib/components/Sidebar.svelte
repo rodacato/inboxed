@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getTheme } from '$lib/theme.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -8,7 +8,9 @@
 	import { toastStore } from '$lib/stores/toast.store.svelte';
 	import { getEnabledModules } from '$lib/config/modules';
 	import { projectsStore } from '$lib/stores/projects.store.svelte';
+	import { getRealtimeStore } from '../../features/realtime/realtime.store.svelte';
 	import type { Project } from '../../features/projects/projects.types';
+	import type { CableMessage } from '../../features/realtime/cable-client';
 
 	let {
 		wsConnected = false,
@@ -21,13 +23,50 @@
 
 	const projects = $derived(projectsStore.projects);
 
+	const realtime = getRealtimeStore();
+	let unsubscribers: (() => void)[] = [];
+
+	const ENDPOINT_TYPE_COUNT_KEY: Record<string, string> = {
+		webhook: 'webhook_count',
+		form: 'form_count',
+		heartbeat: 'heartbeat_count'
+	};
+
+	function subscribeToProjects(projs: Project[]) {
+		// Clean up previous subscriptions
+		unsubscribers.forEach((u) => u());
+		unsubscribers = [];
+
+		for (const project of projs) {
+			const unsub = realtime.subscribeToProject(project.id, (msg: CableMessage) => {
+				if (msg.type === 'inbox_updated') {
+					const delta = (msg.email_count_delta as number) ?? 1;
+					projectsStore.incrementCount(project.id, 'email_count', delta);
+				} else if (msg.type === 'request_captured') {
+					const countKey = ENDPOINT_TYPE_COUNT_KEY[msg.endpoint_type as string];
+					if (countKey) {
+						projectsStore.incrementCount(project.id, countKey, 1);
+					}
+				} else if (msg.type === 'inbox_created') {
+					projectsStore.incrementCount(project.id, 'inbox_count', 1);
+				}
+			});
+			unsubscribers.push(unsub);
+		}
+	}
+
 	onMount(async () => {
 		try {
 			const loaded = await projectsStore.load();
 			registerCommands(loaded);
+			subscribeToProjects(loaded);
 		} catch {
 			// ignore
 		}
+	});
+
+	onDestroy(() => {
+		unsubscribers.forEach((u) => u());
 	});
 
 	function registerCommands(projs: Project[]) {
@@ -205,9 +244,12 @@
 									<span class="material-symbols-outlined text-base">{mod.icon}</span>
 									{#if !collapsed}
 										<span class="truncate flex-1">{mod.label}</span>
-										<span class="text-[10px] text-text-dim font-mono">
-											{project.inbox_count}
-										</span>
+										{@const count = project[mod.countKey as keyof typeof project] as number ?? 0}
+										{#if count > 0}
+											<span class="text-[10px] text-text-dim font-mono">
+												{count}
+											</span>
+										{/if}
 									{/if}
 								</a>
 							{/each}

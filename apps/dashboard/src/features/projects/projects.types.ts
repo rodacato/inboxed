@@ -5,6 +5,10 @@ export interface Project {
 	default_ttl_hours: number | null;
 	max_inbox_count: number;
 	inbox_count: number;
+	email_count: number;
+	webhook_count: number;
+	form_count: number;
+	heartbeat_count: number;
 	created_at: string;
 }
 
