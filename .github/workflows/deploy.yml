@@ -81,8 +81,8 @@ jobs:
           cache-to: type=gha,mode=max,scope=mcp
 
   deploy:
-    name: Deploy API + SMTP
-    needs: build-api
+    name: Deploy All Services
+    needs: [build-api, build-dashboard, build-mcp]
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
@@ -123,69 +123,288 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Boot accessories (if not running)
-        run: kamal accessory boot all 2>/dev/null || true
+      # ── Pre-flight: validate configuration ──────────────────────────
+      - name: "Pre-flight: validate secrets & variables"
+        run: |
+          echo "::group::Checking required secrets and variables"
+          MISSING=0
 
+          # Critical secrets (masked — only check presence)
+          for secret in HOST_IP DATABASE_URL SECRET_KEY_BASE POSTGRES_PASSWORD REDIS_URL; do
+            val=$(printenv "$secret" 2>/dev/null || true)
+            if [ -z "$val" ]; then
+              echo "::error::Missing required secret: $secret — set it in GitHub > Settings > Secrets"
+              MISSING=1
+            else
+              echo "[ok] $secret is set"
+            fi
+          done
+
+          # Required variables
+          for var in INBOXED_DOMAIN INBOXED_WEB_DOMAIN; do
+            val=$(printenv "$var" 2>/dev/null || true)
+            if [ -z "$val" ]; then
+              echo "::error::Missing required variable: $var — set it in GitHub > Settings > Variables"
+              MISSING=1
+            else
+              echo "[ok] $var = $val"
+            fi
+          done
+
+          # Optional (warn if missing)
+          for opt in OUTBOUND_SMTP_HOST OUTBOUND_FROM_EMAIL GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET INBOXED_SETUP_TOKEN INBOXED_MCP_KEY; do
+            val=$(printenv "$opt" 2>/dev/null || true)
+            if [ -z "$val" ]; then
+              echo "::warning::Optional secret not set: $opt — some features will be disabled"
+            else
+              echo "[ok] $opt is set"
+            fi
+          done
+
+          # Validate DATABASE_URL format (should reference inboxed-postgres)
+          if [ -n "$DATABASE_URL" ]; then
+            if echo "$DATABASE_URL" | grep -q "localhost\|127\.0\.0\.1"; then
+              echo "::error::DATABASE_URL uses localhost — it must use the container hostname (inboxed-postgres) for Docker networking"
+              MISSING=1
+            fi
+            echo "[ok] DATABASE_URL host: $(echo "$DATABASE_URL" | sed 's|.*@\([^:/]*\).*|\1|' )"
+          fi
+
+          echo "::endgroup::"
+          if [ "$MISSING" -eq 1 ]; then
+            echo "::error::Pre-flight failed — fix the issues above before deploying"
+            exit 1
+          fi
+          echo "Pre-flight passed"
+
+      # ── Pre-flight: validate SSH connectivity ───────────────────────
+      - name: "Pre-flight: test SSH connectivity"
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 deploy@$HOST_IP"
+          echo "Connecting to deploy@$HOST_IP..."
+          if ! $SSH "echo 'SSH connection successful' && docker --version"; then
+            echo "::error::Cannot SSH into deploy@$HOST_IP — check SSH_PRIVATE_KEY secret and server firewall"
+            exit 1
+          fi
+          echo "[ok] SSH and Docker are available"
+
+      # ── Infrastructure: clean up orphans ────────────────────────────
+      - name: "Infra: clean up orphan containers"
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no deploy@$HOST_IP"
+
+          # Force-remove ALL known containers from previous failed deploys
+          # This catches: stopped containers, running zombies, renamed containers
+          echo "Cleaning up all stale inboxed containers..."
+          for name in inboxed-postgres inboxed-redis inboxed-db; do
+            if $SSH "docker ps -a --format '{{.Names}}' | grep -q ^${name}$" 2>/dev/null; then
+              echo "::warning::Removing container: $name"
+              $SSH "docker rm -f $name" || true
+            fi
+          done
+
+          # Remove stale SMTP containers (inboxed-smtp-<sha>) that hold ports
+          STALE_SMTP=$($SSH "docker ps -a --filter label=role=smtp --filter label=service=inboxed --format '{{.Names}}'" 2>/dev/null || true)
+          if [ -n "$STALE_SMTP" ]; then
+            echo "::warning::Removing stale SMTP containers: $STALE_SMTP"
+            $SSH "docker ps -a --filter label=role=smtp --filter label=service=inboxed --format '{{.Names}}' | xargs -r docker rm -f" || true
+          fi
+
+          # Remove stale web containers
+          STALE_WEB=$($SSH "docker ps -a --filter label=role=web --filter label=service=inboxed --format '{{.Names}}'" 2>/dev/null || true)
+          if [ -n "$STALE_WEB" ]; then
+            echo "::warning::Removing stale web containers: $STALE_WEB"
+            $SSH "docker ps -a --filter label=role=web --filter label=service=inboxed --format '{{.Names}}' | xargs -r docker rm -f" || true
+          fi
+
+          # Nuclear option: kill anything holding our ports (from Docker fallback runs, etc.)
+          for port in 5432 6379 2525 465; do
+            HOLDER=$($SSH "docker ps --format '{{.Names}}' --filter publish=$port" 2>/dev/null || true)
+            if [ -n "$HOLDER" ]; then
+              echo "::warning::Port $port held by: $HOLDER — removing"
+              $SSH "docker rm -f $HOLDER" || true
+            fi
+          done
+
+          # Release stale deploy locks from previous failed runs
+          $SSH "rm -rf .kamal/lock-*" 2>/dev/null || true
+          kamal lock release 2>/dev/null || true
+          echo "[ok] Cleanup complete"
+
+      # ── Infrastructure: detect server state ─────────────────────────
+      - name: "Infra: detect server state"
+        id: server_state
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no deploy@$HOST_IP"
+          $SSH "docker network create kamal 2>/dev/null || true"
+
+          # Detect what's already running
+          if $SSH "docker ps --format '{{.Names}}' | grep -q kamal-proxy" 2>/dev/null; then
+            echo "kamal_proxy=running" >> "$GITHUB_OUTPUT"
+            echo "[ok] kamal-proxy is running (skip setup)"
+          else
+            echo "kamal_proxy=missing" >> "$GITHUB_OUTPUT"
+            echo "[!] kamal-proxy not found (will run setup)"
+          fi
+
+          if $SSH "docker ps --format '{{.Names}}' | grep -q ^inboxed-postgres$" 2>/dev/null; then
+            echo "postgres=running" >> "$GITHUB_OUTPUT"
+            echo "[ok] inboxed-postgres is running"
+          else
+            echo "postgres=missing" >> "$GITHUB_OUTPUT"
+            echo "[!] inboxed-postgres not found (will boot)"
+          fi
+
+          if $SSH "docker ps --format '{{.Names}}' | grep -q ^inboxed-redis$" 2>/dev/null; then
+            echo "redis=running" >> "$GITHUB_OUTPUT"
+            echo "[ok] inboxed-redis is running"
+          else
+            echo "redis=missing" >> "$GITHUB_OUTPUT"
+            echo "[!] inboxed-redis not found (will boot)"
+          fi
+
+      # ── Infrastructure: first-time setup (conditional) ─────────────
+      - name: "Infra: first-time kamal setup"
+        if: steps.server_state.outputs.kamal_proxy == 'missing'
+        run: |
+          echo "Installing kamal-proxy on the server for the first time..."
+          kamal setup
+
+      # ── Infrastructure: boot PostgreSQL (conditional) ───────────────
+      - name: "Infra: boot PostgreSQL"
+        if: steps.server_state.outputs.postgres == 'missing'
+        run: |
+          echo "Booting PostgreSQL accessory..."
+          kamal accessory boot postgres 2>&1 || {
+            echo "::error::Failed to boot PostgreSQL. Check POSTGRES_PASSWORD secret and Docker logs on the server."
+            echo "::error::  Fix: gh secret set POSTGRES_PASSWORD -e production"
+            exit 1
+          }
+          echo "[ok] PostgreSQL booted"
+
+      # ── Infrastructure: boot Redis (conditional) ────────────────────
+      - name: "Infra: boot Redis"
+        if: steps.server_state.outputs.redis == 'missing'
+        run: |
+          echo "Booting Redis accessory..."
+          kamal accessory boot redis 2>&1 || {
+            echo "::error::Failed to boot Redis. Check Docker logs on the server."
+            exit 1
+          }
+          echo "[ok] Redis booted"
+
+      # ── Infrastructure: verify database is healthy ──────────────────
+      - name: "Infra: wait for database"
+        run: |
+          set -euo pipefail
+          SSH="ssh -o StrictHostKeyChecking=no deploy@$HOST_IP"
+
+          echo "Waiting for PostgreSQL to accept connections..."
+          DB_READY=false
+          for i in $(seq 1 20); do
+            if $SSH "docker exec inboxed-postgres pg_isready -U inboxed" 2>/dev/null; then
+              DB_READY=true
+              break
+            fi
+            echo "  Waiting... ($i/20)"
+            sleep 2
+          done
+
+          if [ "$DB_READY" != "true" ]; then
+            echo "::error::PostgreSQL failed to become ready after 40s"
+            echo "::group::PostgreSQL container logs"
+            $SSH "docker logs inboxed-postgres 2>&1 | tail -50" || true
+            echo "::endgroup::"
+            echo "::group::All containers"
+            $SSH "docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Networks}}\t{{.Image}}'" || true
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "[ok] PostgreSQL is accepting connections"
+
+          # Verify DNS resolution from kamal network (same path the app uses)
+          echo "Verifying inboxed-postgres is reachable from kamal network..."
+          if ! $SSH "docker run --rm --network kamal postgres:16-alpine pg_isready -h inboxed-postgres -U inboxed" 2>/dev/null; then
+            echo "::error::Cannot reach inboxed-postgres from kamal network — container may not be on the correct network"
+            echo "::group::Network inspection"
+            $SSH "docker network inspect kamal --format '{{range .Containers}}{{.Name}} {{end}}'" || true
+            echo "::endgroup::"
+            exit 1
+          fi
+          echo "[ok] Database is reachable from kamal network"
+
+      # ── Deploy: API + SMTP ─────────────────────────────────────────
       - name: Deploy with Kamal
         run: kamal deploy
 
-  deploy-dashboard:
-    name: Deploy Dashboard
-    needs: [deploy, build-dashboard]
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 10
+      # ── Deploy: Dashboard accessory ────────────────────────────────
+      - name: "Deploy: dashboard accessory"
+        run: |
+          echo "Deploying dashboard..."
+          if kamal accessory reboot dashboard 2>&1; then
+            echo "[ok] Dashboard rebooted"
+          else
+            echo "First boot..."
+            kamal accessory boot dashboard 2>&1 || {
+              echo "::error::Failed to deploy dashboard. Check image ghcr.io/${{ github.repository_owner }}/inboxed-dashboard exists."
+              exit 1
+            }
+            echo "[ok] Dashboard booted"
+          fi
 
-    env:
-      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
-      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      HOST_IP: ${{ secrets.HOST_IP }}
-      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
+      # ── Deploy: MCP accessory ──────────────────────────────────────
+      - name: "Deploy: MCP accessory"
+        run: |
+          echo "Deploying MCP server..."
+          if kamal accessory reboot mcp 2>&1; then
+            echo "[ok] MCP rebooted"
+          else
+            echo "First boot..."
+            kamal accessory boot mcp 2>&1 || {
+              echo "::error::Failed to deploy MCP. Check INBOXED_MCP_KEY is set."
+              exit 1
+            }
+            echo "[ok] MCP booted"
+          fi
 
-    steps:
-      - uses: actions/checkout@v4
+      # ── Post-deploy: health report ─────────────────────────────────
+      - name: "Post-deploy: health report"
+        if: always()
+        run: |
+          SSH="ssh -o StrictHostKeyChecking=no deploy@$HOST_IP"
+          echo "::group::Container status"
+          $SSH "docker ps -a --filter 'name=inboxed' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" 2>/dev/null || true
+          echo "::endgroup::"
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.3"
+          echo "::group::Service health"
+          for svc in inboxed-postgres inboxed-redis inboxed-dashboard inboxed-mcp kamal-proxy; do
+            if $SSH "docker ps --format '{{.Names}}' | grep -q ^${svc}$" 2>/dev/null; then
+              echo "[ok] $svc is running"
+            else
+              echo "[FAIL] $svc is NOT running"
+            fi
+          done
 
-      - name: Install Kamal
-        run: gem install kamal
+          # Check web role
+          WEB=$($SSH "docker ps --filter label=service=inboxed --filter label=role=web --format '{{.Names}}' | head -1" 2>/dev/null || true)
+          if [ -n "$WEB" ]; then
+            echo "[ok] web is running ($WEB)"
+          else
+            echo "[FAIL] web container is NOT running"
+            echo "::group::Recent web container logs"
+            $SSH "docker ps -a --filter label=service=inboxed --filter label=role=web --format '{{.Names}}' | head -1 | xargs -I{} docker logs {} 2>&1 | tail -30" 2>/dev/null || true
+            echo "::endgroup::"
+          fi
 
-      - uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Check SMTP role
+          SMTP=$($SSH "docker ps --filter label=service=inboxed --filter label=role=smtp --format '{{.Names}}' | head -1" 2>/dev/null || true)
+          if [ -n "$SMTP" ]; then
+            echo "[ok] smtp is running ($SMTP)"
+          else
+            echo "[FAIL] smtp container is NOT running"
+          fi
+          echo "::endgroup::"
 
-      - name: Deploy dashboard accessory
-        run: kamal accessory reboot dashboard 2>/dev/null || kamal accessory boot dashboard
-
-  deploy-mcp:
-    name: Deploy MCP
-    needs: [deploy, build-mcp]
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 10
-
-    env:
-      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
-      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      HOST_IP: ${{ secrets.HOST_IP }}
-      INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
-      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.3"
-
-      - name: Install Kamal
-        run: gem install kamal
-
-      - uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy MCP accessory
-        run: kamal accessory reboot mcp 2>/dev/null || kamal accessory boot mcp
+          echo "::group::Network topology"
+          $SSH "docker network inspect kamal --format '{{range .Containers}}  - {{.Name}}{{\"\n\"}}{{end}}'" 2>/dev/null || echo "kamal network not found"
+          echo "::endgroup::"

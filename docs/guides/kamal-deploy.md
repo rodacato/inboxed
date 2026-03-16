@@ -36,7 +36,7 @@ Production ✓
 | `inboxed-smtp` | SMTP reception server |
 | `inboxed-dashboard` | Dashboard static files |
 | `inboxed-mcp` | MCP server |
-| `inboxed-db` | PostgreSQL 16 |
+| `inboxed-postgres` | PostgreSQL 16 |
 | `inboxed-redis` | Redis 7 |
 | `kamal-proxy` | Reverse proxy (port 80) |
 
