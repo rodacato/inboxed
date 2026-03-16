@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		fetchEndpoints,
 		fetchProjectRequests,
@@ -64,7 +65,7 @@
 	});
 
 	function toggleType(type: string) {
-		const next = new Set(activeTypes);
+		const next = new SvelteSet(activeTypes);
 		if (next.has(type)) {
 			// Don't allow deactivating all
 			if (next.size > 1) next.delete(type);
@@ -277,7 +278,7 @@
 							<div class="bg-surface-2 border border-border rounded overflow-hidden">
 								<table class="w-full text-xs font-mono">
 									<tbody>
-										{#each Object.entries(selectedRequest.headers) as [key, val]}
+										{#each Object.entries(selectedRequest.headers) as [key, val] (key)}
 											<tr class="border-b border-border last:border-0">
 												<td class="px-3 py-1.5 text-text-secondary whitespace-nowrap align-top font-medium">{key}</td>
 												<td class="px-3 py-1.5 text-text-primary break-all">{val}</td>
@@ -302,7 +303,7 @@
 							<div class="bg-surface-2 border border-border rounded overflow-hidden">
 								<table class="w-full text-xs font-mono">
 									<tbody>
-										{#each [...params.entries()] as [key, val]}
+										{#each [...params.entries()] as [key, val] (key)}
 											<tr class="border-b border-border last:border-0">
 												<td class="px-3 py-1.5 text-text-secondary whitespace-nowrap align-top font-medium">{key}</td>
 												<td class="px-3 py-1.5 text-text-primary break-all">{val}</td>

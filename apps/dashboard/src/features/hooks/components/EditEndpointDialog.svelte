@@ -76,7 +76,7 @@
 			onDelete?.(endpoint);
 			toastStore.add({ type: 'success', title: 'Endpoint deleted' });
 			endpoint = null;
-		} catch (e) {
+		} catch {
 			toastStore.add({ type: 'error', title: 'Delete failed' });
 		}
 	}

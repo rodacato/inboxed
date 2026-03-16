@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { createProject, updateProject, deleteProject } from '../../../features/projects/projects.service';
+import { createProject, updateProject, deleteProject } from '../../../features/projects/projects.service';
 	import { projectsStore } from '$lib/stores/projects.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Project } from '../../../features/projects/projects.types';

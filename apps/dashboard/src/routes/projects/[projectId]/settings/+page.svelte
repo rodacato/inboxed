@@ -234,7 +234,7 @@
 						</div>
 						{#if activeSnippet.hint}
 							<p class="text-[10px] font-mono mt-2 text-amber">
-								{@html activeSnippet.hint}
+								{activeSnippet.hint}
 							</p>
 						{/if}
 					</div>
