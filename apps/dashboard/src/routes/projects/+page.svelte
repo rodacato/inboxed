@@ -123,7 +123,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 			{#each projects as project (project.id)}
 				<a
-					href="/projects/{project.id}"
+					href="/projects/{project.id}/mail"
 					class="block p-6 rounded-lg border border-border bg-surface hover:border-phosphor/30 hover:bg-surface-2 transition-all group"
 				>
 					<h3

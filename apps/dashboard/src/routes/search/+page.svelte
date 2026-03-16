@@ -82,7 +82,7 @@
 		<div class="space-y-3">
 			{#each results as result (result.id)}
 				<a
-					href="/projects/{result.inbox_id}/emails/{result.id}"
+					href="/projects/{result.project_id}/mail/{result.id}"
 					class="block p-4 rounded-lg border border-border bg-surface hover:border-phosphor/30 hover:bg-surface-2 transition-all"
 				>
 					<p class="text-sm font-display font-medium text-text-primary">
