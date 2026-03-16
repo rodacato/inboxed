@@ -2,6 +2,9 @@ import type {
   ApiStatus,
   EmailDetail,
   EmailSummary,
+  HttpEndpoint,
+  HttpRequest,
+  HttpRequestSummary,
   Inbox,
   PaginatedResponse,
   SearchResult,
@@ -105,6 +108,110 @@ export class InboxedApi {
     }
 
     return res.json() as Promise<EmailSummary>;
+  }
+
+  // HTTP Endpoints
+  async createEndpoint(params: {
+    project?: string;
+    endpoint_type?: string;
+    label?: string;
+    expected_interval_seconds?: number;
+  }): Promise<{ data: HttpEndpoint }> {
+    return this.request<{ data: HttpEndpoint }>("/api/v1/endpoints", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+  }
+
+  async getEndpoint(token: string): Promise<{ data: HttpEndpoint }> {
+    return this.request<{ data: HttpEndpoint }>(
+      `/api/v1/endpoints/${encodeURIComponent(token)}`
+    );
+  }
+
+  async listEndpoints(params?: {
+    type?: string;
+    limit?: number;
+  }): Promise<PaginatedResponse<HttpEndpoint>> {
+    const qs = new URLSearchParams();
+    if (params?.type) qs.set("type", params.type);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const query = qs.toString() ? `?${qs}` : "";
+    return this.request<PaginatedResponse<HttpEndpoint>>(
+      `/api/v1/endpoints${query}`
+    );
+  }
+
+  async deleteEndpoint(token: string): Promise<void> {
+    await this.request<void>(
+      `/api/v1/endpoints/${encodeURIComponent(token)}`,
+      { method: "DELETE" }
+    );
+  }
+
+  // HTTP Requests
+  async listRequests(
+    token: string,
+    params?: { limit?: number; method?: string }
+  ): Promise<PaginatedResponse<HttpRequestSummary>> {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.method) qs.set("method", params.method);
+    const query = qs.toString() ? `?${qs}` : "";
+    return this.request<PaginatedResponse<HttpRequestSummary>>(
+      `/api/v1/endpoints/${encodeURIComponent(token)}/requests${query}`
+    );
+  }
+
+  async getRequest(
+    token: string,
+    requestId: string
+  ): Promise<{ data: HttpRequest }> {
+    return this.request<{ data: HttpRequest }>(
+      `/api/v1/endpoints/${encodeURIComponent(token)}/requests/${requestId}`
+    );
+  }
+
+  async getLatestRequest(
+    token: string,
+    method?: string
+  ): Promise<HttpRequest | null> {
+    const qs = new URLSearchParams({ limit: "1" });
+    if (method) qs.set("method", method);
+    const res = await this.request<PaginatedResponse<HttpRequest>>(
+      `/api/v1/endpoints/${encodeURIComponent(token)}/requests?${qs}`
+    );
+    return res.data.length > 0 ? res.data[0] : null;
+  }
+
+  async waitForRequest(
+    token: string,
+    params?: { method?: string; timeout?: number }
+  ): Promise<HttpRequest | null> {
+    const body: Record<string, unknown> = {};
+    if (params?.method) body.method = params.method;
+    if (params?.timeout) body.timeout = params.timeout;
+
+    const url = `${this.baseUrl}/api/v1/endpoints/${encodeURIComponent(token)}/requests/wait`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 408) {
+      return null;
+    }
+
+    if (!res.ok) {
+      throw new ApiError(res.status, res.statusText, url);
+    }
+
+    const json = (await res.json()) as { data: HttpRequest };
+    return json.data;
   }
 
   // Search

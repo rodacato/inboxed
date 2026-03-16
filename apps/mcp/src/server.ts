@@ -8,6 +8,13 @@ import * as extractLink from "./tools/extract-link.js";
 import * as extractValue from "./tools/extract-value.js";
 import * as searchEmails from "./tools/search-emails.js";
 import * as deleteInbox from "./tools/delete-inbox.js";
+import * as createEndpoint from "./tools/create-endpoint.js";
+import * as waitForRequest from "./tools/wait-for-request.js";
+import * as getLatestRequest from "./tools/get-latest-request.js";
+import * as extractJsonField from "./tools/extract-json-field.js";
+import * as listRequests from "./tools/list-requests.js";
+import * as checkHeartbeat from "./tools/check-heartbeat.js";
+import * as deleteEndpoint from "./tools/delete-endpoint.js";
 
 const tools = [
   listEmails,
@@ -18,12 +25,19 @@ const tools = [
   extractValue,
   searchEmails,
   deleteInbox,
+  createEndpoint,
+  waitForRequest,
+  getLatestRequest,
+  extractJsonField,
+  listRequests,
+  checkHeartbeat,
+  deleteEndpoint,
 ];
 
 export function createServer(api: InboxedApi): McpServer {
   const server = new McpServer({
     name: "inboxed-mcp",
-    version: "0.1.0",
+    version: "0.2.0",
   });
 
   for (const tool of tools) {

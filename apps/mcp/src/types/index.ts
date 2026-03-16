@@ -49,6 +49,43 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// HTTP Catcher types
+export interface HttpEndpoint {
+  id: string;
+  endpoint_type: "webhook" | "form" | "heartbeat";
+  token: string;
+  label: string | null;
+  url: string;
+  request_count: number;
+  heartbeat_status: string | null;
+  last_ping_at: string | null;
+  expected_interval_seconds: number | null;
+  created_at: string;
+}
+
+export interface HttpRequest {
+  id: string;
+  method: string;
+  path: string | null;
+  query_string: string | null;
+  headers: Record<string, string>;
+  body: string | null;
+  content_type: string | null;
+  ip_address: string | null;
+  size_bytes: number;
+  received_at: string;
+}
+
+export interface HttpRequestSummary {
+  id: string;
+  method: string;
+  path: string | null;
+  content_type: string | null;
+  ip_address: string | null;
+  size_bytes: number;
+  received_at: string;
+}
+
 export interface ApiStatus {
   service: string;
   version: string;

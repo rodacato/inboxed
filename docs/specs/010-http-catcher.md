@@ -3,7 +3,7 @@
 > Extend Inboxed's "catch, inspect, assert" model to HTTP requests. A public endpoint receives any HTTP request and stores it for inspection via Dashboard, REST API, and MCP. Three endpoint types — webhook, form, heartbeat — share one infrastructure with type-specific UX.
 
 **Phase:** 8
-**Status:** accepted
+**Status:** in progress
 **Created:** 2026-03-16
 **Depends on:** [001 — Architecture](001-architecture.md) (layer rules), [008 — Webhooks](008-webhooks.md) (outbound delivery infra for heartbeat alerts), [009 — Usability](009-usability.md) (layout primitives, module sidebar, route slots, feature flags)
 **ADRs:** [021 — HTTP Catcher](../adrs/021-webhook-catcher.md), [023 — Endpoint Type Polymorphism](../adrs/023-endpoint-type-polymorphism.md), [024 — Heartbeat State Machine](../adrs/024-heartbeat-state-machine.md), [025 — Public Catch Endpoint Security](../adrs/025-public-catch-endpoint-security.md)
