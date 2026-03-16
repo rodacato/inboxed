@@ -152,6 +152,19 @@
 		return `${Math.floor(hours / 24)}d`;
 	}
 
+	async function copyValue(text: string) {
+		await navigator.clipboard.writeText(text);
+		toastStore.add({ type: 'success', title: 'Copied to clipboard' });
+	}
+
+	function formatBody(body: string | null, contentType: string | null): string {
+		if (!body) return '';
+		if (contentType?.includes('json')) {
+			try { return JSON.stringify(JSON.parse(body), null, 2); } catch { /* not valid json */ }
+		}
+		return body;
+	}
+
 	function formatSize(bytes: number): string {
 		if (bytes < 1024) return `${bytes}B`;
 		return `${(bytes / 1024).toFixed(1)}KB`;
@@ -255,7 +268,12 @@
 					<!-- Headers -->
 					{#if selectedRequest.headers && Object.keys(selectedRequest.headers).length > 0}
 						<div class="mb-4">
-							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Headers</h4>
+							<div class="flex items-center justify-between mb-2">
+								<h4 class="text-xs font-mono text-text-dim uppercase">Headers</h4>
+								<button onclick={() => copyValue(Object.entries(selectedRequest.headers).map(([k, v]) => `${k}: ${v}`).join('\n'))} class="text-text-dim hover:text-text-primary transition-colors" title="Copy headers">
+									<span class="material-symbols-outlined text-sm">content_copy</span>
+								</button>
+							</div>
 							<div class="bg-surface-2 border border-border rounded overflow-hidden">
 								<table class="w-full text-xs font-mono">
 									<tbody>
@@ -275,7 +293,12 @@
 					{#if selectedRequest.query_string}
 						{@const params = new URLSearchParams(selectedRequest.query_string)}
 						<div class="mb-4">
-							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Query params</h4>
+							<div class="flex items-center justify-between mb-2">
+								<h4 class="text-xs font-mono text-text-dim uppercase">Query params</h4>
+								<button onclick={() => copyValue(selectedRequest.query_string ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy query string">
+									<span class="material-symbols-outlined text-sm">content_copy</span>
+								</button>
+							</div>
 							<div class="bg-surface-2 border border-border rounded overflow-hidden">
 								<table class="w-full text-xs font-mono">
 									<tbody>
@@ -294,8 +317,13 @@
 					<!-- Body -->
 					{#if selectedRequest.body}
 						<div>
-							<h4 class="text-xs font-mono text-text-dim uppercase mb-2">Body</h4>
-							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto whitespace-pre-wrap break-all max-h-96">{selectedRequest.body}</pre>
+							<div class="flex items-center justify-between mb-2">
+								<h4 class="text-xs font-mono text-text-dim uppercase">Body</h4>
+								<button onclick={() => copyValue(selectedRequest.body ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy body">
+									<span class="material-symbols-outlined text-sm">content_copy</span>
+								</button>
+							</div>
+							<pre class="bg-surface-2 border border-border rounded px-3 py-2 text-xs font-mono text-text-primary overflow-x-auto whitespace-pre-wrap break-all max-h-96">{formatBody(selectedRequest.body, selectedRequest.content_type)}</pre>
 						</div>
 					{/if}
 				{/if}
