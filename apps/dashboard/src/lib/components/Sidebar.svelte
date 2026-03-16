@@ -110,10 +110,11 @@
 	const isMac = typeof navigator !== 'undefined' && navigator.platform?.includes('Mac');
 	const orgName = $derived(authStore.organization?.name ?? 'Organization');
 	const userEmail = $derived(authStore.user?.email ?? '');
+	const userName = $derived(userEmail.split('@')[0] || 'User');
 	const trialDaysLeft = $derived(authStore.organization?.daysRemaining);
 	const isTrial = $derived(authStore.organization?.trial ?? false);
 	const trialActive = $derived(authStore.organization?.trialActive ?? true);
-	const isAdmin = $derived(authStore.isOrgAdmin);
+	const isSettingsActive = $derived($page.url.pathname.startsWith('/settings'));
 </script>
 
 <aside
@@ -153,59 +154,17 @@
 			</a>
 		</nav>
 
-		<!-- Organization name -->
-		{#if !collapsed}
-			<div class="mt-5 pt-4 border-t border-border">
+		<!-- Organization + Projects -->
+		<div class="mt-5 pt-4 border-t border-border">
+			{#if !collapsed}
 				<div class="flex items-center justify-between px-3 mb-2">
 					<h3 class="text-[10px] font-bold uppercase tracking-widest text-text-dim font-mono truncate">
 						{orgName}
 					</h3>
-					{#if isAdmin}
-						<a
-							href="/settings/organization"
-							onclick={() => onNavigate?.()}
-							class="text-text-dim hover:text-text-secondary transition-colors"
-							title="Organization settings"
-						>
-							<span class="material-symbols-outlined text-sm">settings</span>
-						</a>
-					{/if}
-				</div>
-			</div>
-		{/if}
-
-		<!-- Projects with module sections -->
-		<div class="{collapsed ? 'mt-5 pt-4 border-t border-border' : 'mt-2'}">
-			{#if collapsed}
-				<div class="flex items-center justify-center px-3 mb-2">
-					<a
-						href="/projects"
-						onclick={() => onNavigate?.()}
-						class="text-text-dim hover:text-text-secondary transition-colors"
-						title="Manage projects"
-					>
-						<span class="material-symbols-outlined text-sm">settings</span>
-					</a>
-				</div>
-			{:else}
-				<div class="flex items-center justify-between px-3 mb-2">
-					<h3
-						class="text-[10px] font-bold uppercase tracking-widest text-text-dim font-mono"
-					>
-						Projects
-					</h3>
-					<a
-						href="/projects"
-						onclick={() => onNavigate?.()}
-						class="text-text-dim hover:text-text-secondary transition-colors"
-						title="Manage projects"
-					>
-						<span class="material-symbols-outlined text-sm">settings</span>
-					</a>
 				</div>
 			{/if}
 
-			<div class="space-y-3">
+			<div class="space-y-3 {collapsed ? '' : 'mt-1'}">
 				{#each projects as project (project.id)}
 					{@const isActiveProject = $page.url.pathname.startsWith(`/projects/${project.id}`)}
 					<div>
@@ -276,8 +235,8 @@
 		</div>
 	</div>
 
-	<!-- Footer -->
-	<div class="p-4 pt-3 space-y-3 border-t border-border {collapsed ? 'px-2' : 'px-5'}">
+	<!-- Footer: User pill -->
+	<div class="p-4 pt-3 space-y-2 border-t border-border {collapsed ? 'px-2' : 'px-5'}">
 		<!-- Trial status -->
 		{#if isTrial && !collapsed}
 			<div class="px-2 py-1.5 rounded-lg text-xs font-mono
@@ -290,33 +249,24 @@
 			</div>
 		{/if}
 
-		<!-- Settings links (admin) -->
-		{#if isAdmin && !collapsed}
-			<div class="space-y-0.5">
-				<a
-					href="/settings/members"
-					onclick={() => onNavigate?.()}
-					class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-mono transition-colors
-						{$page.url.pathname.startsWith('/settings/members')
-						? 'text-phosphor bg-phosphor-glow'
-						: 'text-text-dim hover:text-text-secondary hover:bg-surface-2'}"
-				>
-					<span class="material-symbols-outlined text-sm">group</span>
-					Members
-				</a>
-			</div>
-		{/if}
-
+		<!-- User row: name + settings + logout -->
 		<div class="flex items-center gap-1.5 {collapsed ? 'flex-col' : ''}">
-			<button
-				onclick={() => theme.toggle()}
-				class="size-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
-				title={theme.isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-			>
-				<span class="material-symbols-outlined text-lg">
-					{theme.isDark ? 'light_mode' : 'dark_mode'}
+			{#if !collapsed}
+				<span class="flex-1 text-sm font-mono text-text-primary truncate" title={userEmail}>
+					{userName}
 				</span>
-			</button>
+			{/if}
+			<a
+				href="/settings"
+				onclick={() => onNavigate?.()}
+				class="size-7 flex items-center justify-center rounded-lg transition-colors
+					{isSettingsActive
+					? 'text-phosphor bg-phosphor-glow'
+					: 'text-text-secondary hover:bg-surface-2 hover:text-text-primary'}"
+				title="Settings"
+			>
+				<span class="material-symbols-outlined text-lg">settings</span>
+			</a>
 			<button
 				onclick={logout}
 				class="size-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-error transition-colors"
@@ -326,15 +276,9 @@
 			</button>
 		</div>
 
-		<!-- User email -->
-		{#if !collapsed && userEmail}
-			<div class="px-2 text-[10px] font-mono text-text-dim truncate">
-				{userEmail}
-			</div>
-		{/if}
-
+		<!-- Connection status -->
 		<div
-			class="flex items-center gap-2 px-2 py-2 rounded-lg bg-surface-2 border border-border {collapsed ? 'justify-center' : 'px-3'}"
+			class="flex items-center gap-2 {collapsed ? 'justify-center' : 'px-1'}"
 		>
 			<div
 				class="size-1.5 rounded-full shrink-0 {wsConnected

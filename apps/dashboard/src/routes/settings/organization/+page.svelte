@@ -42,7 +42,7 @@
 	}
 </script>
 
-<div class="h-full overflow-y-auto">
+<div>
 	<div class="max-w-xl mx-auto p-6">
 		<h1 class="text-xl font-display font-bold text-text-primary mb-6">Organization</h1>
 
