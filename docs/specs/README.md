@@ -99,6 +99,7 @@ Unresolved items to discuss before moving to approved.
 | 006 | [Testing Helpers](006-testing-helpers.md) | Phase 5 | accepted | — | Lightweight API client libraries in TypeScript and Ruby with extraction helpers. Integration guides for Playwright, RSpec, Vitest, Cypress, Minitest. |
 | 007 | [Deploy & Self-Hosting](007-deploy-self-hosting.md) | Phase 6 | accepted | — | bin/setup, structured logging, multi-arch Docker CI/CD, documentation suite, static landing page. 10-minute setup goal. |
 | 008 | [Webhooks](008-webhooks.md) | Phase 7 | accepted | — | HTTP push notifications on email events. HMAC-SHA256 signing, exponential backoff retries, delivery log, webhook management API. |
+| 009 | [Usability & UI Scalability](009-usability.md) | Cross-cutting | accepted | — | Reusable layout primitives, modular navigation, route restructuring, toast notifications, command palette, auth abstraction, responsive design. Prepares dashboard for Phases 8+9 without layout rewrites. |
 
 <!--
 Template row:
