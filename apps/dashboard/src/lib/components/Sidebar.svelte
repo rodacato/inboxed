@@ -109,6 +109,12 @@
 	}
 
 	const isMac = typeof navigator !== 'undefined' && navigator.platform?.includes('Mac');
+	const orgName = $derived(authStore.organization?.name ?? 'Organization');
+	const userEmail = $derived(authStore.user?.email ?? '');
+	const trialDaysLeft = $derived(authStore.organization?.daysRemaining);
+	const isTrial = $derived(authStore.organization?.trial ?? false);
+	const trialActive = $derived(authStore.organization?.trialActive ?? true);
+	const isAdmin = $derived(authStore.isOrgAdmin);
 </script>
 
 <aside
@@ -148,25 +154,57 @@
 			</a>
 		</nav>
 
+		<!-- Organization name -->
+		{#if !collapsed}
+			<div class="mt-5 pt-4 border-t border-border">
+				<div class="flex items-center justify-between px-3 mb-2">
+					<h3 class="text-[10px] font-bold uppercase tracking-widest text-text-dim font-mono truncate">
+						{orgName}
+					</h3>
+					{#if isAdmin}
+						<a
+							href="/settings/organization"
+							onclick={() => onNavigate?.()}
+							class="text-text-dim hover:text-text-secondary transition-colors"
+							title="Organization settings"
+						>
+							<span class="material-symbols-outlined text-sm">settings</span>
+						</a>
+					{/if}
+				</div>
+			</div>
+		{/if}
+
 		<!-- Projects with module sections -->
-		<div class="mt-5 pt-4 border-t border-border">
-			<div class="flex items-center justify-between px-3 mb-2">
-				{#if !collapsed}
+		<div class="{collapsed ? 'mt-5 pt-4 border-t border-border' : 'mt-2'}">
+			{#if collapsed}
+				<div class="flex items-center justify-center px-3 mb-2">
+					<a
+						href="/projects"
+						onclick={() => onNavigate?.()}
+						class="text-text-dim hover:text-text-secondary transition-colors"
+						title="Manage projects"
+					>
+						<span class="material-symbols-outlined text-sm">settings</span>
+					</a>
+				</div>
+			{:else}
+				<div class="flex items-center justify-between px-3 mb-2">
 					<h3
 						class="text-[10px] font-bold uppercase tracking-widest text-text-dim font-mono"
 					>
 						Projects
 					</h3>
-				{/if}
-				<a
-					href="/projects"
-					onclick={() => onNavigate?.()}
-					class="text-text-dim hover:text-text-secondary transition-colors"
-					title="Manage projects"
-				>
-					<span class="material-symbols-outlined text-sm">settings</span>
-				</a>
-			</div>
+					<a
+						href="/projects"
+						onclick={() => onNavigate?.()}
+						class="text-text-dim hover:text-text-secondary transition-colors"
+						title="Manage projects"
+					>
+						<span class="material-symbols-outlined text-sm">settings</span>
+					</a>
+				</div>
+			{/if}
 
 			<div class="space-y-3">
 				{#each projects as project (project.id)}
@@ -241,6 +279,35 @@
 
 	<!-- Footer -->
 	<div class="p-4 pt-3 space-y-3 border-t border-border {collapsed ? 'px-2' : 'px-5'}">
+		<!-- Trial status -->
+		{#if isTrial && !collapsed}
+			<div class="px-2 py-1.5 rounded-lg text-xs font-mono
+				{trialActive ? 'text-amber' : 'text-error'}">
+				{#if trialActive}
+					Trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} left
+				{:else}
+					Trial expired
+				{/if}
+			</div>
+		{/if}
+
+		<!-- Settings links (admin) -->
+		{#if isAdmin && !collapsed}
+			<div class="space-y-0.5">
+				<a
+					href="/settings/members"
+					onclick={() => onNavigate?.()}
+					class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-mono transition-colors
+						{$page.url.pathname.startsWith('/settings/members')
+						? 'text-phosphor bg-phosphor-glow'
+						: 'text-text-dim hover:text-text-secondary hover:bg-surface-2'}"
+				>
+					<span class="material-symbols-outlined text-sm">group</span>
+					Members
+				</a>
+			</div>
+		{/if}
+
 		<div class="flex items-center gap-1.5 {collapsed ? 'flex-col' : ''}">
 			<button
 				onclick={() => theme.toggle()}
@@ -259,6 +326,14 @@
 				<span class="material-symbols-outlined text-lg">logout</span>
 			</button>
 		</div>
+
+		<!-- User email -->
+		{#if !collapsed && userEmail}
+			<div class="px-2 text-[10px] font-mono text-text-dim truncate">
+				{userEmail}
+			</div>
+		{/if}
+
 		<div
 			class="flex items-center gap-2 px-2 py-2 rounded-lg bg-surface-2 border border-border {collapsed ? 'justify-center' : 'px-3'}"
 		>
