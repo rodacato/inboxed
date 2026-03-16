@@ -1,14 +1,20 @@
 :80 {
     handle /api/* {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle /admin/* {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle /auth/* {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     @setup_api {
@@ -16,19 +22,27 @@
         method POST
     }
     handle @setup_api {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle /cable {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle /up {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle /hook/* {
-        reverse_proxy inboxed-web:3000
+        reverse_proxy kamal-proxy:80 {
+            header_up Host {$BACKEND_HOST:localhost}
+        }
     }
 
     handle {
