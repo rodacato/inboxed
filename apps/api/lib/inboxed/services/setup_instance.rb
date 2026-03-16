@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "ostruct"
+
 module Inboxed
   module Services
     class SetupInstance
@@ -8,12 +10,6 @@ module Inboxed
       end
 
       def call(email:, password:, org_name:)
-        org = OrganizationRecord.create!(
-          name: org_name,
-          slug: org_name.parameterize.presence || SecureRandom.uuid.split("-").first,
-          trial_ends_at: nil
-        )
-
         user = UserRecord.create!(
           email: email.downcase.strip,
           password: password,
@@ -21,11 +17,16 @@ module Inboxed
           verified_at: Time.current
         )
 
-        MembershipRecord.create!(
+        org = CreateOrganizationWithDefaults.new.call(
+          name: org_name,
           user: user,
-          organization: org,
-          role: "org_admin"
+          role: "org_admin",
+          trial_days: 0
         )
+
+        # Override slug with a readable one from the org name
+        readable_slug = org_name.parameterize.presence || org.slug
+        org.update!(slug: readable_slug) if readable_slug != org.slug
 
         Inboxed::Settings.set(:setup_completed_at, Time.current)
 

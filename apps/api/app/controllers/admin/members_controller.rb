@@ -36,13 +36,5 @@ module Admin
         head :no_content
       end
     end
-
-    private
-
-    def require_org_admin!
-      unless Inboxed::CurrentTenant.org_admin?
-        render json: {error: "Forbidden"}, status: :forbidden
-      end
-    end
   end
 end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "ostruct"
+
 module Inboxed
   module Services
     class RegisterUser
@@ -35,20 +37,9 @@ module Inboxed
       end
 
       def register_open
-        user = create_user(verified: !outbound_smtp_configured?)
-
-        trial_days = ENV.fetch("TRIAL_DURATION_DAYS", "7").to_i
-        org = OrganizationRecord.create!(
-          name: "#{@email.split("@").first}'s workspace",
-          slug: SecureRandom.uuid.split("-").first,
-          trial_ends_at: (trial_days > 0) ? trial_days.days.from_now : nil
-        )
-
-        MembershipRecord.create!(user: user, organization: org, role: "org_admin")
-        create_default_project(org)
-
-        SendVerificationEmail.new.call(user: user) if outbound_smtp_configured? && !user.verified?
-
+        user = create_user
+        org = CreateOrganizationWithDefaults.new.call(name: "#{@email.split("@").first}'s workspace", user: user)
+        send_verification(user)
         publish_event(user, org, "email")
         success(user)
       end
@@ -57,7 +48,7 @@ module Inboxed
         invitation = InvitationRecord.pending.find_by!(token: @invitation_token)
         raise InvitationExpired if invitation.expired?
 
-        user = create_user(verified: !outbound_smtp_configured?)
+        user = create_user
 
         MembershipRecord.create!(
           user: user,
@@ -80,31 +71,24 @@ module Inboxed
           ]
         )
 
-        SendVerificationEmail.new.call(user: user) if outbound_smtp_configured? && !user.verified?
-
+        send_verification(user)
         publish_event(user, invitation.organization, "invitation")
         success(user)
       end
 
-      def create_user(verified: false)
+      def create_user
+        auto_verify = !outbound_smtp_configured?
         UserRecord.create!(
           email: @email,
           password: @password,
-          verified_at: verified ? Time.current : nil,
-          verification_token: verified ? nil : SecureRandom.urlsafe_base64(32),
-          verification_sent_at: verified ? nil : Time.current
+          verified_at: auto_verify ? Time.current : nil,
+          verification_token: auto_verify ? nil : SecureRandom.urlsafe_base64(32),
+          verification_sent_at: auto_verify ? nil : Time.current
         )
       end
 
-      def create_default_project(org)
-        project = ProjectRecord.create!(
-          name: "My Project",
-          slug: SecureRandom.uuid.split("-").first,
-          organization: org,
-          default_ttl_hours: 24
-        )
-
-        IssueApiKey.new.call(project_id: project.id, label: "Default key")
+      def send_verification(user)
+        SendVerificationEmail.new.call(user: user) if outbound_smtp_configured? && !user.verified?
       end
 
       def outbound_smtp_configured?

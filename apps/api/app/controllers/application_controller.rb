@@ -62,10 +62,6 @@ class ApplicationController < ActionController::API
     data
   end
 
-  def requires_verification?
-    ENV["OUTBOUND_SMTP_HOST"].present?
-  end
-
   def outbound_smtp_configured?
     ENV["OUTBOUND_SMTP_HOST"].present?
   end

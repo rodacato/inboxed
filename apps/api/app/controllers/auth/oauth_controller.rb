@@ -39,17 +39,21 @@ module Auth
       access_token = token_params["access_token"]
       return nil unless access_token
 
-      user_uri = URI("https://api.github.com/user")
-      user_request = Net::HTTP::Get.new(user_uri)
-      user_request["Authorization"] = "Bearer #{access_token}"
-      user_request["Accept"] = "application/json"
-      user_response = Net::HTTP.start(user_uri.hostname, user_uri.port, use_ssl: true) { |http| http.request(user_request) }
-      return nil unless user_response.is_a?(Net::HTTPSuccess)
-
-      JSON.parse(user_response.body, symbolize_names: true)
+      fetch_github_profile(access_token)
     rescue => e
       Rails.logger.error("GitHub OAuth error: #{e.message}")
       nil
+    end
+
+    def fetch_github_profile(access_token)
+      uri = URI("https://api.github.com/user")
+      request = Net::HTTP::Get.new(uri)
+      request["Authorization"] = "Bearer #{access_token}"
+      request["Accept"] = "application/json"
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
+      return nil unless response.is_a?(Net::HTTPSuccess)
+
+      JSON.parse(response.body, symbolize_names: true)
     end
 
     def find_or_create_github_user(gh)
@@ -62,6 +66,10 @@ module Auth
         return user
       end
 
+      create_new_github_user(gh)
+    end
+
+    def create_new_github_user(gh)
       user = UserRecord.create!(
         email: gh[:email],
         password: SecureRandom.hex(32),
@@ -70,24 +78,10 @@ module Auth
         verified_at: Time.current
       )
 
-      # Create org for GitHub user
-      trial_days = ENV.fetch("TRIAL_DURATION_DAYS", "7").to_i
-      org = OrganizationRecord.create!(
+      Inboxed::Services::CreateOrganizationWithDefaults.new.call(
         name: "#{gh[:login]}'s workspace",
-        slug: SecureRandom.uuid.split("-").first,
-        trial_ends_at: (trial_days > 0) ? trial_days.days.from_now : nil
+        user: user
       )
-
-      MembershipRecord.create!(user: user, organization: org, role: "org_admin")
-
-      project = ProjectRecord.create!(
-        name: "My Project",
-        slug: SecureRandom.uuid.split("-").first,
-        organization: org,
-        default_ttl_hours: 24
-      )
-
-      Inboxed::Services::IssueApiKey.new.call(project_id: project.id, label: "Default key")
 
       user
     end

@@ -2,23 +2,18 @@
 
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
-    identified_by :admin_authenticated
+    identified_by :current_user
 
     def connect
-      self.admin_authenticated = authenticate_admin
+      self.current_user = find_verified_user
     end
 
     private
 
-    def authenticate_admin
-      token = request.params[:token]
-      admin_token = ENV["INBOXED_ADMIN_TOKEN"]
-
-      reject_unauthorized_connection unless token.present? &&
-        admin_token.present? &&
-        ActiveSupport::SecurityUtils.secure_compare(token, admin_token)
-
-      true
+    def find_verified_user
+      user_id = request.session[:user_id] || cookies.encrypted[:user_id]
+      user = UserRecord.find_by(id: user_id) if user_id
+      user || reject_unauthorized_connection
     end
   end
 end

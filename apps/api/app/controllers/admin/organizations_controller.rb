@@ -34,11 +34,5 @@ module Admin
     def organization_params
       params.permit(:name)
     end
-
-    def require_org_admin!
-      unless Inboxed::CurrentTenant.org_admin?
-        render json: {error: "Forbidden"}, status: :forbidden
-      end
-    end
   end
 end

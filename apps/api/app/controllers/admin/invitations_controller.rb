@@ -13,18 +13,7 @@ module Admin
 
       render json: {
         data: invitations.map { |inv|
-          {
-            id: inv.id,
-            email: inv.email,
-            role: inv.role,
-            token: inv.token,
-            accepted: inv.accepted?,
-            expired: inv.expired?,
-            expires_at: inv.expires_at.iso8601,
-            invited_by: inv.invited_by.email,
-            created_at: inv.created_at.iso8601,
-            invite_url: "#{ENV.fetch("INBOXED_BASE_URL", "http://localhost:5179")}/invitation?token=#{inv.token}"
-          }
+          serialize_invitation(inv)
         }
       }
     end
@@ -37,16 +26,7 @@ module Admin
         invited_by: current_user
       )
 
-      render json: {
-        data: {
-          id: invitation.id,
-          email: invitation.email,
-          role: invitation.role,
-          token: invitation.token,
-          expires_at: invitation.expires_at.iso8601,
-          invite_url: "#{ENV.fetch("INBOXED_BASE_URL", "http://localhost:5179")}/invitation?token=#{invitation.token}"
-        }
-      }, status: :created
+      render json: {data: serialize_invitation(invitation)}, status: :created
     end
 
     def destroy
@@ -58,10 +38,19 @@ module Admin
 
     private
 
-    def require_org_admin!
-      unless Inboxed::CurrentTenant.org_admin?
-        render json: {error: "Forbidden"}, status: :forbidden
-      end
+    def serialize_invitation(inv)
+      {
+        id: inv.id,
+        email: inv.email,
+        role: inv.role,
+        token: inv.token,
+        accepted: inv.accepted?,
+        expired: inv.expired?,
+        expires_at: inv.expires_at.iso8601,
+        invited_by: inv.invited_by.email,
+        created_at: inv.created_at.iso8601,
+        invite_url: invite_url(inv.token)
+      }
     end
   end
 end

@@ -6,7 +6,7 @@ module Auth
       user = UserRecord.find_by(email: params[:email]&.downcase&.strip)
 
       if user&.authenticate(params[:password])
-        if requires_verification? && !user.verified?
+        if outbound_smtp_configured? && !user.verified?
           render json: {error: "email_not_verified", message: "Please verify your email first"}, status: :forbidden
         else
           start_session(user)
