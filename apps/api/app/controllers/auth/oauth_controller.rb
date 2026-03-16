@@ -3,10 +3,16 @@
 module Auth
   class OauthController < ApplicationController
     def github
-      redirect_to github_authorize_url, allow_other_host: true
+      state = SecureRandom.hex(32)
+      session[:oauth_state] = state
+      redirect_to github_authorize_url(state: state), allow_other_host: true
     end
 
     def github_callback
+      unless params[:state].present? && ActiveSupport::SecurityUtils.secure_compare(params[:state].to_s, session.delete(:oauth_state).to_s)
+        return redirect_to "/login?error=invalid_state", allow_other_host: true
+      end
+
       github_user = exchange_code_for_user(params[:code])
       return redirect_to "/login?error=github_failed", allow_other_host: true unless github_user
 
@@ -19,10 +25,10 @@ module Auth
 
     private
 
-    def github_authorize_url
+    def github_authorize_url(state:)
       client_id = ENV.fetch("GITHUB_CLIENT_ID")
       redirect_uri = "#{ENV.fetch("INBOXED_BASE_URL")}/auth/github/callback"
-      "https://github.com/login/oauth/authorize?client_id=#{client_id}&redirect_uri=#{CGI.escape(redirect_uri)}&scope=user:email"
+      "https://github.com/login/oauth/authorize?client_id=#{client_id}&redirect_uri=#{CGI.escape(redirect_uri)}&scope=user:email&state=#{state}"
     end
 
     def exchange_code_for_user(code)

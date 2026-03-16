@@ -44,6 +44,11 @@ class Rack::Attack
     req.ip if req.path.start_with?("/auth/") && req.post?
   end
 
+  # Password reset rate limit: 3 per hour per IP
+  throttle("auth/forgot-password", limit: 3, period: 1.hour) do |req|
+    req.ip if req.path == "/auth/forgot-password" && req.post?
+  end
+
   self.throttled_responder = lambda do |env|
     match_data = env["rack.attack.match_data"] || {}
     limit = match_data[:limit] || 0

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "resolv"
+
 class WebhookEndpointRecord < ApplicationRecord
   self.table_name = "webhook_endpoints"
 
@@ -23,14 +25,60 @@ class WebhookEndpointRecord < ApplicationRecord
 
   private
 
+  PRIVATE_IP_RANGES = [
+    IPAddr.new("10.0.0.0/8"),
+    IPAddr.new("172.16.0.0/12"),
+    IPAddr.new("192.168.0.0/16"),
+    IPAddr.new("127.0.0.0/8"),
+    IPAddr.new("169.254.0.0/16"),
+    IPAddr.new("0.0.0.0/8"),
+    IPAddr.new("::1/128"),
+    IPAddr.new("fc00::/7"),
+    IPAddr.new("fe80::/10")
+  ].freeze
+
   def validate_url_protocol
     return if url.blank?
+
     uri = URI.parse(url)
-    return if uri.scheme == "https"
-    return if uri.scheme == "http" && %w[localhost 127.0.0.1].include?(uri.host)
-    errors.add(:url, "must use HTTPS (HTTP allowed only for localhost)")
+
+    unless uri.scheme.in?(%w[http https])
+      errors.add(:url, "must use HTTP or HTTPS")
+      return
+    end
+
+    if uri.scheme == "http" && !%w[localhost 127.0.0.1].include?(uri.host)
+      errors.add(:url, "must use HTTPS (HTTP allowed only for localhost)")
+      return
+    end
+
+    validate_not_private_ip(uri.host)
   rescue URI::InvalidURIError
     errors.add(:url, "is not a valid URL")
+  end
+
+  def validate_not_private_ip(host)
+    return if host.blank?
+    return if %w[localhost].include?(host)
+
+    ip = IPAddr.new(host)
+    if PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
+      errors.add(:url, "cannot target private or internal IP addresses")
+    end
+  rescue IPAddr::InvalidAddressError
+    # hostname, not an IP — resolve and check
+    begin
+      resolved = Resolv.getaddresses(host)
+      resolved.each do |addr|
+        ip = IPAddr.new(addr)
+        if PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
+          errors.add(:url, "resolves to a private or internal IP address")
+          return
+        end
+      end
+    rescue Resolv::ResolvError
+      # can't resolve at validation time, allow it
+    end
   end
 
   def validate_event_types

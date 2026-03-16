@@ -81,12 +81,39 @@ class HooksController < ApplicationController
   def respond_as_form(result)
     case @endpoint.response_mode
     when "redirect"
-      redirect_to @endpoint.response_redirect_url, allow_other_host: true
+      url = @endpoint.response_redirect_url.to_s
+      if safe_redirect_url?(url)
+        redirect_to url, allow_other_host: true
+      else
+        head :bad_request
+      end
     when "html"
-      render html: (@endpoint.response_html || default_thank_you_html).html_safe
+      html = @endpoint.response_html.presence || default_thank_you_html
+      render html: sanitize_response_html(html).html_safe
     else
       render json: {ok: true, id: result[:request_id]}
     end
+  end
+
+  def safe_redirect_url?(url)
+    return false if url.blank?
+    return true if url.start_with?("/") && !url.start_with?("//")
+
+    uri = URI.parse(url)
+    uri.scheme.in?(%w[http https]) && uri.host.present?
+  rescue URI::InvalidURIError
+    false
+  end
+
+  def sanitize_response_html(html)
+    Rails::HTML5::SafeListSanitizer.new.sanitize(
+      html,
+      tags: %w[html head title body h1 h2 h3 h4 h5 h6 p a br hr div span ul ol li
+               strong em b i u table thead tbody tfoot tr td th img form input
+               label button select option textarea meta link style],
+      attributes: %w[href src alt title class id style name type value placeholder
+                     action method charset content rel media]
+    )
   end
 
   def default_thank_you_html
