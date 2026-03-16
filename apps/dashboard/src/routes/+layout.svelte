@@ -8,6 +8,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import TrialBanner from '$lib/components/TrialBanner.svelte';
 	import { getRealtimeStore } from '../features/realtime/realtime.store.svelte';
 
 	let { children } = $props();
@@ -16,15 +17,39 @@
 	let sidebarCollapsed = $state(false);
 	const realtime = getRealtimeStore();
 
-	onMount(() => {
-		if (!authStore.isAuthenticated && $page.url.pathname !== '/login') {
-			goto('/login');
+	const PUBLIC_ROUTES = ['/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation'];
+
+	function isPublicRoute(pathname: string): boolean {
+		return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));
+	}
+
+	onMount(async () => {
+		const pathname = $page.url.pathname;
+
+		// Load status first to check setup state
+		await authStore.loadStatus();
+
+		// Redirect to setup if not completed
+		if (authStore.setupRequired && pathname !== '/setup') {
+			goto('/setup');
+			ready = true;
 			return;
 		}
-		if (authStore.isAuthenticated) {
-			realtime.connect();
-			authStore.loadStatus();
+
+		// For public routes, just show them
+		if (isPublicRoute(pathname)) {
+			ready = true;
+			return;
 		}
+
+		// For protected routes, check session
+		if (!authStore.isAuthenticated) {
+			goto('/login');
+			ready = true;
+			return;
+		}
+
+		realtime.connect();
 
 		// Restore sidebar collapsed state
 		sidebarCollapsed = localStorage.getItem('inboxed_sidebar_collapsed') === 'true';
@@ -48,14 +73,16 @@
 		sidebarOpen = false;
 	}
 
-	const isLogin = $derived($page.url.pathname === '/login');
+	const isPublic = $derived(isPublicRoute($page.url.pathname));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if isLogin}
+{#if !ready}
+	<!-- Loading -->
+{:else if isPublic}
 	{@render children()}
-{:else if ready}
+{:else}
 	<div class="flex h-screen overflow-hidden bg-base">
 		<!-- Desktop sidebar -->
 		<div class="hidden md:block">
@@ -110,6 +137,11 @@
 					{sidebarCollapsed ? 'chevron_right' : 'chevron_left'}
 				</span>
 			</button>
+
+			<!-- Trial banner -->
+			{#if authStore.organization?.trial}
+				<TrialBanner />
+			{/if}
 
 			<main class="flex-1 overflow-hidden">
 				{@render children()}

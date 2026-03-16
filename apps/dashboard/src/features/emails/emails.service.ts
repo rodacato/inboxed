@@ -1,4 +1,4 @@
-import { apiClient, getStoredToken } from '$lib/api-client';
+import { apiClient } from '$lib/api-client';
 import type { EmailSummary, EmailDetail } from './emails.types';
 import type { Pagination } from '../projects/projects.types';
 
@@ -37,9 +37,9 @@ export async function fetchEmail(id: string): Promise<{ email: EmailDetail }> {
 }
 
 export async function fetchEmailRaw(id: string): Promise<string> {
-	const token = getStoredToken();
-	const res = await fetch(`/admin/emails/${id}/raw`, {
-		headers: token ? { Authorization: `Bearer ${token}` } : {}
+	const API_URL = import.meta.env.VITE_API_URL || '';
+	const res = await fetch(`${API_URL}/admin/emails/${id}/raw`, {
+		credentials: 'include'
 	});
 	return res.text();
 }

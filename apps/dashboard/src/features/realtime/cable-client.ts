@@ -3,10 +3,10 @@ export interface CableMessage {
 	[key: string]: unknown;
 }
 
-export function createCable(token: string) {
+export function createCable() {
 	const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 	const host = window.location.host;
-	const url = `${protocol}//${host}/cable?token=${encodeURIComponent(token)}`;
+	const url = `${protocol}//${host}/cable`;
 
 	let ws: WebSocket | null = null;
 	let reconnectAttempts = 0;

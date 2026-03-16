@@ -1,5 +1,4 @@
 import { createCable, type CableMessage } from './cable-client';
-import { getStoredToken } from '$lib/api-client';
 
 let cable: ReturnType<typeof createCable> | null = null;
 let connected = $state(false);
@@ -11,10 +10,9 @@ export function getRealtimeStore() {
 		},
 
 		connect() {
-			const token = getStoredToken();
-			if (!token || cable) return;
+			if (cable) return;
 
-			cable = createCable(token);
+			cable = createCable();
 			cable.onConnect(() => {
 				connected = true;
 			});
