@@ -78,7 +78,7 @@
 {#if open}
 	<div class="fixed inset-0 z-50 bg-black/50" role="presentation" onclick={close}></div>
 	<div
-		class="fixed inset-x-0 top-[15%] z-51 mx-auto w-full max-w-md"
+		class="fixed inset-x-0 top-[15%] z-[51] mx-auto w-full max-w-md"
 		role="dialog"
 		aria-label="Create endpoint"
 	>
