@@ -15,6 +15,18 @@ class Rack::Attack
     end
   end
 
+  # Public catch endpoint — per token: 120 requests per minute
+  throttle("hook/per_token", limit: ENV.fetch("RATE_LIMIT_HOOK", 120).to_i, period: 1.minute) do |req|
+    if req.path.start_with?("/hook/")
+      req.path.match(%r{^/hook/([^/]+)})&.captures&.first
+    end
+  end
+
+  # Public catch endpoint — global: 1000 requests per minute
+  throttle("hook/global", limit: ENV.fetch("RATE_LIMIT_HOOK_GLOBAL", 1000).to_i, period: 1.minute) do |req|
+    "global" if req.path.start_with?("/hook/")
+  end
+
   # Auth endpoint protection: 5 failed attempts per 5 minutes per IP
   throttle("auth/ip", limit: ENV.fetch("RATE_LIMIT_AUTH", 5).to_i, period: 5.minutes) do |req|
     if req.path.start_with?("/api/v1/") && req.env["inboxed.auth_failed"]

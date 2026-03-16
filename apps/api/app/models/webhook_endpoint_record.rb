@@ -7,7 +7,7 @@ class WebhookEndpointRecord < ApplicationRecord
   has_many :deliveries, class_name: "WebhookDeliveryRecord",
     foreign_key: :webhook_endpoint_id, dependent: :destroy
 
-  VALID_EVENT_TYPES = %w[email_received email_deleted inbox_created inbox_purged].freeze
+  VALID_EVENT_TYPES = %w[email_received email_deleted inbox_created inbox_purged request_captured heartbeat_down heartbeat_recovered].freeze
   VALID_STATUSES = %w[active failing disabled].freeze
 
   validates :url, presence: true

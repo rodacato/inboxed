@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_15_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -74,6 +74,48 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_200001) do
     t.index ["created_at"], name: "index_events_on_created_at"
     t.index ["event_type"], name: "index_events_on_event_type"
     t.index ["stream_name", "stream_position"], name: "index_events_on_stream_name_and_stream_position", unique: true
+  end
+
+  create_table "http_endpoints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "allowed_ips", default: [], null: false, array: true
+    t.string "allowed_methods", default: ["POST"], null: false, array: true
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "endpoint_type", null: false
+    t.integer "expected_interval_seconds"
+    t.string "heartbeat_status", default: "pending"
+    t.string "label"
+    t.datetime "last_ping_at"
+    t.integer "max_body_bytes", default: 262144, null: false
+    t.uuid "project_id", null: false
+    t.integer "request_count", default: 0, null: false
+    t.text "response_html"
+    t.string "response_mode", default: "json"
+    t.string "response_redirect_url"
+    t.datetime "status_changed_at"
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint_type", "heartbeat_status"], name: "index_http_endpoints_on_heartbeat_lookup"
+    t.index ["project_id", "endpoint_type"], name: "index_http_endpoints_on_project_id_and_endpoint_type"
+    t.index ["project_id"], name: "index_http_endpoints_on_project_id"
+    t.index ["token"], name: "index_http_endpoints_on_token", unique: true
+  end
+
+  create_table "http_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "body"
+    t.string "content_type"
+    t.datetime "expires_at"
+    t.jsonb "headers", default: {}, null: false
+    t.uuid "http_endpoint_id", null: false
+    t.string "ip_address"
+    t.string "method", null: false
+    t.string "path"
+    t.string "query_string"
+    t.datetime "received_at", null: false
+    t.integer "size_bytes", default: 0, null: false
+    t.index ["expires_at"], name: "index_http_requests_on_expires_at"
+    t.index ["http_endpoint_id", "received_at"], name: "index_http_requests_on_http_endpoint_id_and_received_at", order: { received_at: :desc }
+    t.index ["http_endpoint_id"], name: "index_http_requests_on_http_endpoint_id"
   end
 
   create_table "inboxes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -142,6 +184,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_15_200001) do
   add_foreign_key "api_keys", "projects"
   add_foreign_key "attachments", "emails"
   add_foreign_key "emails", "inboxes"
+  add_foreign_key "http_endpoints", "projects"
+  add_foreign_key "http_requests", "http_endpoints"
   add_foreign_key "inboxes", "projects"
   add_foreign_key "webhook_deliveries", "webhook_endpoints"
   add_foreign_key "webhook_endpoints", "projects"

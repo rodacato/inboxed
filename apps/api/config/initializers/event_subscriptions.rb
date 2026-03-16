@@ -48,6 +48,11 @@ Rails.application.config.after_initialize do
     end
   end
 
+  # HTTP Catcher: dispatch request_captured to webhook subscribers
+  Inboxed::EventStore::Bus.subscribe(Inboxed::Events::HttpRequestCaptured) do |event|
+    Inboxed::Services::DispatchWebhooks.new.call(event: event)
+  end
+
   Inboxed::EventStore::Bus.subscribe(Inboxed::Events::InboxCreated) do |event|
     inbox = InboxRecord.find_by(id: event.data[:inbox_id])
     next unless inbox

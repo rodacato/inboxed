@@ -43,15 +43,12 @@ module Inboxed
         when Events::EmailReceived
           email = EmailRecord.find_by(id: event.data[:email_id])
           email&.inbox&.project_id
-        when Events::EmailDeleted
+        when Events::EmailDeleted, Events::InboxCreated, Events::InboxPurged
           inbox = InboxRecord.find_by(id: event.data[:inbox_id])
           inbox&.project_id
-        when Events::InboxCreated
-          inbox = InboxRecord.find_by(id: event.data[:inbox_id])
-          inbox&.project_id
-        when Events::InboxPurged
-          inbox = InboxRecord.find_by(id: event.data[:inbox_id])
-          inbox&.project_id
+        when Events::HttpRequestCaptured, Events::HttpEndpointCreated,
+             Events::HttpEndpointDeleted, Events::HeartbeatStatusChanged
+          event.data[:project_id]
         end
       end
 
