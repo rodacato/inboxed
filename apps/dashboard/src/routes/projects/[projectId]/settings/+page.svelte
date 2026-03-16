@@ -10,12 +10,14 @@
 		deleteApiKey
 	} from '../../../../features/projects/projects.service';
 	import { fetchInboxes } from '../../../../features/inboxes/inboxes.service';
+	import { fetchEndpoints } from '../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../features/realtime/realtime.store.svelte';
 	import { projectsStore } from '$lib/stores/projects.store.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { Project, ApiKey } from '../../../../features/projects/projects.types';
 	import type { Inbox } from '../../../../features/inboxes/inboxes.types';
+	import type { HttpEndpoint } from '../../../../features/hooks/hooks.types';
 
 	const projectId = $derived($page.params.projectId ?? '');
 	const realtime = getRealtimeStore();
@@ -23,6 +25,7 @@
 	let project = $state<Project | null>(null);
 	let apiKeys = $state<ApiKey[]>([]);
 	let inboxes = $state<Inbox[]>([]);
+	let endpoints = $state<HttpEndpoint[]>([]);
 	let loading = $state(true);
 	let newKeyLabel = $state('');
 	let creatingKey = $state(false);
@@ -37,6 +40,13 @@
 	const apiKeyHint = $derived(
 		apiKeys.length > 0 ? `${apiKeys[0].token_prefix}...` : '<your-api-key>'
 	);
+
+	const webhookEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'webhook'));
+	const formEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'form'));
+	const heartbeatEndpoint = $derived(endpoints.find((e) => e.endpoint_type === 'heartbeat'));
+	const webhookToken = $derived(webhookEndpoint?.token ?? '<endpoint-token>');
+	const formToken = $derived(formEndpoint?.token ?? '<endpoint-token>');
+	const heartbeatToken = $derived(heartbeatEndpoint?.token ?? '<endpoint-token>');
 
 	type QuickStartTab = 'smtp' | 'curl' | 'webhook' | 'form' | 'heartbeat';
 	let activeTab = $state<QuickStartTab>('smtp');
@@ -61,19 +71,25 @@
 			hint: apiKeys.length === 0 ? 'You\'ll need an API key first — create one below.' : null
 		},
 		webhook: {
-			code: `curl -X POST https://${smtpHost}/hook/<endpoint-token> \\\n  -H "Content-Type: application/json" \\\n  -d '{"event": "test"}'`,
+			code: `curl -X POST https://${smtpHost}/hook/${webhookToken} \\\n  -H "Content-Type: application/json" \\\n  -d '{"event": "test"}'`,
 			description: 'Catch HTTP requests from your app.',
-			hint: `Create an endpoint in <a href="/projects/${projectId}/hooks" class="text-phosphor hover:underline">Hooks In</a> to get a real token.`
+			hint: webhookEndpoint
+				? `Using endpoint${webhookEndpoint.label ? ` "${webhookEndpoint.label}"` : ''} — <a href="/projects/${projectId}/hooks" class="text-phosphor hover:underline">manage endpoints</a>`
+				: `Create an endpoint in <a href="/projects/${projectId}/hooks" class="text-phosphor hover:underline">Hooks In</a> to get your token.`
 		},
 		form: {
-			code: `<form action="https://${smtpHost}/hook/<endpoint-token>" method="POST">\n  <input name="email" />\n  <button type="submit">Send</button>\n</form>`,
+			code: `<form action="https://${smtpHost}/hook/${formToken}" method="POST">\n  <input name="email" />\n  <button type="submit">Send</button>\n</form>`,
 			description: 'Catch HTML form submissions.',
-			hint: `Create an endpoint in <a href="/projects/${projectId}/forms" class="text-phosphor hover:underline">Forms</a> to get a real token.`
+			hint: formEndpoint
+				? `Using endpoint${formEndpoint.label ? ` "${formEndpoint.label}"` : ''} — <a href="/projects/${projectId}/forms" class="text-phosphor hover:underline">manage endpoints</a>`
+				: `Create an endpoint in <a href="/projects/${projectId}/forms" class="text-phosphor hover:underline">Forms</a> to get your token.`
 		},
 		heartbeat: {
-			code: `# In your crontab:\n*/5 * * * * curl -s https://${smtpHost}/hook/<endpoint-token>`,
+			code: `# In your crontab:\n*/5 * * * * curl -s https://${smtpHost}/hook/${heartbeatToken}`,
 			description: 'Monitor cron jobs and background tasks.',
-			hint: `Create a monitor in <a href="/projects/${projectId}/heartbeats" class="text-phosphor hover:underline">Heartbeats</a> to get a real token.`
+			hint: heartbeatEndpoint
+				? `Using monitor${heartbeatEndpoint.label ? ` "${heartbeatEndpoint.label}"` : ''} — <a href="/projects/${projectId}/heartbeats" class="text-phosphor hover:underline">manage monitors</a>`
+				: `Create a monitor in <a href="/projects/${projectId}/heartbeats" class="text-phosphor hover:underline">Heartbeats</a> to get your token.`
 		}
 	} : null);
 
@@ -86,14 +102,16 @@
 	}
 
 	onMount(async () => {
-		const [projRes, keysRes, inboxRes] = await Promise.all([
+		const [projRes, keysRes, inboxRes, endpointsRes] = await Promise.all([
 			fetchProject(projectId),
 			fetchApiKeys(projectId),
-			fetchInboxes(projectId)
+			fetchInboxes(projectId),
+			fetchEndpoints(projectId)
 		]);
 		project = projRes.project;
 		apiKeys = keysRes.api_keys;
 		inboxes = inboxRes.inboxes;
+		endpoints = endpointsRes.endpoints;
 		loading = false;
 
 		unsubscribe = realtime.subscribeToProject(projectId, (msg) => {
@@ -233,7 +251,11 @@
 							</button>
 						</div>
 						{#if activeSnippet.hint}
-							<p class="text-[10px] font-mono mt-2 {activeTab === 'smtp' || activeTab === 'curl' ? 'text-amber' : 'text-text-dim'}">
+							<p class="text-[10px] font-mono mt-2 {activeTab === 'smtp' || activeTab === 'curl'
+								? 'text-amber'
+								: (activeTab === 'webhook' && webhookEndpoint) || (activeTab === 'form' && formEndpoint) || (activeTab === 'heartbeat' && heartbeatEndpoint)
+									? 'text-text-secondary'
+									: 'text-amber'}">
 								{@html activeSnippet.hint}
 							</p>
 						{/if}
