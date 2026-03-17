@@ -5,9 +5,15 @@ require "rails_helper"
 RSpec.describe "Admin::Status", type: :request do
   describe "GET /admin/status" do
     context "without session" do
-      it "returns 401" do
+      it "returns 200 with public status info (no user/org)" do
         get "/admin/status"
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:ok)
+
+        body = JSON.parse(response.body)
+        expect(body).to have_key("setup_completed")
+        expect(body).to have_key("features")
+        expect(body).not_to have_key("user")
+        expect(body).not_to have_key("organization")
       end
     end
 

@@ -122,7 +122,8 @@ RSpec.describe Inboxed::SmtpServer do
 
   describe "#on_rcpt_to_event" do
     it "accepts any recipient (catch-all)" do
-      result = server.on_rcpt_to_event({}, "anyone@any-domain.com")
+      ctx = {envelope: {to: []}}
+      result = server.on_rcpt_to_event(ctx, "anyone@any-domain.com")
       expect(result).to eq("anyone@any-domain.com")
     end
   end
