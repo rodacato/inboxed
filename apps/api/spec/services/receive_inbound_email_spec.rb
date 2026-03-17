@@ -115,6 +115,42 @@ RSpec.describe Inboxed::Services::ReceiveInboundEmail do
     end
   end
 
+  describe "address normalization" do
+    before do
+      allow(Inboxed::Features).to receive(:enabled?).with(:inbound_email).and_return(true)
+    end
+
+    it "matches inboxes stored with angle brackets" do
+      InboxRecord.where(address: shared_address).update_all(address: "<#{shared_address}>")
+
+      result = service.call(envelope_to: shared_address, envelope_from: "sender@gmail.com", raw_source: raw_email)
+
+      expect(result[:delivered_to]).to eq(2)
+    end
+
+    it "matches inboxes stored without angle brackets" do
+      result = service.call(envelope_to: shared_address, envelope_from: "sender@gmail.com", raw_source: raw_email)
+
+      expect(result[:delivered_to]).to eq(2)
+    end
+
+    it "handles envelope_to with angle brackets" do
+      result = service.call(envelope_to: "<#{shared_address}>", envelope_from: "sender@gmail.com", raw_source: raw_email)
+
+      expect(result[:delivered_to]).to eq(2)
+    end
+
+    it "passes normalized address to the job" do
+      service.call(envelope_to: shared_address, envelope_from: "sender@gmail.com", raw_source: raw_email)
+
+      enqueued = queue_adapter.enqueued_jobs.select { |j| j["job_class"] == "ReceiveEmailJob" }
+      enqueued.each do |job|
+        args = job["arguments"].first
+        expect(args["envelope_to"]).to eq([shared_address])
+      end
+    end
+  end
+
   describe "no matching inboxes" do
     it "returns zero counts when no inbox matches" do
       result = service.call(

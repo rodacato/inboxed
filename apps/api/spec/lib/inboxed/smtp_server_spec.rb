@@ -85,6 +85,22 @@ RSpec.describe Inboxed::SmtpServer do
       )
     end
 
+    it "strips angle brackets from envelope addresses" do
+      ctx[:envelope][:from] = "<sender@app.test>"
+      ctx[:envelope][:to] = ["<user@example.com>", "<other@example.com>"]
+
+      expect {
+        server.on_message_data_event(ctx)
+      }.to have_enqueued_job(ReceiveEmailJob).with(
+        project_id: project.id,
+        api_key_id: api_key.id,
+        envelope_from: "sender@app.test",
+        envelope_to: ["user@example.com", "other@example.com"],
+        raw_source: raw_source,
+        source_type: "relay"
+      )
+    end
+
     it "reads authorization_id from context (not authenticated)" do
       # This is the bug we fixed: midi-smtp-server stores the return value
       # of on_auth_event in ctx[:server][:authorization_id], not in
