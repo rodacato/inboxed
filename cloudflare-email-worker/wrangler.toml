@@ -1,0 +1,12 @@
+name = "inboxed-email-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[triggers]
+# Bind to catch-all route for mail.notdefined.dev
+# Configure via Cloudflare dashboard: Email Routing → Routes
+# Route: *@mail.notdefined.dev → Worker
+
+# Secrets (set via `wrangler secret put`):
+# - INBOXED_API_URL
+# - INBOUND_WEBHOOK_SECRET
