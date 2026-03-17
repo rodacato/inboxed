@@ -13,8 +13,16 @@ interface EmailMessage {
   reject(reason: string): void;
 }
 
+const ALLOWED_DOMAIN = "mail.notdefined.dev";
+
 export default {
   async email(message: EmailMessage, env: Env) {
+    const recipientDomain = message.to.split("@")[1]?.toLowerCase();
+    if (recipientDomain !== ALLOWED_DOMAIN) {
+      message.reject("Not handled by this worker");
+      return;
+    }
+
     const rawEmail = await streamToArrayBuffer(message.raw);
 
     const response = await fetch(`${env.INBOXED_API_URL}/hooks/inbound`, {
