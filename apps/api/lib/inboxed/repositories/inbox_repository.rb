@@ -4,9 +4,8 @@ module Inboxed
   module Repositories
     class InboxRepository
       def find_or_create_by_address(project_id:, address:)
-        InboxRecord.find_or_create_by!(address: address) do |r|
+        InboxRecord.find_or_create_by!(project_id: project_id, address: address) do |r|
           r.id = SecureRandom.uuid
-          r.project_id = project_id
         end
       end
 

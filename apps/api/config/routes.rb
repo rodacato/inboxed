@@ -23,6 +23,9 @@ Rails.application.routes.draw do
     post "accept-invitation", to: "invitations#accept"
   end
 
+  # Inbound email webhook (Cloudflare Email Worker)
+  post "/hooks/inbound", to: "hooks/inbound#create"
+
   # Public catch endpoint — no auth required
   match "/hook/:token", to: "hooks#catch", via: :all, as: :hook_catch
   match "/hook/:token/*path", to: "hooks#catch", via: :all, as: :hook_catch_path

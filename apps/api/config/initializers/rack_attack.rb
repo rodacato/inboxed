@@ -27,6 +27,11 @@ class Rack::Attack
     "global" if req.path.start_with?("/hook/")
   end
 
+  # Inbound email webhook: 30 requests per minute per IP
+  throttle("inbound_webhook", limit: 30, period: 1.minute) do |req|
+    req.ip if req.path == "/hooks/inbound" && req.post?
+  end
+
   # Auth endpoint protection: 5 failed attempts per 5 minutes per IP
   throttle("auth/ip", limit: ENV.fetch("RATE_LIMIT_AUTH", 5).to_i, period: 5.minutes) do |req|
     if req.path.start_with?("/api/v1/") && req.env["inboxed.auth_failed"]

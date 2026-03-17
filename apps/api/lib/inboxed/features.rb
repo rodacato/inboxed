@@ -8,6 +8,7 @@ module Inboxed
         hooks: ENV.fetch("INBOXED_FEATURE_HOOKS", "true") == "true",
         forms: ENV.fetch("INBOXED_FEATURE_FORMS", "true") == "true",
         heartbeats: ENV.fetch("INBOXED_FEATURE_HEARTBEATS", "true") == "true",
+        inbound_email: ENV.fetch("INBOXED_FEATURE_INBOUND_EMAIL", "false") == "true",
         mcp: true,
         html_preview: true
       }
