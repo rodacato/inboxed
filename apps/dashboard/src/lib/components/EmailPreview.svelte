@@ -52,7 +52,7 @@
 		onDeleted?.();
 	}
 
-	// OTP Detection
+	// OTP Detection — only match codes that look intentional, not dates/years
 	const otpCode = $derived.by(() => {
 		if (!email) return null;
 		const text = `${email.subject ?? ''} ${email.body_text ?? ''}`;
@@ -60,10 +60,15 @@
 		if (labeled) return labeled[1];
 		const dashed = text.match(/\b([A-Z0-9]{4,6}-[A-Z0-9]{1,6})\b/);
 		if (dashed) return dashed[1];
-		const numeric = text.match(/\b(\d{4,8})\b/);
-		if (numeric) return numeric[1];
+		const numeric = text.match(/\b(\d{5,8})\b/);
+		if (numeric && !isLikelyDate(numeric[1])) return numeric[1];
 		return null;
 	});
+
+	function isLikelyDate(value: string): boolean {
+		const num = parseInt(value, 10);
+		return num >= 1900 && num <= 2099;
+	}
 
 	function copyOtp() {
 		if (otpCode) {
