@@ -6,7 +6,8 @@ module Inboxed
       MAX_FAN_OUT = 10
 
       def call(envelope_to:, envelope_from:, raw_source:)
-        inboxes = InboxRecord.where(address: envelope_to)
+        normalized = envelope_to.to_s.gsub(/\A<|>\z/, "").strip
+        inboxes = InboxRecord.where(address: [normalized, "<#{normalized}>"])
                              .includes(:project)
                              .limit(MAX_FAN_OUT)
 
@@ -20,7 +21,7 @@ module Inboxed
             ReceiveEmailJob.perform_later(
               project_id: inbox.project_id,
               envelope_from: envelope_from,
-              envelope_to: [envelope_to],
+              envelope_to: [normalized],
               raw_source: raw_source,
               source_type: "inbound"
             )
@@ -29,7 +30,7 @@ module Inboxed
             ReceiveEmailJob.perform_later(
               project_id: inbox.project_id,
               envelope_from: envelope_from,
-              envelope_to: [envelope_to],
+              envelope_to: [normalized],
               raw_source: redact_email_source(raw_source, envelope_from),
               source_type: "inbound_redacted"
             )

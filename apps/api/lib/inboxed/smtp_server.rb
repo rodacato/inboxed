@@ -70,8 +70,8 @@ module Inboxed
         raise MidiSmtpServer::Smtpd452Exception, "Rate limit exceeded (#{SMTP_RATE_LIMIT}/min)"
       end
 
-      envelope_from = ctx[:envelope][:from]
-      envelope_to = ctx[:envelope][:to]
+      envelope_from = strip_angle_brackets(ctx[:envelope][:from])
+      envelope_to = Array(ctx[:envelope][:to]).map { |addr| strip_angle_brackets(addr) }
 
       ReceiveEmailJob.perform_later(
         project_id: api_key.project_id,
@@ -147,6 +147,10 @@ module Inboxed
         entry[:count] += 1
         true
       end
+    end
+
+    def strip_angle_brackets(address)
+      address.to_s.gsub(/\A<|>\z/, "").strip
     end
 
     def cleanup_stale_entries(now)
