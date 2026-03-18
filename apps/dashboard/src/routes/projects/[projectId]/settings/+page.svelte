@@ -50,12 +50,15 @@
 		apiKeys.length > 0 ? `${apiKeys[0].token_prefix}...` : '<your-api-key>'
 	);
 
-	type QuickStartTab = 'smtp' | 'curl';
+	type QuickStartTab = 'smtp' | 'curl' | 'mcp';
 	let activeTab = $state<QuickStartTab>('smtp');
+
+	const apiBaseUrl = $derived(import.meta.env.VITE_API_URL || window.location.origin);
 
 	const quickStartTabs: { id: QuickStartTab; label: string; icon: string; iconColor: string }[] = [
 		{ id: 'smtp', label: 'SMTP', icon: 'mail', iconColor: 'text-phosphor' },
-		{ id: 'curl', label: 'Test Email', icon: 'terminal', iconColor: 'text-cyan' }
+		{ id: 'curl', label: 'Test Email', icon: 'terminal', iconColor: 'text-cyan' },
+		{ id: 'mcp', label: 'MCP', icon: 'smart_toy', iconColor: 'text-purple' }
 	];
 
 	const snippets = $derived(project ? {
@@ -67,6 +70,11 @@
 		curl: {
 			code: `curl --url "smtp://${smtpHost}:${smtpPort}" \\\n  --user "${project.slug}:${apiKeyHint}" \\\n  --mail-from "test@example.com" \\\n  --mail-rcpt "hello@${project.slug}.test" \\\n  --upload-file - <<EOF\nFrom: test@example.com\nTo: hello@${project.slug}.test\nSubject: Hello from Inboxed\n\nYour first test email!\nEOF`,
 			description: 'Send your first email via curl.',
+			hint: apiKeys.length === 0 ? 'You\'ll need an API key first — create one below.' : null
+		},
+		mcp: {
+			code: `{\n  "mcpServers": {\n    "inboxed": {\n      "command": "docker",\n      "args": [\n        "run", "-i", "--rm",\n        "-e", "INBOXED_API_URL=${apiBaseUrl}",\n        "-e", "INBOXED_API_KEY=${apiKeyHint}",\n        "ghcr.io/rodacato/inboxed-mcp"\n      ]\n    }\n  }\n}`,
+			description: 'Add to your claude_desktop_config.json or .mcp.json to connect Claude.',
 			hint: apiKeys.length === 0 ? 'You\'ll need an API key first — create one below.' : null
 		}
 	} : null);
