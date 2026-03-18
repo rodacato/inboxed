@@ -13,6 +13,53 @@ _Nothing yet._
 
 ---
 
+## [0.3.0] - 2026-03-18
+
+### Added
+
+#### Core
+- Inbound email reception via Cloudflare Email Routing and Workers
+- Plan limits, daily usage quotas, and address blocklist for abuse prevention
+- Cloudflare Turnstile captcha on registration
+- Manual inbox creation from project settings
+- MCP HTTP transport for remote connections (Streamable HTTP)
+- New MCP tools: `list_inboxes`, `list_endpoints`, `get_endpoint`
+- Standardized API v1 response envelopes with resource-named keys (ADR-032)
+- OpenAPI spec with auto-generated docs at `/docs`
+
+#### Dashboard
+- Site admin panel: overview, organizations, users, and blocked addresses management
+- Self-host guide page (`/self-host`) with local and production deployment instructions
+- Inbound email source badges in mail list and detail views
+- MCP tab in project settings quick start
+- Hooks navigation in command palette per project
+
+#### Infrastructure
+- Separated API and dashboard into distinct subdomains
+- Cloudflare Email Worker for inbound email forwarding
+- Turnstile keys in Kamal deploy config and GitHub Actions
+
+### Fixed
+- Email address normalization (strip angle brackets)
+- OTP detection no longer matches years in email dates
+- Tenant isolation and trial enforcement in admin controllers
+- Cross-origin WebSocket connections from dashboard domain
+- Site admin sidebar highlight, page centering, and API proxy
+- Landing page: removed false npm/gem client library claims, corrected API response format
+- Various Kamal deploy and Caddyfile routing issues
+
+### Changed
+- Removed static landing page and GitHub Pages workflow (dashboard serves landing page)
+- Consolidated and cleaned up documentation guides
+- Detailed explanations added to `.env.example` for all variables
+- Updated project docs (README, AGENTS, CONTRIBUTING, SECURITY, CHANGELOG) for accuracy
+
+### Removed
+- Static `site/` directory and GitHub Pages deploy workflow
+- Redundant guides: `self-hosting.md`, `dns-setup.md`, `configuration.md` (replaced by `/self-host` page)
+
+---
+
 ## [0.2.0] - 2026-03-16
 
 ### Added
