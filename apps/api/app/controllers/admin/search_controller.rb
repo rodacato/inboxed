@@ -8,6 +8,7 @@ module Admin
 
       result = Inboxed::ReadModels::EmailSearch.search_all(
         query: query,
+        project_ids: tenant_project_ids,
         limit: pagination_limit,
         after: params[:after]
       )

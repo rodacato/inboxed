@@ -3,7 +3,7 @@
 module Admin
   class EmailsController < BaseController
     def project_index
-      project = ProjectRecord.find(params[:project_id])
+      project = current_project
 
       result = Inboxed::ReadModels::EmailList.for_project(
         project.id,
@@ -19,7 +19,7 @@ module Admin
     end
 
     def index
-      inbox = InboxRecord.find_by!(id: params[:inbox_id], project_id: params[:project_id])
+      inbox = InboxRecord.find_by!(id: params[:inbox_id], project_id: current_project.id)
 
       result = Inboxed::ReadModels::EmailList.for_inbox(
         inbox.id,
@@ -34,27 +34,37 @@ module Admin
     end
 
     def show
-      email = EmailRecord.includes(:attachments).find(params[:id])
+      email = find_tenant_email
       render json: {email: EmailDetailSerializer.render(email, url_prefix: "/admin")}
     end
 
     def raw
-      email = EmailRecord.find(params[:id])
+      email = find_tenant_email
       send_data email.raw_source,
         type: "text/plain; charset=utf-8",
         disposition: 'inline; filename="email.eml"'
     end
 
     def destroy
-      email = EmailRecord.find(params[:id])
+      email = find_tenant_email
       Inboxed::Services::DeleteEmail.new.call(email_id: email.id)
       head :no_content
     end
 
     def purge
-      inbox = InboxRecord.find_by!(id: params[:inbox_id], project_id: params[:project_id])
+      inbox = InboxRecord.find_by!(id: params[:inbox_id], project_id: current_project.id)
       deleted = Inboxed::Services::PurgeInbox.new.call(inbox_id: inbox.id)
       render json: {deleted_count: deleted}
+    end
+
+    private
+
+    def find_tenant_email
+      EmailRecord
+        .includes(:attachments)
+        .joins(inbox: :project)
+        .where(projects: {id: tenant_project_ids})
+        .find(params[:id])
     end
   end
 end

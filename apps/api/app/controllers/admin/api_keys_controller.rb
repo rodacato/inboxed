@@ -2,8 +2,10 @@
 
 module Admin
   class ApiKeysController < BaseController
+    include TrialEnforced
+
     def index
-      project = ProjectRecord.find(params[:project_id])
+      project = current_project
       api_keys = ApiKeyRecord.where(project_id: project.id).order(created_at: :desc)
 
       render json: {
@@ -12,7 +14,7 @@ module Admin
     end
 
     def create
-      project = ProjectRecord.find(params[:project_id])
+      project = current_project
       key_params = params.fetch(:api_key, {}).permit(:label)
 
       result = Inboxed::Services::IssueApiKey.new.call(
@@ -32,7 +34,7 @@ module Admin
     end
 
     def update
-      api_key = ApiKeyRecord.find(params[:id])
+      api_key = find_tenant_api_key
       key_params = params.require(:api_key).permit(:label)
       api_key.update!(key_params)
 
@@ -40,12 +42,18 @@ module Admin
     end
 
     def destroy
-      api_key = ApiKeyRecord.find(params[:id])
+      api_key = find_tenant_api_key
       api_key.destroy!
       head :no_content
     end
 
     private
+
+    def find_tenant_api_key
+      ApiKeyRecord
+        .where(project_id: tenant_project_ids)
+        .find(params[:id])
+    end
 
     def serialize_api_key(record)
       {

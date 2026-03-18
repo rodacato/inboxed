@@ -14,6 +14,10 @@ module Admin
       Inboxed::CurrentTenant.scope_projects(ProjectRecord).find(params[:project_id])
     end
 
+    def tenant_project_ids
+      Inboxed::CurrentTenant.scope_projects(ProjectRecord).select(:id)
+    end
+
     def require_org_admin!
       unless Inboxed::CurrentTenant.org_admin?
         render json: {error: "Forbidden"}, status: :forbidden

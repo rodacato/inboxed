@@ -3,7 +3,7 @@
 module Admin
   class AttachmentsController < BaseController
     def index
-      email = EmailRecord.find(params[:email_id])
+      email = find_tenant_email
       attachments = AttachmentRecord.where(email_id: email.id)
 
       render json: {
@@ -12,7 +12,10 @@ module Admin
     end
 
     def download
-      attachment = AttachmentRecord.find(params[:id])
+      attachment = AttachmentRecord
+        .joins(email: {inbox: :project})
+        .where(projects: {id: tenant_project_ids})
+        .find(params[:id])
 
       send_data attachment.content,
         type: attachment.content_type,
@@ -21,6 +24,13 @@ module Admin
     end
 
     private
+
+    def find_tenant_email
+      EmailRecord
+        .joins(inbox: :project)
+        .where(projects: {id: tenant_project_ids})
+        .find(params[:email_id])
+    end
 
     def serialize_attachment(att)
       {

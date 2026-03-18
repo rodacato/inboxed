@@ -2,8 +2,10 @@
 
 module Admin
   class EndpointsController < BaseController
+    include TrialEnforced
+
     def index
-      project = ProjectRecord.find(params[:project_id])
+      project = current_project
 
       result = Inboxed::ReadModels::EndpointList.for_project(
         project.id,

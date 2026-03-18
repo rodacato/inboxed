@@ -35,11 +35,12 @@ module Inboxed
         }
       end
 
-      def self.search_all(query:, limit:, after: nil)
+      def self.search_all(query:, project_ids:, limit:, after: nil)
         quoted = ActiveRecord::Base.connection.quote(query)
 
         scope = EmailRecord
           .joins(inbox: :project)
+          .where(projects: {id: project_ids})
           .where(
             "to_tsvector('simple', coalesce(emails.subject, '') || ' ' || coalesce(emails.body_text, '')) @@ plainto_tsquery('simple', ?)",
             query
@@ -59,6 +60,7 @@ module Inboxed
           has_more: records.size > limit,
           total_count: EmailRecord
             .joins(inbox: :project)
+            .where(projects: {id: project_ids})
             .where(
               "to_tsvector('simple', coalesce(emails.subject, '') || ' ' || coalesce(emails.body_text, '')) @@ plainto_tsquery('simple', ?)",
               query
