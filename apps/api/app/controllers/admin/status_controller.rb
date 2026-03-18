@@ -14,6 +14,7 @@ module Admin
         outbound_smtp_configured: outbound_smtp_configured?,
         timestamp: Time.current.iso8601,
         environment: Rails.env,
+        turnstile_site_key: ENV["TURNSTILE_SITE_KEY"],
         features: Inboxed::Features.all,
         smtp: {
           host: ENV.fetch("INBOXED_DOMAIN", "localhost"),

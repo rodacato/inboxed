@@ -2,6 +2,8 @@
 
 module Auth
   class RegistrationsController < ApplicationController
+    before_action :verify_turnstile!, only: [:create]
+
     def create
       result = Inboxed::Services::RegisterUser.new.call(
         email: params[:email],
@@ -22,6 +24,28 @@ module Auth
       render json: {error: "registration_closed", message: "Registration is not available"}, status: :forbidden
     rescue Inboxed::Services::RegisterUser::InvitationExpired
       render json: {error: "invitation_expired", message: "This invitation has expired"}, status: :gone
+    end
+
+    private
+
+    def verify_turnstile!
+      secret = ENV["TURNSTILE_SECRET_KEY"]
+      return unless secret.present? # Skip if not configured
+
+      token = params[:turnstile_token]
+      unless token.present?
+        return render json: {error: "captcha_required", message: "Please complete the captcha"}, status: :unprocessable_entity
+      end
+
+      response = Net::HTTP.post_form(
+        URI("https://challenges.cloudflare.com/turnstile/v0/siteverify"),
+        {secret: secret, response: token, remoteip: request.remote_ip}
+      )
+      result = JSON.parse(response.body)
+
+      unless result["success"]
+        render json: {error: "captcha_failed", message: "Captcha verification failed. Please try again."}, status: :unprocessable_entity
+      end
     end
   end
 end

@@ -41,9 +41,10 @@ export async function login(email: string, password: string): Promise<{ user: Au
 	return { user, organization };
 }
 
-export async function register(email: string, password: string, invitationToken?: string): Promise<{ verificationRequired: boolean }> {
+export async function register(email: string, password: string, invitationToken?: string, turnstileToken?: string): Promise<{ verificationRequired: boolean }> {
 	const body: Record<string, string> = { email, password };
 	if (invitationToken) body.invitation_token = invitationToken;
+	if (turnstileToken) body.turnstile_token = turnstileToken;
 
 	const res = (await apiClient('/auth/register', {
 		method: 'POST',
@@ -140,6 +141,10 @@ export function getErrorMessage(err: unknown): string {
 		if (body?.error === 'invalid_credentials') return 'Invalid email or password.';
 		if (body?.error === 'registration_closed') return 'Registration is currently closed.';
 		if (body?.error === 'invitation_expired') return 'This invitation has expired.';
+		if (body?.error === 'captcha_required') return 'Please complete the captcha.';
+		if (body?.error === 'captcha_failed') return 'Captcha verification failed. Please try again.';
+		if (body?.error === 'plan_limit_reached') return String(body?.message || 'Plan limit reached.');
+		if (body?.error === 'address_blocked') return String(body?.message || 'This address is not allowed.');
 		if (body?.detail) return String(body.detail);
 		if (body?.error) return String(body.error);
 	}
