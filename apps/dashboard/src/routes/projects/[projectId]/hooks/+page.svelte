@@ -271,7 +271,7 @@
 						<div class="mb-4">
 							<div class="flex items-center justify-between mb-2">
 								<h4 class="text-xs font-mono text-text-dim uppercase">Headers</h4>
-								<button onclick={() => copyValue(Object.entries(selectedRequest.headers).map(([k, v]) => `${k}: ${v}`).join('\n'))} class="text-text-dim hover:text-text-primary transition-colors" title="Copy headers">
+								<button onclick={() => copyValue(Object.entries(selectedRequest!.headers).map(([k, v]) => `${k}: ${v}`).join('\n'))} class="text-text-dim hover:text-text-primary transition-colors" title="Copy headers">
 									<span class="material-symbols-outlined text-sm">content_copy</span>
 								</button>
 							</div>
@@ -296,7 +296,7 @@
 						<div class="mb-4">
 							<div class="flex items-center justify-between mb-2">
 								<h4 class="text-xs font-mono text-text-dim uppercase">Query params</h4>
-								<button onclick={() => copyValue(selectedRequest.query_string ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy query string">
+								<button onclick={() => copyValue(selectedRequest!.query_string ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy query string">
 									<span class="material-symbols-outlined text-sm">content_copy</span>
 								</button>
 							</div>
@@ -320,7 +320,7 @@
 						<div>
 							<div class="flex items-center justify-between mb-2">
 								<h4 class="text-xs font-mono text-text-dim uppercase">Body</h4>
-								<button onclick={() => copyValue(selectedRequest.body ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy body">
+								<button onclick={() => copyValue(selectedRequest!.body ?? '')} class="text-text-dim hover:text-text-primary transition-colors" title="Copy body">
 									<span class="material-symbols-outlined text-sm">content_copy</span>
 								</button>
 							</div>
