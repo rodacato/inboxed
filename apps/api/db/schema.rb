@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_17_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -38,6 +38,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_100001) do
     t.integer "size_bytes", null: false
     t.datetime "updated_at", null: false
     t.index ["email_id"], name: "index_attachments_on_email_id"
+  end
+
+  create_table "blocked_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "address", null: false
+    t.uuid "blocked_by_id"
+    t.datetime "created_at", null: false
+    t.string "reason"
+    t.datetime "updated_at", null: false
+    t.index ["address"], name: "index_blocked_addresses_on_address", unique: true
+  end
+
+  create_table "daily_usage_counters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.date "date", null: false
+    t.integer "emails_count", default: 0, null: false
+    t.uuid "organization_id", null: false
+    t.integer "requests_count", default: 0, null: false
+    t.index ["organization_id", "date"], name: "idx_daily_counters_org_date", unique: true
   end
 
   create_table "emails", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -260,6 +277,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_100001) do
 
   add_foreign_key "api_keys", "projects"
   add_foreign_key "attachments", "emails"
+  add_foreign_key "daily_usage_counters", "organizations", on_delete: :cascade
   add_foreign_key "emails", "inboxes"
   add_foreign_key "http_endpoints", "projects"
   add_foreign_key "http_requests", "http_endpoints"

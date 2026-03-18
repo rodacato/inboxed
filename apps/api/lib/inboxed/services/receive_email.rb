@@ -19,6 +19,30 @@ module Inboxed
         parsed = @parser.call(raw_source)
         ttl_hours = resolve_ttl(project_id)
 
+        # Enforce daily email limit and check blocked addresses
+        project = ProjectRecord.find(project_id)
+        if project.organization
+          org = project.organization
+          if org.max_emails_per_day
+            usage = org.today_usage
+            if usage.emails_count >= org.max_emails_per_day
+              raise Inboxed::PlanLimitExceeded.new(
+                "Daily email limit of #{org.max_emails_per_day} reached",
+                limit: "max_emails_per_day",
+                current: usage.emails_count,
+                max: org.max_emails_per_day
+              )
+            end
+          end
+        end
+
+        # Check blocked addresses
+        envelope_to.each do |recipient|
+          if BlockedAddressRecord.blocked?(recipient)
+            raise Inboxed::AddressBlocked.new(recipient)
+          end
+        end
+
         envelope_to.each do |recipient|
           inbox = @inbox_repo.find_or_create_by_address(
             project_id: project_id,
@@ -60,6 +84,11 @@ module Inboxed
           @inbox_repo.increment_email_count(inbox.id)
 
           inbox_aggregate.clear_pending_events
+        end
+
+        # Track daily usage
+        if project.organization_id
+          DailyUsageCounterRecord.increment_emails!(project.organization_id)
         end
       end
 

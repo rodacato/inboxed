@@ -12,6 +12,8 @@ module ErrorRenderable
     rescue_from ActiveRecord::RecordInvalid, with: :render_validation_error
     rescue_from ActionController::ParameterMissing, with: :render_bad_request
     rescue_from Inboxed::CurrentTenant::TenantNotSet, with: :render_unauthorized
+    rescue_from Inboxed::PlanLimitExceeded, with: :render_plan_limit_exceeded
+    rescue_from Inboxed::AddressBlocked, with: :render_address_blocked
   end
 
   private
@@ -60,6 +62,29 @@ module ErrorRenderable
       type: "forbidden",
       title: "Forbidden",
       detail: message.to_s,
+      status: :forbidden
+    )
+  end
+
+  def render_plan_limit_exceeded(exception)
+    render_problem(
+      type: "plan-limit-reached",
+      title: "Plan limit reached",
+      detail: exception.message,
+      status: :forbidden,
+      extras: {
+        limit: exception.limit,
+        current: exception.current,
+        max: exception.max
+      }.compact
+    )
+  end
+
+  def render_address_blocked(exception)
+    render_problem(
+      type: "address-blocked",
+      title: "Address blocked",
+      detail: exception.message,
       status: :forbidden
     )
   end

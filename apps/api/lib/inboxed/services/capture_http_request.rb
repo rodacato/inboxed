@@ -8,6 +8,23 @@ module Inboxed
       end
 
       def call(endpoint:, request_data:)
+        # Enforce daily request limit
+        project = ProjectRecord.find(endpoint.project_id)
+        if project.organization
+          org = project.organization
+          if org.max_requests_per_day
+            usage = org.today_usage
+            if usage.requests_count >= org.max_requests_per_day
+              raise Inboxed::PlanLimitExceeded.new(
+                "Daily request limit of #{org.max_requests_per_day} reached",
+                limit: "max_requests_per_day",
+                current: usage.requests_count,
+                max: org.max_requests_per_day
+              )
+            end
+          end
+        end
+
         record = HttpRequestRecord.create!(
           http_endpoint_id: endpoint.id,
           method: request_data[:method],
@@ -29,6 +46,11 @@ module Inboxed
 
         publish_event(endpoint, record)
         broadcast_request(endpoint, record)
+
+        # Track daily usage
+        if project.organization_id
+          DailyUsageCounterRecord.increment_requests!(project.organization_id)
+        end
 
         {request_id: record.id, heartbeat_status: heartbeat_status}
       end

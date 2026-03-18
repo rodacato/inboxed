@@ -7,7 +7,23 @@ module Inboxed
         @event_store = event_store
       end
 
-      def call(project_id:, params:)
+      def call(project_id:, params:, skip_limits: false)
+        # Enforce plan limits on new endpoint creation
+        unless skip_limits
+          project = ProjectRecord.find(project_id)
+          if project.organization
+            org = project.organization
+            if org.max_endpoints && org.total_endpoint_count >= org.max_endpoints
+              raise Inboxed::PlanLimitExceeded.new(
+                "Endpoint limit of #{org.max_endpoints} reached",
+                limit: "max_endpoints",
+                current: org.total_endpoint_count,
+                max: org.max_endpoints
+              )
+            end
+          end
+        end
+
         record = HttpEndpointRecord.create!(
           project_id: project_id,
           endpoint_type: params[:endpoint_type] || "webhook",

@@ -33,3 +33,7 @@ production:
     class: MaintenanceCleanupJob
     queue: default
     schedule: every 1 hour
+  daily_counter_cleanup:
+    class: DailyCounterCleanupJob
+    queue: default
+    schedule: every day at 4am

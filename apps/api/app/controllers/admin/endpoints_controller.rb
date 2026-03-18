@@ -3,6 +3,11 @@
 module Admin
   class EndpointsController < BaseController
     include TrialEnforced
+    include PlanLimitsEnforced
+    include VerificationEnforced
+
+    before_action :enforce_email_verified!, only: [:create]
+    before_action :enforce_endpoint_limit!, only: [:create]
 
     def index
       project = current_project

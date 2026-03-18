@@ -15,6 +15,8 @@ class HooksController < ApplicationController
     )
 
     respond_to_endpoint_type(result)
+  rescue Inboxed::PlanLimitExceeded => e
+    render json: {error: "plan_limit_reached", message: e.message}, status: :too_many_requests
   end
 
   private
