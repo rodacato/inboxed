@@ -3,7 +3,7 @@
 > HTTP push notifications when emails are received, with retry logic and HMAC signing.
 
 **Phase:** Phase 7 — Post-MVP
-**Status:** accepted
+**Status:** implemented
 **Release:** —
 **Depends on:** [002 — SMTP & Persistence](002-smtp-persistence.md) (domain events), [003 — REST API](003-rest-api.md) (API patterns)
 **ADRs:** [ADR-002 Custom Event Store](../adrs/002-custom-event-store.md), [ADR-020 Webhook Delivery Strategy](../adrs/020-webhook-delivery-strategy.md)

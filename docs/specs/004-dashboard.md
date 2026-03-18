@@ -1,7 +1,7 @@
 # Spec 004 — Dashboard
 
 **Phase:** 3 — Dashboard
-**Status:** accepted
+**Status:** implemented
 **Created:** 2026-03-15
 **ADRs:** [004](../adrs/004-feature-based-svelte.md), [008](../adrs/008-api-response-format.md), [009](../adrs/009-cursor-pagination.md), [011](../adrs/011-realtime-actioncable.md), [012](../adrs/012-dashboard-admin-auth.md)
 **Depends on:** [002 — SMTP + Persistence](002-smtp-persistence.md), [003 — REST API](003-rest-api.md)

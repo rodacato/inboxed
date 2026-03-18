@@ -3,7 +3,7 @@
 > AI agents can read, search, and extract data from captured emails via the Model Context Protocol.
 
 **Phase:** Phase 4 — MCP Server
-**Status:** accepted
+**Status:** implemented
 **Release:** —
 **Depends on:** [003 — REST API](003-rest-api.md)
 **ADRs:** [ADR-005 Hexagonal Light](../adrs/005-mcp-hexagonal.md), [ADR-013 Tool Design](../adrs/013-mcp-tool-design.md), [ADR-014 Error Handling](../adrs/014-mcp-error-handling.md)

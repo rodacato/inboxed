@@ -3,7 +3,7 @@
 > Define the architectural patterns, layer boundaries, and conventions for all three services before writing business logic.
 
 **Phase:** Cross-cutting (applies to all phases)
-**Status:** approved
+**Status:** implemented
 **Release:** —
 
 ---

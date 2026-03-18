@@ -3,7 +3,7 @@
 > Bootstrap the monorepo with Rails API, Svelte dashboard, MCP server, Caddy proxy, CI/CD pipeline, and Kamal deploy — validated end-to-end before writing any business logic.
 
 **Phase:** Phase 0 (Foundation)
-**Status:** draft
+**Status:** implemented
 **Release:** —
 
 ---

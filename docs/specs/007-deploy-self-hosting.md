@@ -3,7 +3,7 @@
 > From `git clone` to receiving test emails in under 10 minutes.
 
 **Phase:** Phase 6 — Deploy & Self-Hosting
-**Status:** accepted
+**Status:** implemented
 **Release:** —
 **Depends on:** [000 — Foundation](000-foundation.md), all prior specs (functional Inboxed stack)
 **ADRs:** [ADR-017 Setup Script](../adrs/017-setup-script-secure-defaults.md), [ADR-018 Landing Page](../adrs/018-static-landing-page.md), [ADR-019 Docker Compose Primary](../adrs/019-docker-compose-primary-deploy.md)

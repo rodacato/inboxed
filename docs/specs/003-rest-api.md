@@ -3,7 +3,7 @@
 > Programmatic access to projects, inboxes, emails, and attachments via a versioned JSON API with authentication, pagination, rate limiting, and OpenAPI documentation.
 
 **Phase:** Phase 2 (REST API)
-**Status:** draft
+**Status:** implemented
 **Release:** —
 **Depends on:** [001-architecture](001-architecture.md), [002-smtp-persistence](002-smtp-persistence.md)
 

@@ -3,7 +3,7 @@
 > Receive emails via SMTP, parse MIME, persist to PostgreSQL through the event store, and clean up expired messages.
 
 **Phase:** Phase 1 (SMTP + Persistence)
-**Status:** draft
+**Status:** implemented
 **Release:** —
 **Depends on:** [001-architecture](001-architecture.md)
 

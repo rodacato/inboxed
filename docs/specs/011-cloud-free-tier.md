@@ -5,7 +5,7 @@
 > Add multi-user support to Inboxed. Organizations group users and projects. The site operator controls registration (open, invite-only, or closed) and trial duration. Same codebase, same Docker image — configuration via env vars, not code branches.
 
 **Phase:** 9
-**Status:** accepted
+**Status:** implemented
 **Created:** 2026-03-16
 **Depends on:** [001 — Architecture](001-architecture.md), [009 — Usability](009-usability.md) (auth abstraction, feature flags)
 **ADRs:** [022 — Cloud Free Tier](../adrs/022-cloud-free-tier.md) (superseded in part), [026 — Authentication](../adrs/026-cloud-authentication.md) (rewritten), [027 — Tenant Isolation](../adrs/027-tenant-isolation.md) (rewritten), [028 — Cloud SMTP Routing](../adrs/028-cloud-smtp-routing.md), [029 — Organization & Trial](../adrs/029-organization-trial.md)
