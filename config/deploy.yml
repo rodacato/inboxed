@@ -73,6 +73,8 @@ env:
     - GITHUB_CLIENT_ID
     - GITHUB_CLIENT_SECRET
     - INBOUND_WEBHOOK_SECRET
+    - TURNSTILE_SITE_KEY
+    - TURNSTILE_SECRET_KEY
 
 accessories:
   dashboard:

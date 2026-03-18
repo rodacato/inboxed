@@ -107,6 +107,8 @@ jobs:
       GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
       GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
       INBOUND_WEBHOOK_SECRET: ${{ secrets.INBOUND_WEBHOOK_SECRET }}
+      TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
       INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
       INBOXED_WEB_DOMAIN: ${{ vars.INBOXED_WEB_DOMAIN }}
       INBOXED_API_DOMAIN: ${{ vars.INBOXED_API_DOMAIN }}
@@ -162,7 +164,7 @@ jobs:
           done
 
           # Optional (warn if missing)
-          for opt in OUTBOUND_SMTP_HOST OUTBOUND_FROM_EMAIL GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET INBOXED_SETUP_TOKEN INBOXED_MCP_KEY; do
+          for opt in OUTBOUND_SMTP_HOST OUTBOUND_FROM_EMAIL GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET INBOXED_SETUP_TOKEN INBOXED_MCP_KEY TURNSTILE_SITE_KEY TURNSTILE_SECRET_KEY; do
             val=$(printenv "$opt" 2>/dev/null || true)
             if [ -z "$val" ]; then
               echo "::warning::Optional secret not set: $opt — some features will be disabled"
