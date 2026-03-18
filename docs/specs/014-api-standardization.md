@@ -3,7 +3,7 @@
 > Unify the public API v1 response format, add HTTP transport to the MCP server, publish multi-arch Docker images, and document the API with OpenAPI + Redocly.
 
 **Phase:** Cross-cutting (API, MCP, Deploy)
-**Status:** draft
+**Status:** implemented
 **Release:** —
 **Depends on:** [003-rest-api](003-rest-api.md), [005-mcp-server](005-mcp-server.md), [010-http-catcher](010-http-catcher.md)
 **ADRs:** [ADR-008](../adrs/008-api-response-format.md), [ADR-032](../adrs/032-api-envelope-standardization.md), [ADR-033](../adrs/033-mcp-dual-transport.md)
@@ -310,13 +310,13 @@ Steps 1-3 must ship together (breaking change). Steps 4-5 are independent.
 
 ## 7. Exit criteria
 
-- [ ] All public API v1 endpoints return resource-named envelope keys
-- [ ] All paginated responses include `pagination.total_count`
-- [ ] All error responses follow RFC 7807 with `Content-Type: application/problem+json`
-- [ ] Dashboard hooks feature works with updated response format
-- [ ] MCP `list_emails` works against production API without normalization
-- [ ] MCP HTTP transport validates `Authorization` header
-- [ ] MCP HTTP transport returns CORS headers
-- [ ] `ghcr.io/rodacato/inboxed-mcp:latest` has both amd64 and arm64 manifests
-- [ ] OpenAPI spec passes `redocly lint`
-- [ ] All existing RSpec and Vitest tests pass
+- [x] All public API v1 endpoints return resource-named envelope keys
+- [x] All paginated responses include `pagination.total_count`
+- [x] All error responses follow RFC 7807 with `Content-Type: application/problem+json`
+- [x] Dashboard hooks feature works with updated response format — N/A, dashboard uses admin API
+- [x] MCP `list_emails` works against production API without normalization
+- [x] MCP HTTP transport validates `Authorization` header
+- [x] MCP HTTP transport returns CORS headers
+- [ ] `ghcr.io/rodacato/inboxed-mcp:latest` has both amd64 and arm64 manifests — pending next push to master
+- [x] OpenAPI spec passes `redocly lint`
+- [x] All existing RSpec and Vitest tests pass
