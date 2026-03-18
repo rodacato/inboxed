@@ -93,31 +93,31 @@ jobs:
     timeout-minutes: 20
 
     env:
-      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
-      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      HOST_IP: ${{ secrets.HOST_IP }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
-      INBOXED_SETUP_TOKEN: ${{ secrets.INBOXED_SETUP_TOKEN }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
-      OUTBOUND_SMTP_HOST: ${{ secrets.OUTBOUND_SMTP_HOST }}
-      OUTBOUND_FROM_EMAIL: ${{ secrets.OUTBOUND_FROM_EMAIL }}
+      EMAIL_TTL_HOURS: ${{ vars.EMAIL_TTL_HOURS }}
       GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
       GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+      HOST_IP: ${{ secrets.HOST_IP }}
       INBOUND_WEBHOOK_SECRET: ${{ secrets.INBOUND_WEBHOOK_SECRET }}
-      TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
-      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
-      INBOXED_WEB_DOMAIN: ${{ vars.INBOXED_WEB_DOMAIN }}
       INBOXED_API_DOMAIN: ${{ vars.INBOXED_API_DOMAIN }}
-      REGISTRATION_MODE: ${{ vars.REGISTRATION_MODE }}
-      TRIAL_DURATION_DAYS: ${{ vars.TRIAL_DURATION_DAYS }}
-      EMAIL_TTL_HOURS: ${{ vars.EMAIL_TTL_HOURS }}
+      INBOXED_DOMAIN: ${{ vars.INBOXED_DOMAIN }}
       INBOXED_MAX_MESSAGE_SIZE_MB: ${{ vars.INBOXED_MAX_MESSAGE_SIZE_MB }}
+      INBOXED_MCP_KEY: ${{ secrets.INBOXED_MCP_KEY }}
+      INBOXED_SETUP_TOKEN: ${{ secrets.INBOXED_SETUP_TOKEN }}
+      INBOXED_WEB_DOMAIN: ${{ vars.INBOXED_WEB_DOMAIN }}
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
+      OUTBOUND_FROM_EMAIL: ${{ secrets.OUTBOUND_FROM_EMAIL }}
+      OUTBOUND_SMTP_HOST: ${{ secrets.OUTBOUND_SMTP_HOST }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      REGISTRATION_MODE: ${{ vars.REGISTRATION_MODE }}
+      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
       SMTP_MAX_RECIPIENTS: ${{ vars.SMTP_MAX_RECIPIENTS }}
       SMTP_RATE_LIMIT_PER_MIN: ${{ vars.SMTP_RATE_LIMIT_PER_MIN }}
+      TRIAL_DURATION_DAYS: ${{ vars.TRIAL_DURATION_DAYS }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
 
     steps:
       - uses: actions/checkout@v4

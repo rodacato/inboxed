@@ -51,30 +51,30 @@ builder:
 
 env:
   clear:
+    DASHBOARD_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
+    EMAIL_TTL_HOURS: <%= ENV.fetch("EMAIL_TTL_HOURS", "168") %>
+    INBOXED_BASE_URL: https://<%= ENV.fetch("INBOXED_API_DOMAIN", "inboxed-api.example.com") %>
+    INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "mail.example.com") %>
+    INBOXED_FEATURE_INBOUND_EMAIL: true
+    INBOXED_MAX_MESSAGE_SIZE_MB: <%= ENV.fetch("INBOXED_MAX_MESSAGE_SIZE_MB", "3") %>
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: true
-    INBOXED_DOMAIN: <%= ENV.fetch("INBOXED_DOMAIN", "mail.example.com") %>
-    INBOXED_BASE_URL: https://<%= ENV.fetch("INBOXED_API_DOMAIN", "inboxed-api.example.com") %>
-    DASHBOARD_URL: https://<%= ENV.fetch("INBOXED_WEB_DOMAIN", "inboxed.example.com") %>
     REGISTRATION_MODE: <%= ENV.fetch("REGISTRATION_MODE", "closed") %>
-    TRIAL_DURATION_DAYS: <%= ENV.fetch("TRIAL_DURATION_DAYS", "7") %>
-    EMAIL_TTL_HOURS: <%= ENV.fetch("EMAIL_TTL_HOURS", "168") %>
-    INBOXED_MAX_MESSAGE_SIZE_MB: <%= ENV.fetch("INBOXED_MAX_MESSAGE_SIZE_MB", "3") %>
     SMTP_MAX_RECIPIENTS: <%= ENV.fetch("SMTP_MAX_RECIPIENTS", "100") %>
     SMTP_RATE_LIMIT_PER_MIN: <%= ENV.fetch("SMTP_RATE_LIMIT_PER_MIN", "60") %>
-    INBOXED_FEATURE_INBOUND_EMAIL: true
+    TRIAL_DURATION_DAYS: <%= ENV.fetch("TRIAL_DURATION_DAYS", "7") %>
   secret:
     - DATABASE_URL
-    - SECRET_KEY_BASE
-    - INBOXED_SETUP_TOKEN
-    - REDIS_URL
-    - OUTBOUND_SMTP_HOST
-    - OUTBOUND_FROM_EMAIL
     - GITHUB_CLIENT_ID
     - GITHUB_CLIENT_SECRET
     - INBOUND_WEBHOOK_SECRET
-    - TURNSTILE_SITE_KEY
+    - INBOXED_SETUP_TOKEN
+    - OUTBOUND_FROM_EMAIL
+    - OUTBOUND_SMTP_HOST
+    - REDIS_URL
+    - SECRET_KEY_BASE
     - TURNSTILE_SECRET_KEY
+    - TURNSTILE_SITE_KEY
 
 accessories:
   dashboard:
