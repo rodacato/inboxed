@@ -1,0 +1,116 @@
+# /api/v1/endpoints/{token}/requests
+list:
+  get:
+    operationId: listRequests
+    summary: List captured HTTP requests
+    tags: [Requests]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+      - name: method
+        in: query
+        schema:
+          type: string
+        description: Filter by HTTP method (e.g., POST)
+      - $ref: "../components/parameters.yaml#/limit"
+      - $ref: "../components/parameters.yaml#/after"
+    responses:
+      "200":
+        description: Request list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requests, pagination]
+              properties:
+                requests:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/HttpRequestSummary"
+                pagination:
+                  $ref: "../components/schemas.yaml#/Pagination"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/endpoints/{token}/requests/{request_id}
+detail:
+  get:
+    operationId: getRequest
+    summary: Get request detail
+    description: Returns the full request including body and headers.
+    tags: [Requests]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Request detail
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request]
+              properties:
+                request:
+                  $ref: "../components/schemas.yaml#/HttpRequestDetail"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  delete:
+    operationId: deleteRequest
+    summary: Delete a captured request
+    tags: [Requests]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "204":
+        description: Request deleted
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/endpoints/{token}/requests/wait
+wait:
+  post:
+    operationId: waitForRequest
+    summary: Long-poll for a new request
+    description: |
+      Blocks until a request matching the criteria arrives or the timeout expires.
+      Returns 408 if no request arrives within the timeout.
+    tags: [Requests]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              method:
+                type: string
+                description: Filter by HTTP method
+              timeout:
+                type: integer
+                default: 30
+                description: Max seconds to wait
+    responses:
+      "200":
+        description: Request received
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request]
+              properties:
+                request:
+                  $ref: "../components/schemas.yaml#/HttpRequestDetail"
+      "408":
+        description: Timeout — no request arrived

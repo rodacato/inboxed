@@ -1,0 +1,187 @@
+# /api/v1/webhooks
+list:
+  get:
+    operationId: listWebhooks
+    summary: List webhook subscriptions
+    tags: [Webhooks]
+    responses:
+      "200":
+        description: Webhook list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhooks]
+              properties:
+                webhooks:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/WebhookEndpoint"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+  post:
+    operationId: createWebhook
+    summary: Create a webhook subscription
+    tags: [Webhooks]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [url, event_types]
+            properties:
+              url:
+                type: string
+                format: uri
+                description: HTTPS URL to receive events (HTTP allowed for localhost)
+              event_types:
+                type: array
+                items:
+                  type: string
+                  enum: [email_received, email_deleted]
+              description:
+                type: string
+    responses:
+      "201":
+        description: Webhook created (includes secret)
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhook]
+              properties:
+                webhook:
+                  $ref: "../components/schemas.yaml#/WebhookEndpointWithSecret"
+      "422":
+        $ref: "../components/responses.yaml#/ValidationError"
+
+# /api/v1/webhooks/{webhook_id}
+detail:
+  get:
+    operationId: getWebhook
+    summary: Get webhook details with delivery stats
+    tags: [Webhooks]
+    parameters:
+      - $ref: "../components/parameters.yaml#/webhookId"
+    responses:
+      "200":
+        description: Webhook with stats
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhook]
+              properties:
+                webhook:
+                  $ref: "../components/schemas.yaml#/WebhookEndpointWithStats"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  patch:
+    operationId: updateWebhook
+    summary: Update a webhook subscription
+    tags: [Webhooks]
+    parameters:
+      - $ref: "../components/parameters.yaml#/webhookId"
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              description:
+                type: string
+              status:
+                type: string
+                enum: [active, disabled]
+              event_types:
+                type: array
+                items:
+                  type: string
+                  enum: [email_received, email_deleted]
+    responses:
+      "200":
+        description: Webhook updated
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [webhook]
+              properties:
+                webhook:
+                  $ref: "../components/schemas.yaml#/WebhookEndpoint"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  delete:
+    operationId: deleteWebhook
+    summary: Delete webhook and delivery history
+    tags: [Webhooks]
+    parameters:
+      - $ref: "../components/parameters.yaml#/webhookId"
+    responses:
+      "204":
+        description: Webhook deleted
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/webhooks/{webhook_id}/test
+test:
+  post:
+    operationId: testWebhook
+    summary: Send a test delivery
+    tags: [Webhooks]
+    parameters:
+      - $ref: "../components/parameters.yaml#/webhookId"
+    responses:
+      "200":
+        description: Test result
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [test_result]
+              properties:
+                test_result:
+                  type: object
+                  properties:
+                    success:
+                      type: boolean
+                    http_status:
+                      type: ["integer", "null"]
+                    duration_ms:
+                      type: integer
+                    error:
+                      type: ["string", "null"]
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/webhooks/{webhook_id}/deliveries
+deliveries:
+  get:
+    operationId: listDeliveries
+    summary: List delivery history
+    tags: [Deliveries]
+    parameters:
+      - $ref: "../components/parameters.yaml#/webhookId"
+      - $ref: "../components/parameters.yaml#/limit"
+      - $ref: "../components/parameters.yaml#/after"
+    responses:
+      "200":
+        description: Delivery list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deliveries, pagination]
+              properties:
+                deliveries:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/WebhookDelivery"
+                pagination:
+                  $ref: "../components/schemas.yaml#/Pagination"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"

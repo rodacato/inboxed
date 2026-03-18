@@ -22,6 +22,9 @@ apps/dashboard/.svelte-kit/
 packages/typescript/dist/
 packages/ruby/Gemfile.lock
 
+# ── Generated docs ───────────────────────────────────────────
+apps/api/public/docs/
+
 # ── IDE ───────────────────────────────────────────────────────
 .vscode/*
 !.vscode/settings.json

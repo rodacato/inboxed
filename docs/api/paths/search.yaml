@@ -1,0 +1,30 @@
+get:
+  operationId: searchEmails
+  summary: Full-text search across emails
+  tags: [Search]
+  parameters:
+    - name: q
+      in: query
+      required: true
+      schema:
+        type: string
+      description: Search query
+    - $ref: "../components/parameters.yaml#/limit"
+    - $ref: "../components/parameters.yaml#/after"
+  responses:
+    "200":
+      description: Search results
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [emails, pagination]
+            properties:
+              emails:
+                type: array
+                items:
+                  $ref: "../components/schemas.yaml#/SearchResult"
+              pagination:
+                $ref: "../components/schemas.yaml#/Pagination"
+    "400":
+      $ref: "../components/responses.yaml#/BadRequest"

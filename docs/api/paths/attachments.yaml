@@ -1,0 +1,52 @@
+# /api/v1/emails/{email_id}/attachments
+list:
+  get:
+    operationId: listAttachments
+    summary: List email attachments
+    tags: [Attachments]
+    parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Attachment list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attachments]
+              properties:
+                attachments:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/Attachment"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/attachments/{attachment_id}/download
+download:
+  get:
+    operationId: downloadAttachment
+    summary: Download attachment binary
+    tags: [Attachments]
+    parameters:
+      - name: attachment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Attachment binary
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"

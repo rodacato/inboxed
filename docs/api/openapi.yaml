@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: Inboxed API
+  version: 1.0.0
+  description: |
+    Inboxed is a developer-first email testing and HTTP request capture service.
+    Use the API to manage inboxes, read emails, capture webhook requests,
+    and subscribe to event notifications.
+
+    ## Authentication
+
+    All endpoints require a Bearer token. Pass your project API key in the
+    `Authorization` header:
+
+    ```
+    Authorization: Bearer <your-api-key>
+    ```
+
+    ## Pagination
+
+    Collection endpoints return a `pagination` object:
+
+    ```json
+    {
+      "pagination": {
+        "has_more": true,
+        "next_cursor": "eyJ...",
+        "total_count": 128
+      }
+    }
+    ```
+
+    Pass `?after=<next_cursor>` to fetch the next page. Use `?limit=N`
+    to control page size (default 20, max 100).
+
+    ## Errors
+
+    Errors follow [RFC 7807 Problem Details](https://datatracker.ietf.org/doc/html/rfc7807):
+
+    ```json
+    {
+      "type": "https://docs.inboxed.dev/errors/not-found",
+      "title": "Resource not found",
+      "detail": "Couldn't find InboxRecord with 'id'=abc",
+      "status": 404
+    }
+    ```
+  contact:
+    name: Inboxed
+    url: https://github.com/rodacato/inboxed
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: https://inboxed-api.notdefined.dev
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Status
+    description: Service health
+  - name: Inboxes
+    description: Email inbox management
+  - name: Emails
+    description: Read and manage captured emails
+  - name: Attachments
+    description: Email attachment access
+  - name: Search
+    description: Full-text email search
+  - name: Endpoints
+    description: HTTP catcher endpoints (webhooks, forms, heartbeats)
+  - name: Requests
+    description: Captured HTTP requests
+  - name: Webhooks
+    description: Outbound webhook subscriptions
+  - name: Deliveries
+    description: Webhook delivery history
+
+paths:
+  # ── Status ──────────────────────────────────────────────
+  /api/v1/status:
+    $ref: "./paths/status.yaml"
+
+  # ── Inboxes ─────────────────────────────────────────────
+  /api/v1/inboxes:
+    $ref: "./paths/inboxes.yaml#/list"
+  /api/v1/inboxes/{inbox_id}:
+    $ref: "./paths/inboxes.yaml#/detail"
+
+  # ── Emails ──────────────────────────────────────────────
+  /api/v1/inboxes/{inbox_id}/emails:
+    $ref: "./paths/emails.yaml#/list"
+  /api/v1/emails/{email_id}:
+    $ref: "./paths/emails.yaml#/detail"
+  /api/v1/emails/{email_id}/raw:
+    $ref: "./paths/emails.yaml#/raw"
+  /api/v1/emails/wait:
+    $ref: "./paths/emails.yaml#/wait"
+  /api/v1/inboxes/{inbox_id}/emails/purge:
+    $ref: "./paths/emails.yaml#/purge"
+
+  # ── Attachments ─────────────────────────────────────────
+  /api/v1/emails/{email_id}/attachments:
+    $ref: "./paths/attachments.yaml#/list"
+  /api/v1/attachments/{attachment_id}/download:
+    $ref: "./paths/attachments.yaml#/download"
+
+  # ── Search ──────────────────────────────────────────────
+  /api/v1/search:
+    $ref: "./paths/search.yaml"
+
+  # ── Endpoints (HTTP Catcher) ────────────────────────────
+  /api/v1/endpoints:
+    $ref: "./paths/endpoints.yaml#/list"
+  /api/v1/endpoints/{token}:
+    $ref: "./paths/endpoints.yaml#/detail"
+  /api/v1/endpoints/{token}/purge:
+    $ref: "./paths/endpoints.yaml#/purge"
+
+  # ── Requests ────────────────────────────────────────────
+  /api/v1/endpoints/{token}/requests:
+    $ref: "./paths/requests.yaml#/list"
+  /api/v1/endpoints/{token}/requests/{request_id}:
+    $ref: "./paths/requests.yaml#/detail"
+  /api/v1/endpoints/{token}/requests/wait:
+    $ref: "./paths/requests.yaml#/wait"
+
+  # ── Webhooks ────────────────────────────────────────────
+  /api/v1/webhooks:
+    $ref: "./paths/webhooks.yaml#/list"
+  /api/v1/webhooks/{webhook_id}:
+    $ref: "./paths/webhooks.yaml#/detail"
+  /api/v1/webhooks/{webhook_id}/test:
+    $ref: "./paths/webhooks.yaml#/test"
+  /api/v1/webhooks/{webhook_id}/deliveries:
+    $ref: "./paths/webhooks.yaml#/deliveries"
+
+components:
+  securitySchemes:
+    $ref: "./components/security.yaml"
+  parameters:
+    $ref: "./components/parameters.yaml"
+  schemas:
+    $ref: "./components/schemas.yaml"
+  responses:
+    $ref: "./components/responses.yaml"

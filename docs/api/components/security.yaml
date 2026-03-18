@@ -1,0 +1,4 @@
+bearerAuth:
+  type: http
+  scheme: bearer
+  description: Project API key

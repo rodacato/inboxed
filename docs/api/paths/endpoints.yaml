@@ -1,0 +1,191 @@
+# /api/v1/endpoints
+list:
+  get:
+    operationId: listEndpoints
+    summary: List HTTP catcher endpoints
+    tags: [Endpoints]
+    parameters:
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [webhook, form, heartbeat]
+        description: Filter by endpoint type
+      - $ref: "../components/parameters.yaml#/limit"
+      - $ref: "../components/parameters.yaml#/after"
+    responses:
+      "200":
+        description: Endpoint list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoints, pagination]
+              properties:
+                endpoints:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/HttpEndpoint"
+                pagination:
+                  $ref: "../components/schemas.yaml#/Pagination"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+  post:
+    operationId: createEndpoint
+    summary: Create an HTTP catcher endpoint
+    tags: [Endpoints]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              endpoint_type:
+                type: string
+                enum: [webhook, form, heartbeat]
+                default: webhook
+              label:
+                type: string
+                description: Human-readable label
+              description:
+                type: string
+              allowed_methods:
+                type: array
+                items:
+                  type: string
+                description: Allowed HTTP methods (default POST)
+              max_body_bytes:
+                type: integer
+                description: Max request body size in bytes
+              response_mode:
+                type: string
+                enum: [json, redirect, html]
+                description: How the catch endpoint responds
+              response_redirect_url:
+                type: string
+                description: Redirect URL (when response_mode is redirect)
+              response_html:
+                type: string
+                description: HTML body (when response_mode is html)
+              expected_interval_seconds:
+                type: integer
+                description: Heartbeat expected ping interval
+              allowed_ips:
+                type: array
+                items:
+                  type: string
+                description: IP allowlist (empty = allow all)
+    responses:
+      "201":
+        description: Endpoint created
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  $ref: "../components/schemas.yaml#/HttpEndpoint"
+      "422":
+        $ref: "../components/responses.yaml#/ValidationError"
+
+# /api/v1/endpoints/{token}
+detail:
+  get:
+    operationId: getEndpoint
+    summary: Get endpoint details
+    tags: [Endpoints]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+    responses:
+      "200":
+        description: Endpoint details
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  $ref: "../components/schemas.yaml#/HttpEndpoint"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  patch:
+    operationId: updateEndpoint
+    summary: Update an endpoint
+    tags: [Endpoints]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              label:
+                type: string
+              description:
+                type: string
+              allowed_methods:
+                type: array
+                items:
+                  type: string
+              max_body_bytes:
+                type: integer
+              response_mode:
+                type: string
+              response_redirect_url:
+                type: string
+              expected_interval_seconds:
+                type: integer
+              allowed_ips:
+                type: array
+                items:
+                  type: string
+    responses:
+      "200":
+        description: Endpoint updated
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  $ref: "../components/schemas.yaml#/HttpEndpoint"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  delete:
+    operationId: deleteEndpoint
+    summary: Delete endpoint and all captured requests
+    tags: [Endpoints]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+    responses:
+      "204":
+        description: Endpoint deleted
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/endpoints/{token}/purge
+purge:
+  delete:
+    operationId: purgeRequests
+    summary: Purge all captured requests
+    tags: [Endpoints]
+    parameters:
+      - $ref: "../components/parameters.yaml#/endpointToken"
+    responses:
+      "200":
+        description: Requests purged
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deleted_count]
+              properties:
+                deleted_count:
+                  type: integer
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"

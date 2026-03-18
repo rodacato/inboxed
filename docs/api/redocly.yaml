@@ -1,0 +1,12 @@
+apis:
+  inboxed@v1:
+    root: openapi.yaml
+
+extends:
+  - recommended
+
+rules:
+  no-unused-components: error
+  operation-operationId: error
+  operation-summary: error
+  tag-description: warn

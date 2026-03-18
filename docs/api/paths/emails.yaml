@@ -1,0 +1,169 @@
+# /api/v1/inboxes/{inbox_id}/emails
+list:
+  get:
+    operationId: listEmails
+    summary: List emails in an inbox
+    tags: [Emails]
+    parameters:
+      - name: inbox_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: "../components/parameters.yaml#/limit"
+      - $ref: "../components/parameters.yaml#/after"
+    responses:
+      "200":
+        description: Email list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emails, pagination]
+              properties:
+                emails:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/EmailSummary"
+                pagination:
+                  $ref: "../components/schemas.yaml#/Pagination"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/emails/{email_id}
+detail:
+  get:
+    operationId: getEmail
+    summary: Get email detail
+    description: Returns the full email including body, headers, and attachments.
+    tags: [Emails]
+    parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Email detail
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  $ref: "../components/schemas.yaml#/EmailDetail"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  delete:
+    operationId: deleteEmail
+    summary: Delete an email
+    tags: [Emails]
+    parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "204":
+        description: Email deleted
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/emails/{email_id}/raw
+raw:
+  get:
+    operationId: getEmailRaw
+    summary: Get raw MIME source
+    tags: [Emails]
+    parameters:
+      - name: email_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Raw email source
+        content:
+          text/plain:
+            schema:
+              type: string
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+
+# /api/v1/emails/wait
+wait:
+  post:
+    operationId: waitForEmail
+    summary: Long-poll for a new email
+    description: |
+      Blocks until an email matching the criteria arrives or the timeout expires.
+      Returns 204 if no email arrives within the timeout.
+    tags: [Emails]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              inbox_address:
+                type: string
+                description: Inbox email address to watch
+              subject_pattern:
+                type: string
+                description: Regex pattern to match subject
+              timeout_seconds:
+                type: integer
+                default: 30
+                description: Max seconds to wait (1-60)
+    responses:
+      "200":
+        description: Email received
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  $ref: "../components/schemas.yaml#/EmailDetail"
+      "204":
+        description: Timeout — no email arrived
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+
+# /api/v1/inboxes/{inbox_id}/emails/purge
+purge:
+  delete:
+    operationId: purgeEmails
+    summary: Delete all emails in an inbox
+    tags: [Emails]
+    parameters:
+      - name: inbox_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Emails purged
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deleted_count]
+              properties:
+                deleted_count:
+                  type: integer
+                  example: 42
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"

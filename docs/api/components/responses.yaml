@@ -1,0 +1,27 @@
+Unauthorized:
+  description: Missing or invalid API key
+  content:
+    application/problem+json:
+      schema:
+        $ref: "./schemas.yaml#/ProblemDetail"
+
+NotFound:
+  description: Resource not found
+  content:
+    application/problem+json:
+      schema:
+        $ref: "./schemas.yaml#/ProblemDetail"
+
+BadRequest:
+  description: Bad request
+  content:
+    application/problem+json:
+      schema:
+        $ref: "./schemas.yaml#/ProblemDetail"
+
+ValidationError:
+  description: Validation failed
+  content:
+    application/problem+json:
+      schema:
+        $ref: "./schemas.yaml#/ProblemDetail"

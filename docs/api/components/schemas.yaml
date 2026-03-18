@@ -1,0 +1,348 @@
+Pagination:
+  type: object
+  required: [has_more, next_cursor, total_count]
+  properties:
+    has_more:
+      type: boolean
+    next_cursor:
+      type: ["string", "null"]
+    total_count:
+      type: ["integer", "null"]
+
+Inbox:
+  type: object
+  required: [id, address, email_count, created_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    address:
+      type: string
+      format: email
+      example: test@mail.inboxed.dev
+    email_count:
+      type: integer
+    created_at:
+      type: string
+      format: date-time
+
+EmailSummary:
+  type: object
+  required: [id, from, to, subject, preview, has_attachments, attachment_count, source_type, received_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    from:
+      type: string
+    to:
+      type: array
+      items:
+        type: string
+    subject:
+      type: string
+    preview:
+      type: string
+      description: First 200 chars of body text
+    has_attachments:
+      type: boolean
+    attachment_count:
+      type: integer
+    source_type:
+      type: string
+      enum: [smtp, relay, api]
+    inbox_address:
+      type: ["string", "null"]
+    received_at:
+      type: string
+      format: date-time
+
+EmailDetail:
+  type: object
+  required: [id, inbox_id, from, to, cc, subject, body_html, body_text, raw_headers, source_type, received_at, expires_at, attachments]
+  properties:
+    id:
+      type: string
+      format: uuid
+    inbox_id:
+      type: string
+      format: uuid
+    from:
+      type: string
+    to:
+      type: array
+      items:
+        type: string
+    cc:
+      type: array
+      items:
+        type: string
+    subject:
+      type: string
+    body_html:
+      type: ["string", "null"]
+    body_text:
+      type: ["string", "null"]
+    raw_headers:
+      type: object
+      additionalProperties:
+        type: string
+    source_type:
+      type: string
+    received_at:
+      type: string
+      format: date-time
+    expires_at:
+      type: string
+      format: date-time
+    attachments:
+      type: array
+      items:
+        $ref: "#/Attachment"
+
+Attachment:
+  type: object
+  required: [id, filename, content_type, size_bytes, inline, download_url]
+  properties:
+    id:
+      type: string
+      format: uuid
+    filename:
+      type: string
+    content_type:
+      type: string
+      example: application/pdf
+    size_bytes:
+      type: integer
+    inline:
+      type: boolean
+    download_url:
+      type: string
+      example: /api/v1/attachments/abc/download
+
+SearchResult:
+  type: object
+  required: [id, inbox_id, from, subject, preview, received_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    inbox_id:
+      type: string
+      format: uuid
+    inbox_address:
+      type: ["string", "null"]
+    from:
+      type: string
+    subject:
+      type: string
+    preview:
+      type: string
+    received_at:
+      type: string
+      format: date-time
+    relevance:
+      type: ["number", "null"]
+      format: float
+
+HttpEndpoint:
+  type: object
+  required: [id, endpoint_type, token, url, request_count, created_at, updated_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    endpoint_type:
+      type: string
+      enum: [webhook, form, heartbeat]
+    token:
+      type: string
+      example: wh_a1b2c3d4
+    label:
+      type: ["string", "null"]
+    description:
+      type: ["string", "null"]
+    url:
+      type: string
+      description: Public catch URL
+      example: https://inboxed-api.notdefined.dev/hook/wh_a1b2c3d4
+    allowed_methods:
+      type: array
+      items:
+        type: string
+    allowed_ips:
+      type: array
+      items:
+        type: string
+    max_body_bytes:
+      type: integer
+    request_count:
+      type: integer
+    response_mode:
+      type: ["string", "null"]
+      enum: [json, redirect, html, null]
+    response_redirect_url:
+      type: ["string", "null"]
+    expected_interval_seconds:
+      type: ["integer", "null"]
+      description: Heartbeat expected interval
+    heartbeat_status:
+      type: ["string", "null"]
+      enum: [pending, healthy, late, down, null]
+    last_ping_at:
+      type: ["string", "null"]
+      format: date-time
+    status_changed_at:
+      type: ["string", "null"]
+      format: date-time
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+HttpRequestSummary:
+  type: object
+  required: [id, method, size_bytes, received_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    method:
+      type: string
+      example: POST
+    path:
+      type: ["string", "null"]
+    content_type:
+      type: ["string", "null"]
+    ip_address:
+      type: ["string", "null"]
+    size_bytes:
+      type: integer
+    received_at:
+      type: string
+      format: date-time
+
+HttpRequestDetail:
+  allOf:
+    - $ref: "#/HttpRequestSummary"
+    - type: object
+      properties:
+        query_string:
+          type: ["string", "null"]
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        body:
+          type: ["string", "null"]
+
+WebhookEndpoint:
+  type: object
+  required: [id, url, event_types, status, failure_count, created_at, updated_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    url:
+      type: string
+      format: uri
+    event_types:
+      type: array
+      items:
+        type: string
+        enum: [email_received, email_deleted]
+    status:
+      type: string
+      enum: [active, disabled]
+    description:
+      type: ["string", "null"]
+    failure_count:
+      type: integer
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+WebhookEndpointWithSecret:
+  allOf:
+    - $ref: "#/WebhookEndpoint"
+    - type: object
+      required: [secret]
+      properties:
+        secret:
+          type: string
+          description: HMAC signing secret (only shown on create)
+          example: whsec_abc123...
+
+WebhookEndpointWithStats:
+  allOf:
+    - $ref: "#/WebhookEndpoint"
+    - type: object
+      required: [stats]
+      properties:
+        stats:
+          type: object
+          properties:
+            total_deliveries:
+              type: integer
+            successful:
+              type: integer
+            failed:
+              type: integer
+            pending:
+              type: integer
+
+WebhookDelivery:
+  type: object
+  required: [id, event_type, event_id, status, attempt_count, created_at]
+  properties:
+    id:
+      type: string
+      format: uuid
+    event_type:
+      type: string
+    event_id:
+      type: string
+    status:
+      type: string
+      enum: [pending, delivered, failed]
+    http_status:
+      type: ["integer", "null"]
+    attempt_count:
+      type: integer
+    created_at:
+      type: string
+      format: date-time
+    last_attempted_at:
+      type: ["string", "null"]
+      format: date-time
+
+ProblemDetail:
+  type: object
+  required: [type, title, detail, status]
+  properties:
+    type:
+      type: string
+      format: uri
+      example: https://docs.inboxed.dev/errors/not-found
+    title:
+      type: string
+      example: Resource not found
+    detail:
+      type: string
+    status:
+      type: integer
+    errors:
+      type: array
+      description: Validation errors (only for 422)
+      items:
+        type: object
+        properties:
+          field:
+            type: string
+          message:
+            type: string

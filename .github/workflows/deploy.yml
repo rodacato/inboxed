@@ -26,6 +26,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate API docs
+        run: npx @redocly/cli build-docs docs/api/openapi.yaml --config docs/api/redocly.yaml -o apps/api/public/docs/index.html
       - uses: docker/build-push-action@v6
         with:
           context: apps/api

@@ -1,0 +1,75 @@
+# /api/v1/inboxes
+list:
+  get:
+    operationId: listInboxes
+    summary: List inboxes
+    description: Returns all inboxes for the project. Optionally filter by address.
+    tags: [Inboxes]
+    parameters:
+      - name: address
+        in: query
+        schema:
+          type: string
+        description: Filter by exact email address
+      - $ref: "../components/parameters.yaml#/limit"
+      - $ref: "../components/parameters.yaml#/after"
+    responses:
+      "200":
+        description: Inbox list
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inboxes, pagination]
+              properties:
+                inboxes:
+                  type: array
+                  items:
+                    $ref: "../components/schemas.yaml#/Inbox"
+                pagination:
+                  $ref: "../components/schemas.yaml#/Pagination"
+      "401":
+        $ref: "../components/responses.yaml#/Unauthorized"
+
+# /api/v1/inboxes/{inbox_id}
+detail:
+  get:
+    operationId: getInbox
+    summary: Get inbox details
+    tags: [Inboxes]
+    parameters:
+      - name: inbox_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Inbox details
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inbox]
+              properties:
+                inbox:
+                  $ref: "../components/schemas.yaml#/Inbox"
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"
+  delete:
+    operationId: deleteInbox
+    summary: Delete inbox and all emails
+    tags: [Inboxes]
+    parameters:
+      - name: inbox_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "204":
+        description: Inbox deleted
+      "404":
+        $ref: "../components/responses.yaml#/NotFound"

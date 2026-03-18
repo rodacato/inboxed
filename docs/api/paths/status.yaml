@@ -1,0 +1,28 @@
+get:
+  operationId: getStatus
+  summary: Service health check
+  tags: [Status]
+  security: [bearerAuth: []]
+  responses:
+    "200":
+      description: Service is healthy
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [service, version, status, timestamp]
+            properties:
+              service:
+                type: string
+                example: inboxed-api
+              version:
+                type: string
+                example: 0.0.1
+              status:
+                type: string
+                example: ok
+              timestamp:
+                type: string
+                format: date-time
+    "401":
+      $ref: "../components/responses.yaml#/Unauthorized"
