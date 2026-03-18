@@ -12,6 +12,7 @@
 	import FilterableList from '$lib/components/FilterableList.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import EmailPreview from '$lib/components/EmailPreview.svelte';
+	import SourceBadge from '../../../../features/emails/components/SourceBadge.svelte';
 
 	const projectId = $derived($page.params.projectId ?? '');
 	const realtime = getRealtimeStore();
@@ -211,6 +212,9 @@
 										>
 											{email.inbox_address.indexOf('@') > 0 ? email.inbox_address.substring(0, email.inbox_address.indexOf('@')) : email.inbox_address}
 										</span>
+									{/if}
+									{#if email.source_type && email.source_type !== 'relay'}
+										<SourceBadge sourceType={email.source_type} />
 									{/if}
 									<span class="text-xs font-mono text-text-secondary truncate flex-1"
 										>{email.from}</span

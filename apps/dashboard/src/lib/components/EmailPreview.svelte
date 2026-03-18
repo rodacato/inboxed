@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fetchEmail, fetchEmailRaw, deleteEmail } from '../../features/emails/emails.service';
 	import type { EmailDetail } from '../../features/emails/emails.types';
+	import SourceBadge from '../../features/emails/components/SourceBadge.svelte';
 
 	let {
 		emailId,
@@ -120,9 +121,14 @@
 		<!-- Header + Metadata -->
 		<div class="px-6 pt-4 pb-3 shrink-0 border-b border-border">
 			<div class="flex items-start justify-between mb-3">
-				<h2 class="text-lg font-display font-bold text-text-primary leading-tight pr-4">
-					{email.subject || '(no subject)'}
-				</h2>
+				<div class="flex items-center gap-2 pr-4">
+					<h2 class="text-lg font-display font-bold text-text-primary leading-tight">
+						{email.subject || '(no subject)'}
+					</h2>
+					{#if email.source_type && email.source_type !== 'relay'}
+						<SourceBadge sourceType={email.source_type} />
+					{/if}
+				</div>
 				<button
 					onclick={handleDelete}
 					class="px-2.5 py-1 text-xs font-mono text-error border border-error/30 rounded hover:bg-error/10 transition-colors shrink-0"
