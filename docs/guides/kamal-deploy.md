@@ -2,7 +2,7 @@
 
 Zero-downtime deploys via Kamal, automated through GitHub Actions. Merge to `production`, everything else is automatic.
 
-For simpler setups, see [Docker Compose self-hosting](self-hosting.md).
+For simpler setups, see the [Self-Host Guide](/self-host) on the dashboard.
 
 ---
 
@@ -138,7 +138,7 @@ After editing, restart cloudflared:
 sudo systemctl restart cloudflared
 ```
 
-> **Note:** SMTP (`mail.example.com:2525`) is NOT tunneled through Cloudflare — it's exposed directly via an A record to your VPS IP. Ensure your firewall allows inbound TCP on port 2525. See the [DNS setup guide](dns-setup.md) for full details.
+> **Note:** SMTP (`mail.example.com:2525`) is NOT tunneled through Cloudflare — it's exposed directly via an A record to your VPS IP. Ensure your firewall allows inbound TCP on port 2525.
 
 ---
 

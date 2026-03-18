@@ -26,12 +26,6 @@ Bump the version in all packages:
 
 # MCP server
 # apps/mcp/package.json → "version": "X.Y.Z"
-
-# Ruby client library
-# packages/ruby/inboxed.gemspec → version = "X.Y.Z"
-
-# TypeScript client library
-# packages/typescript/package.json → "version": "X.Y.Z"
 ```
 
 ### 2. Update CHANGELOG.md
