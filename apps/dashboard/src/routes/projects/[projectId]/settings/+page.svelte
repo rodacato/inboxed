@@ -9,7 +9,7 @@
 		createApiKey,
 		deleteApiKey
 	} from '../../../../features/projects/projects.service';
-	import { fetchInboxes } from '../../../../features/inboxes/inboxes.service';
+	import { fetchInboxes, createInbox } from '../../../../features/inboxes/inboxes.service';
 	import { fetchEndpoints } from '../../../../features/hooks/hooks.service';
 	import { getRealtimeStore } from '../../../../features/realtime/realtime.store.svelte';
 	import { projectsStore } from '$lib/stores/projects.store.svelte';
@@ -38,6 +38,9 @@
 	let showCreateEndpoint = $state(false);
 	let editingEndpoint = $state<HttpEndpoint | null>(null);
 	let tryingEndpoint = $state<HttpEndpoint | null>(null);
+	let newInboxAddress = $state('');
+	let creatingInbox = $state(false);
+	let inboxError = $state<string | null>(null);
 	let unsubscribe: (() => void) | undefined;
 
 	const smtp = $derived(authStore.smtp);
@@ -137,6 +140,23 @@
 		await deleteProject(projectId);
 		projectsStore.remove(projectId);
 		goto('/projects');
+	}
+
+	async function handleCreateInbox() {
+		if (!newInboxAddress.trim()) return;
+		creatingInbox = true;
+		inboxError = null;
+		try {
+			const res = await createInbox(projectId, newInboxAddress.trim());
+			if (!inboxes.some((i) => i.id === res.inbox.id)) {
+				inboxes = [res.inbox, ...inboxes];
+			}
+			newInboxAddress = '';
+		} catch (err: unknown) {
+			inboxError = err instanceof Error ? err.message : 'Failed to create inbox';
+		} finally {
+			creatingInbox = false;
+		}
 	}
 
 	function copyToken() {
@@ -409,12 +429,40 @@
 
 		<!-- Inboxes -->
 		<section>
-			<h3 class="text-lg font-display font-bold text-text-primary mb-4">Inboxes</h3>
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-lg font-display font-bold text-text-primary">Inboxes</h3>
+			</div>
+
+			<form
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleCreateInbox();
+				}}
+				class="flex gap-3 mb-4"
+			>
+				<input
+					type="email"
+					bind:value={newInboxAddress}
+					placeholder="Email address (e.g. signup@myapp.test)"
+					class="flex-1 bg-surface-2 border border-border rounded px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-dim focus:outline-none focus:border-phosphor"
+				/>
+				<button
+					type="submit"
+					disabled={creatingInbox || !newInboxAddress.trim()}
+					class="px-4 py-2 bg-phosphor text-base rounded text-sm font-mono font-medium hover:brightness-110 disabled:opacity-50"
+				>
+					+ Add Inbox
+				</button>
+			</form>
+			{#if inboxError}
+				<p class="text-xs font-mono text-error mb-3">{inboxError}</p>
+			{/if}
+
 			{#if inboxes.length === 0}
 				<EmptyState
 					icon="inbox"
 					title="No inboxes yet"
-					description="Send an email to create one automatically."
+					description="Add an address above or send an email to create one automatically."
 				/>
 			{:else}
 				<div class="rounded-lg border border-border overflow-hidden">

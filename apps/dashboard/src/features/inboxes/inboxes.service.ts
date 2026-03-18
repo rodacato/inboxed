@@ -17,6 +17,17 @@ export async function fetchInboxes(
 	};
 }
 
+export async function createInbox(
+	projectId: string,
+	address: string
+): Promise<{ inbox: Inbox }> {
+	return (await apiClient(`/admin/projects/${projectId}/inboxes`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ address })
+	})) as { inbox: Inbox };
+}
+
 export async function deleteInbox(projectId: string, inboxId: string): Promise<void> {
 	await apiClient(`/admin/projects/${projectId}/inboxes/${inboxId}`, {
 		method: 'DELETE'

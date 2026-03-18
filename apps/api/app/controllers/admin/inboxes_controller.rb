@@ -19,6 +19,15 @@ module Admin
       }
     end
 
+    def create
+      address = params.require(:address)
+      inbox = Inboxed::Services::CreateInbox.new.call(
+        project_id: params[:project_id],
+        address: address
+      )
+      render json: {inbox: serialize_inbox(inbox)}, status: :created
+    end
+
     def show
       inbox = InboxRecord.find_by!(id: params[:id], project_id: params[:project_id])
       render json: {inbox: serialize_inbox(inbox)}
