@@ -6,13 +6,7 @@ function createMockApi(overrides: Partial<InboxedApi> = {}): InboxedApi {
   return {
     getStatus: vi.fn(),
     listInboxes: vi.fn(),
-    findInboxByAddress: vi.fn().mockResolvedValue({
-      id: "inbox-1",
-      address: "test@mail.inboxed.dev",
-      email_count: 0,
-      last_email_at: null,
-      created_at: "2026-03-14T10:00:00Z",
-    }),
+    findInboxByAddress: vi.fn(),
     deleteInbox: vi.fn(),
     listEmails: vi.fn(),
     getEmail: vi.fn(),
@@ -55,36 +49,38 @@ describe("wait_for_email", () => {
     expect(data.message).toContain("5 seconds");
   });
 
-  it("passes subject_pattern to API", async () => {
+  it("passes inbox address and subject_pattern directly to API", async () => {
     const api = createMockApi();
     await execute(
       { inbox: "test@mail.inboxed.dev", subject_pattern: "verify" },
       api
     );
 
-    expect(api.waitForEmail).toHaveBeenCalledWith("inbox-1", "verify", 30);
-  });
-
-  it("returns error for unknown inbox", async () => {
-    const api = createMockApi({
-      findInboxByAddress: vi.fn().mockResolvedValue(null),
-    });
-    const result = await execute({ inbox: "unknown@mail.inboxed.dev" }, api);
-    expect(result.isError).toBe(true);
+    expect(api.waitForEmail).toHaveBeenCalledWith(
+      "test@mail.inboxed.dev",
+      "verify",
+      30
+    );
   });
 
   it("defaults timeout to 30 seconds", async () => {
     const api = createMockApi();
     const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
 
-    expect(api.waitForEmail).toHaveBeenCalledWith("inbox-1", undefined, 30);
+    expect(api.waitForEmail).toHaveBeenCalledWith(
+      "test@mail.inboxed.dev",
+      undefined,
+      30
+    );
     const data = JSON.parse(result.content[0].text);
     expect(data.message).toContain("30 seconds");
   });
 
   it("maps API errors via mapApiError", async () => {
     const api = createMockApi({
-      findInboxByAddress: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+      waitForEmail: vi
+        .fn()
+        .mockRejectedValue(new TypeError("fetch failed")),
     });
     const result = await execute({ inbox: "test@mail.inboxed.dev" }, api);
     expect(result.isError).toBe(true);

@@ -257,8 +257,8 @@ describe("InboxedApi", () => {
     await api.waitForEmail("inbox-1", "verify", 15);
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(callBody.subject_pattern).toBe("verify");
-    expect(callBody.timeout).toBe(15);
-    expect(callBody.inbox_id).toBe("inbox-1");
+    expect(callBody.timeout_seconds).toBe(15);
+    expect(callBody.inbox_address).toBe("inbox-1");
   });
 
   it("waitForEmail omits subject_pattern when not provided", async () => {

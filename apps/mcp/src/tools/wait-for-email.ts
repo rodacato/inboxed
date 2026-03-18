@@ -33,14 +33,9 @@ export async function execute(
   api: InboxedApi
 ): Promise<ToolResult> {
   try {
-    const inbox = await api.findInboxByAddress(input.inbox);
-    if (!inbox) {
-      return toolError(`Inbox not found: ${input.inbox}`);
-    }
-
     const timeout = input.timeout_seconds ?? 30;
     const email = await api.waitForEmail(
-      inbox.id,
+      input.inbox,
       input.subject_pattern,
       timeout
     );

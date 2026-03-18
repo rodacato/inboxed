@@ -53,7 +53,8 @@ export class InboxedApi {
     const raw = await this.request<Record<string, unknown>>(path, options);
     const pagination = (raw.pagination ?? { has_more: false, next_cursor: null, total_count: 0 }) as Pagination;
     const dataKey = Object.keys(raw).find((k) => k !== "pagination");
-    const items = dataKey ? (raw[dataKey] as T[]) : [];
+    const value = dataKey ? raw[dataKey] : undefined;
+    const items = Array.isArray(value) ? (value as T[]) : [];
     return { items, pagination };
   }
 
@@ -68,10 +69,8 @@ export class InboxedApi {
   }
 
   async findInboxByAddress(address: string): Promise<Inbox | null> {
-    const res = await this.requestPaginated<Inbox>(
-      `/api/v1/inboxes?address=${encodeURIComponent(address)}`
-    );
-    return res.items.length > 0 ? res.items[0] : null;
+    const res = await this.requestPaginated<Inbox>("/api/v1/inboxes");
+    return res.items.find((i) => i.address === address) ?? null;
   }
 
   async deleteInbox(id: string): Promise<void> {
@@ -94,13 +93,13 @@ export class InboxedApi {
   }
 
   async waitForEmail(
-    inboxId: string,
+    inboxAddress: string,
     subjectPattern?: string,
     timeoutSeconds: number = 30
   ): Promise<EmailSummary | null> {
     const body: Record<string, unknown> = {
-      inbox_id: inboxId,
-      timeout: timeoutSeconds,
+      inbox_address: inboxAddress,
+      timeout_seconds: timeoutSeconds,
     };
     if (subjectPattern) {
       body.subject_pattern = subjectPattern;
@@ -199,10 +198,11 @@ export class InboxedApi {
   ): Promise<HttpRequest | null> {
     const qs = new URLSearchParams({ limit: "1" });
     if (method) qs.set("method", method);
-    const res = await this.requestPaginated<HttpRequest>(
+    const res = await this.requestPaginated<HttpRequestSummary>(
       `/api/v1/endpoints/${encodeURIComponent(token)}/requests?${qs}`
     );
-    return res.items.length > 0 ? res.items[0] : null;
+    if (res.items.length === 0) return null;
+    return this.getRequest(token, res.items[0].id);
   }
 
   async waitForRequest(
