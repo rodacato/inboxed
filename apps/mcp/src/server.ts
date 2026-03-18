@@ -15,8 +15,12 @@ import * as extractJsonField from "./tools/extract-json-field.js";
 import * as listRequests from "./tools/list-requests.js";
 import * as checkHeartbeat from "./tools/check-heartbeat.js";
 import * as deleteEndpoint from "./tools/delete-endpoint.js";
+import * as listInboxes from "./tools/list-inboxes.js";
+import * as listEndpoints from "./tools/list-endpoints.js";
+import * as getEndpoint from "./tools/get-endpoint.js";
 
 const tools = [
+  listInboxes,
   listEmails,
   getEmail,
   waitForEmail,
@@ -25,6 +29,8 @@ const tools = [
   extractValue,
   searchEmails,
   deleteInbox,
+  listEndpoints,
+  getEndpoint,
   createEndpoint,
   waitForRequest,
   getLatestRequest,
