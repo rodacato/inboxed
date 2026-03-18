@@ -50,7 +50,7 @@ describe("InboxedApi", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            data: [
+            inboxes: [
               {
                 id: "inbox-1",
                 address: "test@mail.inboxed.dev",
@@ -59,7 +59,7 @@ describe("InboxedApi", () => {
                 created_at: "2026-03-14T10:00:00Z",
               },
             ],
-            meta: { total_count: 1, next_cursor: null },
+            pagination: { total_count: 1, next_cursor: null, has_more: false },
           }),
       })
     );
@@ -76,8 +76,8 @@ describe("InboxedApi", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            data: [],
-            meta: { total_count: 0, next_cursor: null },
+            inboxes: [],
+            pagination: { total_count: 0, next_cursor: null, has_more: false },
           }),
       })
     );
@@ -118,8 +118,8 @@ describe("InboxedApi", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          data: [{ id: "inbox-1", address: "test@mail.inboxed.dev" }],
-          meta: { total_count: 1, next_cursor: null },
+          inboxes: [{ id: "inbox-1", address: "test@mail.inboxed.dev" }],
+          pagination: { total_count: 1, next_cursor: null, has_more: false },
         }),
     });
     vi.stubGlobal("fetch", mockFetch);
@@ -129,7 +129,7 @@ describe("InboxedApi", () => {
       "http://localhost:3000/api/v1/inboxes",
       expect.any(Object)
     );
-    expect(result.data).toHaveLength(1);
+    expect(result.items).toHaveLength(1);
   });
 
   it("deleteInbox sends DELETE request", async () => {
@@ -151,8 +151,8 @@ describe("InboxedApi", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          data: [],
-          meta: { total_count: 0, next_cursor: null },
+          emails: [],
+          pagination: { total_count: 0, next_cursor: null, has_more: false },
         }),
     });
     vi.stubGlobal("fetch", mockFetch);
@@ -169,8 +169,8 @@ describe("InboxedApi", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          data: [],
-          meta: { total_count: 0, next_cursor: null },
+          emails: [],
+          pagination: { total_count: 0, next_cursor: null, has_more: false },
         }),
     });
     vi.stubGlobal("fetch", mockFetch);
@@ -182,14 +182,16 @@ describe("InboxedApi", () => {
     );
   });
 
-  it("getEmail calls correct endpoint", async () => {
+  it("getEmail calls correct endpoint and unwraps response", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
-          id: "email-1",
-          subject: "Test",
-          body_text: "Hello",
+          email: {
+            id: "email-1",
+            subject: "Test",
+            body_text: "Hello",
+          },
         }),
     });
     vi.stubGlobal("fetch", mockFetch);
@@ -207,8 +209,8 @@ describe("InboxedApi", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          data: [],
-          meta: { total_count: 0, next_cursor: null },
+          emails: [],
+          pagination: { total_count: 0, next_cursor: null, has_more: false },
         }),
     });
     vi.stubGlobal("fetch", mockFetch);
@@ -228,11 +230,13 @@ describe("InboxedApi", () => {
         status: 200,
         json: () =>
           Promise.resolve({
-            id: "email-1",
-            from: "noreply@app.com",
-            subject: "Verify",
-            preview: "Click...",
-            received_at: "2026-03-15T10:00:00Z",
+            email: {
+              id: "email-1",
+              from: "noreply@app.com",
+              subject: "Verify",
+              preview: "Click...",
+              received_at: "2026-03-15T10:00:00Z",
+            },
           }),
       })
     );
@@ -246,7 +250,7 @@ describe("InboxedApi", () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ id: "email-1" }),
+      json: () => Promise.resolve({ email: { id: "email-1" } }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -261,7 +265,7 @@ describe("InboxedApi", () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ id: "email-1" }),
+      json: () => Promise.resolve({ email: { id: "email-1" } }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
@@ -287,5 +291,97 @@ describe("InboxedApi", () => {
       "http://localhost:3000/api/v1/status",
       expect.any(Object)
     );
+  });
+
+  it("createEndpoint unwraps response", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          endpoint: {
+            id: "ep-1",
+            token: "wh_abc",
+            url: "/hook/wh_abc",
+            endpoint_type: "webhook",
+            label: "Test",
+          },
+        }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await api.createEndpoint({ endpoint_type: "webhook", label: "Test" });
+    expect(result.token).toBe("wh_abc");
+  });
+
+  it("getEndpoint unwraps response", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          endpoint: {
+            id: "ep-1",
+            token: "wh_abc",
+            endpoint_type: "heartbeat",
+            heartbeat_status: "healthy",
+          },
+        }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await api.getEndpoint("wh_abc");
+    expect(result.endpoint_type).toBe("heartbeat");
+    expect(result.heartbeat_status).toBe("healthy");
+  });
+
+  it("listEndpoints returns paginated items", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          endpoints: [{ id: "ep-1", token: "wh_abc" }],
+          pagination: { total_count: 1, next_cursor: null, has_more: false },
+        }),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await api.listEndpoints({ type: "webhook" });
+    expect(result.items).toHaveLength(1);
+    expect(result.pagination.total_count).toBe(1);
+  });
+
+  it("waitForRequest returns null on 408 timeout", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 408,
+        statusText: "Request Timeout",
+      })
+    );
+
+    const result = await api.waitForRequest("wh_abc", { timeout: 2 });
+    expect(result).toBeNull();
+  });
+
+  it("waitForRequest unwraps response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            request: {
+              id: "req-1",
+              method: "POST",
+              body: '{"test":true}',
+            },
+          }),
+      })
+    );
+
+    const result = await api.waitForRequest("wh_abc");
+    expect(result).not.toBeNull();
+    expect(result!.id).toBe("req-1");
   });
 });

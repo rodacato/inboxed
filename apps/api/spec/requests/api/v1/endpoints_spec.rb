@@ -42,7 +42,7 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       expect(response).to have_http_status(:created)
 
       body = JSON.parse(response.body)
-      data = body["data"]
+      data = body["endpoint"]
       expect(data["endpoint_type"]).to eq("webhook")
       expect(data["label"]).to eq("Stripe hooks")
       expect(data["token"]).to start_with("wh_")
@@ -61,7 +61,7 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       expect(response).to have_http_status(:created)
 
       body = JSON.parse(response.body)
-      data = body["data"]
+      data = body["endpoint"]
       expect(data["endpoint_type"]).to eq("heartbeat")
       expect(data["heartbeat_status"]).to eq("pending")
       expect(data["expected_interval_seconds"]).to eq(300)
@@ -86,7 +86,7 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(2)
+      expect(body["endpoints"].size).to eq(2)
     end
 
     it "filters by type" do
@@ -96,8 +96,8 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       get "/api/v1/endpoints", headers: auth_headers, params: {type: "webhook"}
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(1)
-      expect(body["data"].first["endpoint_type"]).to eq("webhook")
+      expect(body["endpoints"].size).to eq(1)
+      expect(body["endpoints"].first["endpoint_type"]).to eq("webhook")
     end
 
     it "does not show endpoints from other projects" do
@@ -113,7 +113,7 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       get "/api/v1/endpoints", headers: auth_headers
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(0)
+      expect(body["endpoints"].size).to eq(0)
     end
   end
 
@@ -126,8 +126,8 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"]["token"]).to eq(endpoint.token)
-      expect(body["data"]["label"]).to eq("Stripe")
+      expect(body["endpoint"]["token"]).to eq(endpoint.token)
+      expect(body["endpoint"]["label"]).to eq("Stripe")
     end
 
     it "returns 404 for other project's endpoint" do
@@ -158,8 +158,8 @@ RSpec.describe "Api::V1::Endpoints", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"]["label"]).to eq("Updated")
-      expect(body["data"]["description"]).to eq("New description")
+      expect(body["endpoint"]["label"]).to eq("Updated")
+      expect(body["endpoint"]["description"]).to eq("New description")
     end
 
     it "cannot change endpoint_type" do

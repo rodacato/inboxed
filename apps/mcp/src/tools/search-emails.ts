@@ -32,7 +32,7 @@ export async function execute(
     const res = await api.searchEmails(input.query, limit);
 
     return toolSuccess({
-      emails: res.data.map((e) => ({
+      emails: res.items.map((e) => ({
         id: e.id,
         inbox_address: e.inbox_address,
         from: e.from,
@@ -41,7 +41,7 @@ export async function execute(
         received_at: e.received_at,
         relevance: e.relevance,
       })),
-      total_count: res.meta.total_count,
+      total_count: res.pagination.total_count,
     });
   } catch (error) {
     return mapApiError(error);

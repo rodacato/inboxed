@@ -17,13 +17,7 @@ module Api
             after: params[:after]
           )
 
-          render json: {
-            data: result[:records].map { |d| WebhookDeliverySerializer.render(d) },
-            meta: {
-              has_more: result[:has_more],
-              next_cursor: result[:has_more] ? result[:records].last&.id : nil
-            }
-          }
+          render_collection(:deliveries, result[:records], result, serializer: WebhookDeliverySerializer)
         end
       end
     end

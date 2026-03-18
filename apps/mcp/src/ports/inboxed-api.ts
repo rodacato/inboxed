@@ -7,6 +7,7 @@ import type {
   HttpRequestSummary,
   Inbox,
   PaginatedResponse,
+  Pagination,
   SearchResult,
 } from "../types/index.js";
 import { ApiError } from "../helpers/errors.js";
@@ -42,33 +43,18 @@ export class InboxedApi {
   }
 
   /**
-   * Normalize API responses that use resource-named keys (e.g. { inboxes: [], pagination: {} })
-   * into the standard PaginatedResponse shape ({ data: [], meta: {} }).
+   * Extract a paginated response from an API envelope like { inboxes: [...], pagination: {...} }.
+   * The resource key is the first key that isn't "pagination".
    */
-  private normalizePaginated<T>(raw: Record<string, unknown>): PaginatedResponse<T> {
-    if ("data" in raw && "meta" in raw) {
-      return raw as unknown as PaginatedResponse<T>;
-    }
-
-    const pagination = raw.pagination as { total_count: number; next_cursor: string | null; has_more: boolean } | undefined;
-    const dataKey = Object.keys(raw).find((k) => k !== "pagination");
-    const items = dataKey ? (raw[dataKey] as T[]) : [];
-
-    return {
-      data: items,
-      meta: {
-        total_count: pagination?.total_count ?? items.length,
-        next_cursor: pagination?.next_cursor ?? null,
-      },
-    };
-  }
-
   private async requestPaginated<T>(
     path: string,
     options: RequestInit = {}
   ): Promise<PaginatedResponse<T>> {
     const raw = await this.request<Record<string, unknown>>(path, options);
-    return this.normalizePaginated<T>(raw);
+    const pagination = (raw.pagination ?? { has_more: false, next_cursor: null, total_count: 0 }) as Pagination;
+    const dataKey = Object.keys(raw).find((k) => k !== "pagination");
+    const items = dataKey ? (raw[dataKey] as T[]) : [];
+    return { items, pagination };
   }
 
   // Status
@@ -85,7 +71,7 @@ export class InboxedApi {
     const res = await this.requestPaginated<Inbox>(
       `/api/v1/inboxes?address=${encodeURIComponent(address)}`
     );
-    return res.data.length > 0 ? res.data[0] : null;
+    return res.items.length > 0 ? res.items[0] : null;
   }
 
   async deleteInbox(id: string): Promise<void> {
@@ -103,7 +89,8 @@ export class InboxedApi {
   }
 
   async getEmail(id: string): Promise<EmailDetail> {
-    return this.request<EmailDetail>(`/api/v1/emails/${id}`);
+    const res = await this.request<{ email: EmailDetail }>(`/api/v1/emails/${id}`);
+    return res.email;
   }
 
   async waitForEmail(
@@ -129,7 +116,7 @@ export class InboxedApi {
       body: JSON.stringify(body),
     });
 
-    if (res.status === 408) {
+    if (res.status === 408 || res.status === 204) {
       return null;
     }
 
@@ -137,7 +124,8 @@ export class InboxedApi {
       throw new ApiError(res.status, res.statusText, url);
     }
 
-    return res.json() as Promise<EmailSummary>;
+    const json = (await res.json()) as { email: EmailSummary };
+    return json.email;
   }
 
   // HTTP Endpoints
@@ -146,17 +134,19 @@ export class InboxedApi {
     endpoint_type?: string;
     label?: string;
     expected_interval_seconds?: number;
-  }): Promise<{ data: HttpEndpoint }> {
-    return this.request<{ data: HttpEndpoint }>("/api/v1/endpoints", {
+  }): Promise<HttpEndpoint> {
+    const res = await this.request<{ endpoint: HttpEndpoint }>("/api/v1/endpoints", {
       method: "POST",
       body: JSON.stringify(params),
     });
+    return res.endpoint;
   }
 
-  async getEndpoint(token: string): Promise<{ data: HttpEndpoint }> {
-    return this.request<{ data: HttpEndpoint }>(
+  async getEndpoint(token: string): Promise<HttpEndpoint> {
+    const res = await this.request<{ endpoint: HttpEndpoint }>(
       `/api/v1/endpoints/${encodeURIComponent(token)}`
     );
+    return res.endpoint;
   }
 
   async listEndpoints(params?: {
@@ -196,10 +186,11 @@ export class InboxedApi {
   async getRequest(
     token: string,
     requestId: string
-  ): Promise<{ data: HttpRequest }> {
-    return this.request<{ data: HttpRequest }>(
+  ): Promise<HttpRequest> {
+    const res = await this.request<{ request: HttpRequest }>(
       `/api/v1/endpoints/${encodeURIComponent(token)}/requests/${requestId}`
     );
+    return res.request;
   }
 
   async getLatestRequest(
@@ -211,7 +202,7 @@ export class InboxedApi {
     const res = await this.requestPaginated<HttpRequest>(
       `/api/v1/endpoints/${encodeURIComponent(token)}/requests?${qs}`
     );
-    return res.data.length > 0 ? res.data[0] : null;
+    return res.items.length > 0 ? res.items[0] : null;
   }
 
   async waitForRequest(
@@ -240,8 +231,8 @@ export class InboxedApi {
       throw new ApiError(res.status, res.statusText, url);
     }
 
-    const json = (await res.json()) as { data: HttpRequest };
-    return json.data;
+    const json = (await res.json()) as { request: HttpRequest };
+    return json.request;
   }
 
   // Search

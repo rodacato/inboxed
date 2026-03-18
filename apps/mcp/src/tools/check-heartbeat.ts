@@ -21,8 +21,7 @@ export async function execute(
   api: InboxedApi
 ): Promise<ToolResult> {
   try {
-    const res = await api.getEndpoint(input.endpoint_token);
-    const ep = res.data;
+    const ep = await api.getEndpoint(input.endpoint_token);
 
     if (ep.endpoint_type !== "heartbeat") {
       return toolError(

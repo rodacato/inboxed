@@ -54,8 +54,8 @@ RSpec.describe "Api::V1::Endpoints::Requests", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(2)
-      expect(body["data"].first).to include("method", "content_type", "received_at")
+      expect(body["requests"].size).to eq(2)
+      expect(body["requests"].first).to include("method", "content_type", "received_at")
     end
 
     it "filters by method" do
@@ -67,8 +67,8 @@ RSpec.describe "Api::V1::Endpoints::Requests", type: :request do
         params: {method: "POST"}
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(1)
-      expect(body["data"].first["method"]).to eq("POST")
+      expect(body["requests"].size).to eq(1)
+      expect(body["requests"].first["method"]).to eq("POST")
     end
   end
 
@@ -81,7 +81,7 @@ RSpec.describe "Api::V1::Endpoints::Requests", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      data = body["data"]
+      data = body["request"]
       expect(data["id"]).to eq(req.id)
       expect(data["body"]).to eq('{"event":"test"}')
       expect(data["headers"]).to include("content-type" => "application/json")
@@ -114,7 +114,7 @@ RSpec.describe "Api::V1::Endpoints::Requests", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"]["id"]).to eq(req.id)
+      expect(body["request"]["id"]).to eq(req.id)
     end
 
     it "returns 408 on timeout" do

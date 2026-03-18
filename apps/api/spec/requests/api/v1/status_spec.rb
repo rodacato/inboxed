@@ -6,7 +6,9 @@ RSpec.describe "Api::V1::Status", type: :request do
       it "returns 401" do
         get "/api/v1/status"
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)["error"]).to eq("API key required")
+        body = JSON.parse(response.body)
+        expect(body["title"]).to eq("Unauthorized")
+        expect(body["detail"]).to eq("API key required")
       end
     end
 

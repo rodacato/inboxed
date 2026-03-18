@@ -12,8 +12,8 @@ function createMockApi(bodyText: string | null, bodyHtml: string | null) {
       created_at: "2026-03-14T10:00:00Z",
     }),
     listEmails: vi.fn().mockResolvedValue({
-      data: [{ id: "email-1" }],
-      meta: { total_count: 1, next_cursor: null },
+      items: [{ id: "email-1" }],
+      pagination: { has_more: false, total_count: 1, next_cursor: null },
     }),
     getEmail: vi.fn().mockResolvedValue({
       id: "email-1",
@@ -88,8 +88,8 @@ describe("extract_code", () => {
         email_count: 0,
       }),
       listEmails: vi.fn().mockResolvedValue({
-        data: [],
-        meta: { total_count: 0, next_cursor: null },
+        items: [],
+        pagination: { has_more: false, total_count: 0, next_cursor: null },
       }),
     } as unknown as InboxedApi;
 

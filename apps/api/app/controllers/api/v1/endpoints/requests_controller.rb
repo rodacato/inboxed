@@ -13,10 +13,7 @@ module Api
             after: params[:after]
           )
 
-          render json: {
-            data: result[:records].map { |r| HttpRequestSerializer.render(r) },
-            meta: pagination_meta(result)
-          }
+          render_collection(:requests, result[:records], result, serializer: HttpRequestSerializer)
         end
 
         def show
@@ -26,9 +23,7 @@ module Api
 
           request_record = endpoint.requests.find(params[:id])
 
-          render json: {
-            data: HttpRequestSerializer.render_detail(request_record)
-          }
+          render json: {request: HttpRequestSerializer.render_detail(request_record)}
         end
 
         def destroy
@@ -49,7 +44,7 @@ module Api
           )
 
           if result
-            render json: {data: HttpRequestSerializer.render_detail(result)}
+            render json: {request: HttpRequestSerializer.render_detail(result)}
           else
             head :request_timeout
           end

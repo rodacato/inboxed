@@ -41,11 +41,11 @@ export async function execute(
     }
 
     const res = await api.listEmails(inbox.id, 1);
-    if (res.data.length === 0) {
+    if (res.items.length === 0) {
       return toolError(`No emails in inbox: ${input.inbox}`);
     }
 
-    const emailSummary = res.data[0];
+    const emailSummary = res.items[0];
     const email = await api.getEmail(emailSummary.id);
     const value = extractLabeledValue(
       email.body_text,

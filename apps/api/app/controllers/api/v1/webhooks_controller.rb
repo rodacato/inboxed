@@ -7,7 +7,7 @@ module Api
         repo = Inboxed::Repositories::WebhookEndpointRepository.new
         endpoints = repo.list_for_project(@current_project.id)
         render json: {
-          data: endpoints.map { |e| WebhookEndpointSerializer.render(e) }
+          webhooks: endpoints.map { |e| WebhookEndpointSerializer.render(e) }
         }
       end
 
@@ -16,7 +16,7 @@ module Api
         delivery_repo = Inboxed::Repositories::WebhookDeliveryRepository.new
         stats = delivery_repo.stats_for_endpoint(endpoint.id)
         render json: {
-          data: WebhookEndpointSerializer.render_with_stats(endpoint, stats)
+          webhook: WebhookEndpointSerializer.render_with_stats(endpoint, stats)
         }
       end
 
@@ -29,7 +29,7 @@ module Api
           description: params[:description]
         )
         render json: {
-          data: WebhookEndpointSerializer.render(endpoint, include_secret: true)
+          webhook: WebhookEndpointSerializer.render(endpoint, include_secret: true)
         }, status: :created
       end
 
@@ -39,7 +39,7 @@ module Api
         allowed = params.permit(:url, :description, :status, event_types: [])
         repo.update(endpoint, allowed.to_h.compact)
         render json: {
-          data: WebhookEndpointSerializer.render(endpoint)
+          webhook: WebhookEndpointSerializer.render(endpoint)
         }
       end
 
@@ -53,7 +53,7 @@ module Api
       def test
         endpoint = find_endpoint
         result = send_test_delivery(endpoint)
-        render json: {data: result}
+        render json: {test_result: result}
       end
 
       private

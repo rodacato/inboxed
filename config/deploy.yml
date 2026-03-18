@@ -86,6 +86,7 @@ accessories:
     port: "3001:3001"
     env:
       clear:
+        MCP_TRANSPORT: http
         INBOXED_API_URL: https://<%= ENV.fetch("INBOXED_API_DOMAIN", "inboxed-api.example.com") %>
       secret:
         - INBOXED_MCP_KEY

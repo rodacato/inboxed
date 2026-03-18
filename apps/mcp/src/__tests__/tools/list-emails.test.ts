@@ -15,7 +15,7 @@ function createMockApi(overrides: Partial<InboxedApi> = {}): InboxedApi {
     }),
     deleteInbox: vi.fn(),
     listEmails: vi.fn().mockResolvedValue({
-      data: [
+      items: [
         {
           id: "email-1",
           inbox_id: "inbox-1",
@@ -26,7 +26,7 @@ function createMockApi(overrides: Partial<InboxedApi> = {}): InboxedApi {
           received_at: "2026-03-15T10:00:00Z",
         },
       ],
-      meta: { total_count: 1, next_cursor: null },
+      pagination: { has_more: false, total_count: 1, next_cursor: null },
     }),
     getEmail: vi.fn(),
     waitForEmail: vi.fn(),

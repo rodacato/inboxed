@@ -12,15 +12,12 @@ module Api
           after: params[:after]
         )
 
-        render json: {
-          emails: result[:records].map { |r| EmailListSerializer.render(r) },
-          pagination: pagination_meta(result)
-        }
+        render_collection(:emails, result[:records], result, serializer: EmailListSerializer)
       end
 
       def show
         email = find_scoped_email(params[:id])
-        render json: {email: EmailDetailSerializer.render(email)}
+        render_resource(:email, email, serializer: EmailDetailSerializer)
       end
 
       def raw
@@ -51,7 +48,7 @@ module Api
         )
 
         if result
-          render json: {email: EmailDetailSerializer.render(result)}
+          render_resource(:email, result, serializer: EmailDetailSerializer)
         else
           head :no_content
         end

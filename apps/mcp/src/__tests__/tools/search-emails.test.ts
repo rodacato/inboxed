@@ -6,7 +6,7 @@ describe("search_emails", () => {
   it("returns search results", async () => {
     const api = {
       searchEmails: vi.fn().mockResolvedValue({
-        data: [
+        items: [
           {
             id: "email-1",
             inbox_id: "inbox-1",
@@ -18,7 +18,7 @@ describe("search_emails", () => {
             relevance: 0.95,
           },
         ],
-        meta: { total_count: 1, next_cursor: null },
+        pagination: { has_more: false, total_count: 1, next_cursor: null },
       }),
     } as unknown as InboxedApi;
 
@@ -33,8 +33,8 @@ describe("search_emails", () => {
   it("passes limit to API", async () => {
     const api = {
       searchEmails: vi.fn().mockResolvedValue({
-        data: [],
-        meta: { total_count: 0, next_cursor: null },
+        items: [],
+        pagination: { has_more: false, total_count: 0, next_cursor: null },
       }),
     } as unknown as InboxedApi;
 
@@ -45,8 +45,8 @@ describe("search_emails", () => {
   it("defaults limit to 10", async () => {
     const api = {
       searchEmails: vi.fn().mockResolvedValue({
-        data: [],
-        meta: { total_count: 0, next_cursor: null },
+        items: [],
+        pagination: { has_more: false, total_count: 0, next_cursor: null },
       }),
     } as unknown as InboxedApi;
 

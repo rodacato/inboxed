@@ -10,8 +10,8 @@ function createMockApi(bodyText: string | null, bodyHtml: string | null) {
       email_count: 1,
     }),
     listEmails: vi.fn().mockResolvedValue({
-      data: [{ id: "email-1" }],
-      meta: { total_count: 1, next_cursor: null },
+      items: [{ id: "email-1" }],
+      pagination: { has_more: false, total_count: 1, next_cursor: null },
     }),
     getEmail: vi.fn().mockResolvedValue({
       id: "email-1",
@@ -87,8 +87,8 @@ describe("extract_link", () => {
         email_count: 0,
       }),
       listEmails: vi.fn().mockResolvedValue({
-        data: [],
-        meta: { total_count: 0, next_cursor: null },
+        items: [],
+        pagination: { has_more: false, total_count: 0, next_cursor: null },
       }),
     } as unknown as InboxedApi;
 

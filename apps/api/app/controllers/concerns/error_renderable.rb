@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+# RFC 7807 Problem Details error responses (ADR-008, ADR-032)
 module ErrorRenderable
   extend ActiveSupport::Concern
+
+  PROBLEM_CONTENT_TYPE = "application/problem+json"
+  ERROR_BASE_URL = "https://docs.inboxed.dev/errors"
 
   included do
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
@@ -13,27 +17,62 @@ module ErrorRenderable
   private
 
   def render_not_found(exception)
-    render json: {
-      error: "Not found",
-      detail: exception.message
-    }, status: :not_found
+    render_problem(
+      type: "not-found",
+      title: "Resource not found",
+      detail: exception.message,
+      status: :not_found
+    )
   end
 
   def render_validation_error(exception)
-    render json: {
-      error: "Validation failed",
-      detail: exception.record.errors.full_messages
-    }, status: :unprocessable_entity
+    render_problem(
+      type: "validation-error",
+      title: "Validation failed",
+      detail: "One or more request parameters are invalid.",
+      status: :unprocessable_entity,
+      extras: {
+        errors: exception.record.errors.map { |e| {field: e.attribute.to_s, message: e.message} }
+      }
+    )
   end
 
   def render_bad_request(exception)
-    render json: {
-      error: "Bad request",
-      detail: exception.message
-    }, status: :bad_request
+    render_problem(
+      type: "bad-request",
+      title: "Bad request",
+      detail: exception.message,
+      status: :bad_request
+    )
   end
 
   def render_unauthorized(message = "Unauthorized")
-    render json: {error: message.to_s}, status: :unauthorized
+    render_problem(
+      type: "unauthorized",
+      title: "Unauthorized",
+      detail: message.to_s,
+      status: :unauthorized
+    )
+  end
+
+  def render_forbidden(message = "Forbidden")
+    render_problem(
+      type: "forbidden",
+      title: "Forbidden",
+      detail: message.to_s,
+      status: :forbidden
+    )
+  end
+
+  def render_problem(type:, title:, detail:, status:, extras: {})
+    status_code = Rack::Utils.status_code(status)
+    body = {
+      type: "#{ERROR_BASE_URL}/#{type}",
+      title: title,
+      detail: detail,
+      status: status_code
+    }.merge(extras)
+
+    render json: body, status: status, content_type: PROBLEM_CONTENT_TYPE
   end
 end

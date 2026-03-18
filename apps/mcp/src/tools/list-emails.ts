@@ -39,14 +39,14 @@ export async function execute(
     const res = await api.listEmails(inbox.id, limit);
 
     return toolSuccess({
-      emails: res.data.map((e) => ({
+      emails: res.items.map((e) => ({
         id: e.id,
         from: e.from,
         subject: e.subject,
         preview: e.preview,
         received_at: e.received_at,
       })),
-      total_count: res.meta.total_count,
+      total_count: res.pagination.total_count,
     });
   } catch (error) {
     return mapApiError(error);

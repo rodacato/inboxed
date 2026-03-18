@@ -11,10 +11,7 @@ module Api
           after: params[:after]
         )
 
-        render json: {
-          data: result[:records].map { |r| HttpEndpointSerializer.render(r) },
-          meta: pagination_meta(result)
-        }
+        render_collection(:endpoints, result[:records], result, serializer: HttpEndpointSerializer)
       end
 
       def create
@@ -23,9 +20,7 @@ module Api
           params: endpoint_params
         )
 
-        render json: {
-          data: HttpEndpointSerializer.render(endpoint)
-        }, status: :created
+        render_resource(:endpoint, endpoint, serializer: HttpEndpointSerializer, status: :created)
       end
 
       def show
@@ -33,9 +28,7 @@ module Api
           .where(project_id: @current_project.id)
           .find_by!(token: params[:token])
 
-        render json: {
-          data: HttpEndpointSerializer.render(endpoint)
-        }
+        render_resource(:endpoint, endpoint, serializer: HttpEndpointSerializer)
       end
 
       def update
@@ -45,9 +38,7 @@ module Api
           params: endpoint_params
         )
 
-        render json: {
-          data: HttpEndpointSerializer.render(endpoint)
-        }
+        render_resource(:endpoint, endpoint, serializer: HttpEndpointSerializer)
       end
 
       def destroy

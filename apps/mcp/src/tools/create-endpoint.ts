@@ -33,17 +33,17 @@ export async function execute(
   api: InboxedApi
 ): Promise<ToolResult> {
   try {
-    const res = await api.createEndpoint({
+    const ep = await api.createEndpoint({
       endpoint_type: input.endpoint_type ?? "webhook",
       label: input.label,
       expected_interval_seconds: input.expected_interval_seconds,
     });
 
     return toolSuccess({
-      token: res.data.token,
-      url: res.data.url,
-      endpoint_type: res.data.endpoint_type,
-      label: res.data.label,
+      token: ep.token,
+      url: ep.url,
+      endpoint_type: ep.endpoint_type,
+      label: ep.label,
     });
   } catch (error) {
     return mapApiError(error);

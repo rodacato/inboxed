@@ -43,7 +43,7 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       expect(response).to have_http_status(:created)
 
       body = JSON.parse(response.body)
-      data = body["data"]
+      data = body["webhook"]
       expect(data["url"]).to eq("https://example.com/hook")
       expect(data["event_types"]).to eq(["email_received"])
       expect(data["status"]).to eq("active")
@@ -98,8 +98,8 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(2)
-      expect(body["data"].first).not_to have_key("secret")
+      expect(body["webhooks"].size).to eq(2)
+      expect(body["webhooks"].first).not_to have_key("secret")
     end
 
     it "does not show endpoints from other projects" do
@@ -115,7 +115,7 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       get "/api/v1/webhooks", headers: auth_headers
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(0)
+      expect(body["webhooks"].size).to eq(0)
     end
   end
 
@@ -128,8 +128,8 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"]["id"]).to eq(endpoint.id)
-      expect(body["data"]["stats"]).to include(
+      expect(body["webhook"]["id"]).to eq(endpoint.id)
+      expect(body["webhook"]["stats"]).to include(
         "total_deliveries" => 0,
         "successful" => 0,
         "failed" => 0,
@@ -165,8 +165,8 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"]["description"]).to eq("Updated")
-      expect(body["data"]["event_types"]).to eq(["email_received", "email_deleted"])
+      expect(body["webhook"]["description"]).to eq("Updated")
+      expect(body["webhook"]["event_types"]).to eq(["email_received", "email_deleted"])
     end
 
     it "re-enables a disabled endpoint" do
@@ -177,7 +177,7 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       }, as: :json
 
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)["data"]["status"]).to eq("active")
+      expect(JSON.parse(response.body)["webhook"]["status"]).to eq("active")
     end
   end
 
@@ -224,8 +224,8 @@ RSpec.describe "Api::V1::Webhooks", type: :request do
       expect(response).to have_http_status(:ok)
 
       body = JSON.parse(response.body)
-      expect(body["data"].size).to eq(3)
-      expect(body["data"].first).to include("event_type", "status", "http_status")
+      expect(body["deliveries"].size).to eq(3)
+      expect(body["deliveries"].first).to include("event_type", "status", "http_status")
     end
   end
 end

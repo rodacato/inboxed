@@ -41,12 +41,15 @@ export interface SearchResult extends EmailSummary {
   relevance: number;
 }
 
+export interface Pagination {
+  has_more: boolean;
+  next_cursor: string | null;
+  total_count: number;
+}
+
 export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total_count: number;
-    next_cursor: string | null;
-  };
+  items: T[];
+  pagination: Pagination;
 }
 
 // HTTP Catcher types

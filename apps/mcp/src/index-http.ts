@@ -1,16 +1,48 @@
 import { createServer as createHttpServer } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { InboxedApi } from "./ports/inboxed-api.js";
 import { createServer } from "./server.js";
 
 const apiUrl = process.env.INBOXED_API_URL || "http://localhost:3000";
-const apiKey = process.env.INBOXED_API_KEY || "";
+const defaultApiKey = process.env.INBOXED_API_KEY || process.env.INBOXED_MCP_KEY || "";
 const port = parseInt(process.env.PORT || "3001", 10);
+const allowedOrigins = (process.env.CORS_ORIGINS || "*").split(",").map((o) => o.trim());
 
-const api = new InboxedApi(apiUrl, apiKey);
+function setCorsHeaders(req: IncomingMessage, res: ServerResponse): void {
+  const origin = req.headers.origin || "*";
+  const allowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+  if (allowed) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+}
+
+/**
+ * Extract the API key from the request. Clients can pass their own key
+ * via the Authorization header (passthrough auth). Falls back to the
+ * server-level INBOXED_API_KEY env var.
+ */
+function resolveApiKey(req: IncomingMessage): string {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith("Bearer ")) {
+    return auth.slice(7);
+  }
+  return defaultApiKey;
+}
 
 const httpServer = createHttpServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+  setCorsHeaders(req, res);
+
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   // Health check
   if (url.pathname === "/health") {
@@ -22,6 +54,20 @@ const httpServer = createHttpServer(async (req, res) => {
   // MCP endpoint
   if (url.pathname === "/mcp") {
     if (req.method === "POST") {
+      const apiKey = resolveApiKey(req);
+      if (!apiKey) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            error: { code: -32000, message: "Authorization required. Pass a Bearer token or set INBOXED_API_KEY." },
+            id: null,
+          })
+        );
+        return;
+      }
+
+      const api = new InboxedApi(apiUrl, apiKey);
       const server = createServer(api);
       try {
         const transport = new StreamableHTTPServerTransport({

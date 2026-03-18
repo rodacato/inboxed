@@ -5,6 +5,7 @@ module Api
     class BaseController < ApplicationController
       include Paginatable
       include ErrorRenderable
+      include ApiRenderable
 
       before_action :authenticate_api_key!
       before_action :set_correlation_id

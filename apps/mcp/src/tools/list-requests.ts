@@ -39,7 +39,7 @@ export async function execute(
     });
 
     return toolSuccess({
-      requests: res.data.map((r) => ({
+      requests: res.items.map((r) => ({
         id: r.id,
         method: r.method,
         path: r.path,
@@ -48,7 +48,7 @@ export async function execute(
         size_bytes: r.size_bytes,
         received_at: r.received_at,
       })),
-      total_count: res.meta.total_count,
+      total_count: res.pagination.total_count,
     });
   } catch (error) {
     return mapApiError(error);

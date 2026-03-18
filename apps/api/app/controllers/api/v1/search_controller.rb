@@ -5,7 +5,14 @@ module Api
     class SearchController < BaseController
       def show
         query = params[:q].to_s.strip
-        return render json: {error: "Query parameter 'q' is required"}, status: :bad_request if query.blank?
+        if query.blank?
+          return render_problem(
+            type: "bad-request",
+            title: "Bad request",
+            detail: "Query parameter 'q' is required",
+            status: :bad_request
+          )
+        end
 
         result = Inboxed::ReadModels::EmailSearch.search(
           @current_project.id,
@@ -14,25 +21,7 @@ module Api
           after: params[:after]
         )
 
-        render json: {
-          emails: result[:records].map { |r| serialize_search_result(r) },
-          pagination: pagination_meta(result)
-        }
-      end
-
-      private
-
-      def serialize_search_result(record)
-        {
-          id: record.id,
-          inbox_id: record.inbox_id,
-          inbox_address: record.try(:inbox_address),
-          from: record.from_address,
-          subject: record.subject,
-          preview: (record.body_text || "").truncate(200),
-          received_at: record.received_at.iso8601,
-          relevance: record.try(:relevance)&.to_f
-        }
+        render_collection(:emails, result[:records], result, serializer: SearchResultSerializer)
       end
     end
   end
