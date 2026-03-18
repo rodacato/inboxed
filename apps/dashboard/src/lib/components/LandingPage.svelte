@@ -56,7 +56,7 @@
 				<a href="/register" class="w-full sm:w-auto px-8 py-4 bg-phosphor text-white dark:text-black font-bold rounded-xl text-lg hover:scale-105 transition-transform glow-green font-display text-center">
 					Try Free <span class="opacity-60 text-sm ml-1">&mdash; 30 seconds</span>
 				</a>
-				<a href="#self-host" class="w-full sm:w-auto px-8 py-4 border border-border bg-surface/30 backdrop-blur-md text-text-primary font-bold rounded-xl text-lg hover:bg-surface transition-colors font-display text-center">
+				<a href="/self-host" class="w-full sm:w-auto px-8 py-4 border border-border bg-surface/30 backdrop-blur-md text-text-primary font-bold rounded-xl text-lg hover:bg-surface transition-colors font-display text-center">
 					Self-Host Guide
 				</a>
 			</div>
@@ -119,7 +119,7 @@
 					</div>
 					<h3 class="text-xl font-bold font-display mb-3">REST API</h3>
 					<p class="text-text-secondary text-sm leading-relaxed">
-						Full API with long-polling. Use the TypeScript or Ruby client in your CI/CD pipeline. No hardcoded sleeps.
+						Full API with long-polling. Use cURL or any HTTP client in your CI/CD pipeline. No hardcoded sleeps.
 					</p>
 				</div>
 			</div>
@@ -413,7 +413,7 @@
 						<span class="text-[10px] text-text-dim">List emails</span>
 					</div>
 					<pre class="text-xs text-text-secondary font-mono leading-relaxed">&#123;
-  <span class="text-cyan">"data"</span>: [
+  <span class="text-cyan">"emails"</span>: [
     &#123;
       <span class="text-cyan">"id"</span>: <span class="text-amber">"em_a1b2c3"</span>,
       <span class="text-cyan">"from"</span>: <span class="text-amber">"noreply@acme.test"</span>,
@@ -421,7 +421,7 @@
       <span class="text-cyan">"received_at"</span>: <span class="text-amber">"2026-03-16T14:32Z"</span>
     &#125;
   ],
-  <span class="text-cyan">"meta"</span>: &#123; <span class="text-cyan">"total"</span>: <span class="text-phosphor">12</span> &#125;
+  <span class="text-cyan">"pagination"</span>: &#123; <span class="text-cyan">"has_more"</span>: <span class="text-phosphor">true</span>, <span class="text-cyan">"total_count"</span>: <span class="text-phosphor">12</span> &#125;
 &#125;</pre>
 				</div>
 
@@ -441,19 +441,19 @@ curl localhost:3100/api/v1/emails/wait \
 				</div>
 			</div>
 
-			<!-- Client libraries -->
+			<!-- Integration methods -->
 			<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
-					<span class="font-mono text-sm text-amber">npm</span>
-					<span class="font-mono text-sm text-text-secondary">inboxed</span>
-				</div>
-				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
-					<span class="font-mono text-sm text-error">gem</span>
-					<span class="font-mono text-sm text-text-secondary">inboxed</span>
-				</div>
 				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
 					<span class="font-mono text-sm text-cyan">curl</span>
 					<span class="font-mono text-sm text-text-secondary">REST API</span>
+				</div>
+				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
+					<span class="font-mono text-sm text-amber">MCP</span>
+					<span class="font-mono text-sm text-text-secondary">AI Agents</span>
+				</div>
+				<div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
+					<span class="font-mono text-sm text-phosphor">docker</span>
+					<span class="font-mono text-sm text-text-secondary">Self-Hosted</span>
 				</div>
 			</div>
 		</div>
@@ -505,10 +505,10 @@ curl localhost:3100/api/v1/emails/wait \
 							<td class="p-5 text-text-dim hidden sm:table-cell">In-memory</td>
 						</tr>
 						<tr class="border-b border-border/50">
-							<td class="p-5">Client Libraries</td>
-							<td class="p-5 text-phosphor font-mono text-xs">npm + gem</td>
-							<td class="p-5 text-text-dim">&mdash;</td>
-							<td class="p-5 text-text-dim hidden sm:table-cell">&mdash;</td>
+							<td class="p-5">REST API + MCP</td>
+							<td class="p-5 text-phosphor font-mono text-xs">Both</td>
+							<td class="p-5 text-text-dim">API only</td>
+							<td class="p-5 text-text-dim hidden sm:table-cell">API only</td>
 						</tr>
 						<tr>
 							<td class="p-5">Price</td>
@@ -584,8 +584,8 @@ curl localhost:3100/api/v1/emails/wait \
 							<span class="text-phosphor">&#10003;</span> Your data, your server
 						</li>
 					</ul>
-					<a href="{githubUrl}#quickstart" class="block w-full py-4 border-2 border-phosphor text-phosphor font-bold rounded-xl hover:bg-phosphor hover:text-white dark:hover:text-black transition-all text-center font-display">
-						Read Documentation
+					<a href="/self-host" class="block w-full py-4 border-2 border-phosphor text-phosphor font-bold rounded-xl hover:bg-phosphor hover:text-white dark:hover:text-black transition-all text-center font-display">
+						Self-Host Guide
 					</a>
 				</div>
 			</div>
@@ -637,8 +637,8 @@ curl localhost:3100/api/v1/emails/wait \
 						<span class="text-text-dim group-open:rotate-45 transition-transform text-xl">+</span>
 					</summary>
 					<p class="px-6 pb-6 text-sm text-text-secondary leading-relaxed">
-						Yes. Use the REST API or client libraries (TypeScript, Ruby) to assert on emails in your test suite.
-						<code class="font-mono text-cyan">wait_for_email</code> long-polls until the email arrives &mdash; no hardcoded sleeps.
+						Yes. Use the REST API to assert on emails in your test suite.
+						<code class="font-mono text-cyan">POST /api/v1/emails/wait</code> long-polls until the email arrives &mdash; no hardcoded sleeps.
 					</p>
 				</details>
 

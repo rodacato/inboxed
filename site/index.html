@@ -86,7 +86,7 @@
            class="w-full sm:w-auto px-8 py-4 bg-phosphor font-bold rounded-xl text-lg hover:scale-105 transition-transform glow-green font-display text-center text-on-phosphor">
           Try Free <span class="opacity-60 text-sm ml-1">&mdash; 30 seconds</span>
         </a>
-        <a href="#self-host"
+        <a href="https://inboxed.notdefined.dev/self-host"
            class="w-full sm:w-auto px-8 py-4 border border-border bg-surface/30 backdrop-blur-md text-text-primary font-bold rounded-xl text-lg hover:bg-surface transition-colors font-display text-center">
           Self-Host Guide
         </a>
@@ -139,7 +139,7 @@
             <svg class="h-6 w-6 text-phosphor" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
           </div>
           <h3 class="text-xl font-bold font-display mb-3">REST API</h3>
-          <p class="text-text-secondary text-sm leading-relaxed font-body">Full API with long-polling. Use the TypeScript or Ruby client in your CI/CD pipeline. No hardcoded sleeps.</p>
+          <p class="text-text-secondary text-sm leading-relaxed font-body">Full API with long-polling. Use cURL or any HTTP client in your CI/CD pipeline. No hardcoded sleeps.</p>
         </div>
       </div>
     </div>
@@ -383,7 +383,7 @@
             <span class="text-[10px] text-text-dim font-body">List emails</span>
           </div>
           <pre class="text-xs text-text-secondary font-mono leading-relaxed">{
-  "data": [
+  "emails": [
     {
       "id": "em_a1b2c3",
       "from": "noreply@acme.test",
@@ -391,7 +391,7 @@
       "received_at": "2026-03-16T14:32Z"
     }
   ],
-  "meta": { "total": 12 }
+  "pagination": { "has_more": true, "total_count": 12 }
 }</pre>
         </div>
         <div class="bg-black p-6 rounded-2xl border border-border">
@@ -411,16 +411,16 @@ curl localhost:3100/api/v1/emails/wait \
       </div>
       <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
         <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
-          <span class="font-mono text-sm text-amber">npm</span>
-          <span class="font-mono text-sm text-text-secondary">inboxed</span>
-        </div>
-        <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
-          <span class="font-mono text-sm" style="color:#FF3B30">gem</span>
-          <span class="font-mono text-sm text-text-secondary">inboxed</span>
-        </div>
-        <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
           <span class="font-mono text-sm text-cyan">curl</span>
           <span class="font-mono text-sm text-text-secondary">REST API</span>
+        </div>
+        <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
+          <span class="font-mono text-sm text-amber">MCP</span>
+          <span class="font-mono text-sm text-text-secondary">AI Agents</span>
+        </div>
+        <div class="flex items-center gap-3 px-6 py-3 bg-surface rounded-lg border border-border">
+          <span class="font-mono text-sm text-phosphor">docker</span>
+          <span class="font-mono text-sm text-text-secondary">Self-Hosted</span>
         </div>
       </div>
     </div>
@@ -446,7 +446,7 @@ curl localhost:3100/api/v1/emails/wait \
             <tr class="border-b border-border/50"><td class="p-5">Webhook Debugging</td><td class="p-5 text-phosphor">&check; Integrated</td><td class="p-5 text-text-dim">&mdash; External</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
             <tr class="border-b border-border/50"><td class="p-5">HTTP Hooks (webhooks, forms, heartbeats)</td><td class="p-5 text-phosphor">&check; Unified</td><td class="p-5 text-text-dim">&mdash; None</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash; None</td></tr>
             <tr class="border-b border-border/50"><td class="p-5">Data Persistence</td><td class="p-5 text-phosphor">&check; PostgreSQL</td><td class="p-5 text-text-dim">Cloud storage</td><td class="p-5 text-text-dim hidden sm:table-cell">In-memory</td></tr>
-            <tr class="border-b border-border/50"><td class="p-5">Client Libraries</td><td class="p-5 text-phosphor font-mono text-xs">npm + gem</td><td class="p-5 text-text-dim">&mdash;</td><td class="p-5 text-text-dim hidden sm:table-cell">&mdash;</td></tr>
+            <tr class="border-b border-border/50"><td class="p-5">REST API + MCP</td><td class="p-5 text-phosphor font-mono text-xs">Both</td><td class="p-5 text-text-dim">API only</td><td class="p-5 text-text-dim hidden sm:table-cell">API only</td></tr>
             <tr><td class="p-5">Price</td><td class="p-5 text-phosphor font-bold">Free / MIT</td><td class="p-5 text-text-dim">$15-50/mo</td><td class="p-5 text-phosphor hidden sm:table-cell">Free / MIT</td></tr>
           </tbody>
         </table>
@@ -487,7 +487,7 @@ curl localhost:3100/api/v1/emails/wait \
             <li class="flex items-center gap-2"><span class="text-phosphor">&check;</span> Fully private &amp; local</li>
             <li class="flex items-center gap-2"><span class="text-phosphor">&check;</span> Your data, your server</li>
           </ul>
-          <a href="https://github.com/rodacato/inboxed#quickstart" class="block w-full py-4 border-2 border-phosphor text-phosphor font-bold rounded-xl hover:bg-phosphor hover:text-on-phosphor transition-all text-center font-display">Read Documentation</a>
+          <a href="https://inboxed.notdefined.dev/self-host" class="block w-full py-4 border-2 border-phosphor text-phosphor font-bold rounded-xl hover:bg-phosphor hover:text-on-phosphor transition-all text-center font-display">Self-Host Guide</a>
         </div>
       </div>
     </div>
@@ -512,7 +512,7 @@ curl localhost:3100/api/v1/emails/wait \
         </details>
         <details class="bg-surface border border-border rounded-2xl group">
           <summary class="p-6 font-bold font-display cursor-pointer list-none flex items-center justify-between">Can I use Inboxed in CI/CD?<span class="text-text-dim group-open:rotate-45 transition-transform text-xl">+</span></summary>
-          <p class="px-6 pb-6 text-sm text-text-secondary leading-relaxed font-body">Yes. Use the REST API or client libraries (TS, Ruby). <code class="font-mono text-cyan">wait_for_email</code> long-polls until the email arrives &mdash; no hardcoded sleeps.</p>
+          <p class="px-6 pb-6 text-sm text-text-secondary leading-relaxed font-body">Yes. Use the REST API. <code class="font-mono text-cyan">POST /api/v1/emails/wait</code> long-polls until the email arrives &mdash; no hardcoded sleeps.</p>
         </details>
         <details class="bg-surface border border-border rounded-2xl group">
           <summary class="p-6 font-bold font-display cursor-pointer list-none flex items-center justify-between">Is my data safe on the cloud trial?<span class="text-text-dim group-open:rotate-45 transition-transform text-xl">+</span></summary>
