@@ -2,9 +2,9 @@
 
 > Your emails go nowhere. You see everything.
 
-**Inboxed** is a self-hosted SMTP server for developers and QA. Catch test emails, inspect them via API or dashboard, and extract OTPs from AI agents via MCP.
+**Inboxed** is a self-hosted dev inbox for emails, webhooks, and HTTP requests. Catch test emails, inspect webhooks, and let AI agents extract OTPs via MCP.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-39FF14.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-39FF14.svg)](LICENSE.md)
 [![Ruby](https://img.shields.io/badge/Ruby-3.3+-CC342D.svg)](https://ruby-lang.org)
 [![Node](https://img.shields.io/badge/Node-22+-339933.svg)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](docker-compose.yml)
@@ -17,46 +17,15 @@ bin/setup
 docker compose up -d
 ```
 
-Open http://localhost — your dashboard is ready.
-
-Send a test email:
-
-```bash
-swaks --to test@localhost --server localhost:587
-```
+Open `http://localhost/setup` to create your admin account, then `http://localhost` for the dashboard.
 
 ## Features
 
 - **SMTP server** — point your app's SMTP config, catch all test emails
-- **REST API** — list, search, wait for emails programmatically
-- **Dashboard** — real-time inbox viewer with search and OTP detection
-- **MCP server** — AI agents extract OTPs and links without leaving context
-- **Client libraries** — [TypeScript](packages/typescript/) and [Ruby](packages/ruby/) clients for test automation
-
-## Test Automation
-
-### Playwright / Vitest
-
-```typescript
-import { InboxedClient } from "inboxed";
-
-const mail = new InboxedClient({ apiUrl: "http://localhost:3000" });
-
-const code = await mail.extractCode("signup@mail.inboxed.dev");
-await page.fill("[name=otp]", code);
-```
-
-### RSpec
-
-```ruby
-require "inboxed"
-
-Inboxed.configure { |c| c.api_url = "http://localhost:3000" }
-
-email = Inboxed.wait_for_email("user@mail.inboxed.dev", subject: /verify/)
-code = Inboxed.extract_code("user@mail.inboxed.dev")
-expect(code).to match(/\d{6}/)
-```
+- **HTTP hooks** — catch webhooks, form submissions, and heartbeats
+- **REST API** — list, search, wait for emails and requests programmatically
+- **Dashboard** — real-time inbox viewer with search, OTP detection, and email preview
+- **MCP server** — AI agents extract OTPs, links, and webhook data via Model Context Protocol
 
 ## MCP Server
 
@@ -66,38 +35,41 @@ Works with Claude Code, Cursor, n8n, and any MCP-compatible agent.
 {
   "mcpServers": {
     "inboxed": {
-      "command": "node",
-      "args": ["apps/mcp/dist/index.js"],
-      "env": {
-        "INBOXED_API_URL": "http://localhost:3000",
-        "INBOXED_API_KEY": "your-api-key"
-      }
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--network", "host",
+        "-e", "INBOXED_API_URL=http://localhost:3100",
+        "-e", "INBOXED_API_KEY=<your-api-key>",
+        "ghcr.io/rodacato/inboxed-mcp"
+      ]
     }
   }
 }
 ```
 
-Tools: `list_emails`, `get_email`, `wait_for_email`, `extract_code`, `extract_link`, `extract_value`, `search_emails`, `delete_inbox`
+15 tools available: `list_emails`, `get_email`, `wait_for_email`, `extract_code`, `extract_link`, `extract_value`, `search_emails`, `delete_inbox`, `create_endpoint`, `wait_for_request`, `get_latest_request`, `extract_json_field`, `list_requests`, `check_heartbeat`, `delete_endpoint`
 
-## Documentation
+## REST API
 
-- [Self-hosting guide](docs/guides/self-hosting.md)
-- [DNS setup](docs/guides/dns-setup.md)
-- [Configuration reference](docs/guides/configuration.md)
-- [Upgrading](docs/guides/upgrading.md)
-- [REST API spec](docs/specs/003-rest-api.md)
-- [MCP tools spec](docs/specs/005-mcp-server.md)
+```bash
+# Wait for an email (long-polling)
+curl -X POST http://localhost:3100/api/v1/emails/wait \
+  -H "Authorization: Bearer <api-key>" \
+  -d "to=signup@test" \
+  -d "timeout=30"
+
+# List emails
+curl http://localhost:3100/api/v1/inboxes/<id>/emails \
+  -H "Authorization: Bearer <api-key>"
+```
 
 ## Architecture
 
 ```
 apps/
 ├── api/           # Rails 8 API + SMTP server (midi-smtp-server)
-├── dashboard/     # SvelteKit SPA + Tailwind 4
+├── dashboard/     # Svelte 5 SPA + Tailwind 4
 └── mcp/           # Node.js MCP server (TypeScript)
-packages/
-├── typescript/    # Zero-dep TypeScript client
-└── ruby/          # Zero-dep Ruby client
 ```
 
 | Layer | Technology |
@@ -108,8 +80,18 @@ packages/
 | Database | PostgreSQL 16 |
 | Jobs | Solid Queue |
 | Real-time | ActionCable |
-| Dashboard | SvelteKit 2, Svelte 5, Tailwind 4 |
-| Deploy | Docker Compose |
+| Dashboard | Svelte 5, Tailwind 4 |
+| Deploy | Docker Compose, Kamal |
+
+## Self-Hosting
+
+See the [Self-Host Guide](https://inboxed.notdefined.dev/self-host) for step-by-step instructions covering:
+
+- **Local setup** — Docker Compose on your machine
+- **Production** — VPS with HTTPS (Caddy or Cloudflare Tunnel), DNS, and optional inbound email
+- **Kamal deploy** — zero-downtime deploys from a fork
+
+Configuration reference: [`.env.example`](.env.example)
 
 ## Contributing
 

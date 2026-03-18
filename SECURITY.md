@@ -14,7 +14,7 @@ That said, vulnerabilities that could allow unauthorized access to captured emai
 
 | Version | Supported |
 |---------|-----------|
-| Latest `main` | ✅ |
+| Latest `master` | ✅ |
 | Tagged releases | ✅ Current minor |
 | Older releases | ❌ |
 

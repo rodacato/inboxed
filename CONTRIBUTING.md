@@ -15,12 +15,11 @@ First off — thanks for taking the time. Inboxed is a small project built to sc
 ## What We Welcome
 
 - Bug fixes (always welcome, no discussion needed)
-- SDK/helper integrations — Playwright, RSpec, pytest, Cypress, k6, etc.
 - MCP tool additions for new use cases
 - Dashboard UX improvements
 - Documentation fixes and examples
 - Performance improvements to the SMTP receiver
-- New language clients (Ruby gem, npm package, Python package)
+- SDK/helper integrations — Playwright, RSpec, pytest, Cypress, k6, etc.
 
 ## What We're Cautious About
 
@@ -33,57 +32,64 @@ First off — thanks for taking the time. Inboxed is a small project built to sc
 
 ## Development Setup
 
-### Prerequisites
-- Ruby 3.3+
-- Node.js 20+
-- Docker + Docker Compose
-- PostgreSQL 16 (or use the Docker setup)
+### Option A: Dev Container (recommended)
 
-### Getting Started
+The easiest way to get started. Works with VS Code or GitHub Codespaces.
+
+```bash
+git clone https://github.com/rodacato/inboxed
+code inboxed/
+# Then: Cmd+Shift+P → "Dev Containers: Reopen in Container"
+```
+
+The Dev Container installs Ruby 3.3, Node.js 22, PostgreSQL, and Redis automatically. All ports are forwarded.
+
+### Option B: Manual Setup
+
+#### Prerequisites
+- Ruby 3.3+
+- Node.js 22+
+- Docker + Docker Compose (for PostgreSQL and Redis)
+- PostgreSQL 16 (or use Docker)
+
+#### Getting Started
 
 ```bash
 git clone https://github.com/rodacato/inboxed
 cd inboxed
 
-# Install Ruby dependencies
-bundle install
+# Start PostgreSQL and Redis
+docker compose up db redis -d
 
-# Install Node dependencies (MCP server)
-cd mcp && npm install && cd ..
+# Install Ruby dependencies
+cd apps/api && bundle install && cd ../..
+
+# Install Node dependencies (dashboard + MCP)
+cd apps/dashboard && npm install && cd ../..
+cd apps/mcp && npm install && cd ../..
 
 # Copy and configure environment
-cp .env.example .env.development
-# Edit .env.development with local settings
+cp .env.example .env
+# Edit .env with local settings
 
 # Setup database
-bin/rails db:create db:migrate
+cd apps/api && bin/rails db:create db:migrate && cd ../..
 
-# Start everything
-docker compose -f docker-compose.dev.yml up -d  # starts postgres + redis
-bin/dev                                           # starts Rails + MCP + Tailwind
+# Start all services (API, SMTP, dashboard, MCP)
+bin/dev
 ```
 
 ### Running Tests
 
 ```bash
-# Ruby
-bundle exec rspec
+# Ruby (API)
+cd apps/api && bundle exec rspec
 
 # MCP server
-cd mcp && npm test
+cd apps/mcp && npm test
 
-# Full suite
-bin/ci
-```
-
-### Sending a Test Email Locally
-
-```bash
-# With swaks (brew install swaks)
-swaks --to test@localhost --server localhost:1025
-
-# Or configure your local app to use:
-# address: localhost, port: 587, user_name: dev, password: dev-api-key
+# Dashboard
+cd apps/dashboard && npm run check
 ```
 
 ---
@@ -92,7 +98,7 @@ swaks --to test@localhost --server localhost:1025
 
 **Ruby:** Standard Ruby style. Run `bundle exec standardrb` before committing. No cops are disabled without a comment explaining why.
 
-**TypeScript (MCP):** Standard ESLint config. `npm run lint` before committing.
+**TypeScript (MCP + Dashboard):** ESLint + Prettier. `npm run lint` before committing.
 
 **CSS:** Tailwind utility classes only. No custom CSS unless there's a compelling reason. Document it if you add it.
 
@@ -108,7 +114,7 @@ chore: bump ruby to 3.3.4
 
 ## Pull Request Process
 
-1. Fork → branch from `main` → PR back to `main`
+1. Fork → branch from `master` → PR back to `master`
 2. Branch naming: `feat/mcp-extract-link`, `fix/duplicate-message-id`, `docs/pytest-example`
 3. Include tests for new behavior. Bug fixes should include a regression test.
 4. Update docs if you're changing behavior or adding features
@@ -117,7 +123,7 @@ chore: bump ruby to 3.3.4
 
 ### PR Checklist
 
-- [ ] Tests pass (`bin/ci`)
+- [ ] Tests pass
 - [ ] New behavior has tests
 - [ ] Docs updated if needed
 - [ ] No debug code / console.log left in
@@ -131,7 +137,7 @@ chore: bump ruby to 3.3.4
 Use GitHub Issues. Include:
 
 - Inboxed version (or commit hash)
-- How you're running it (Docker / bare metal / dev)
+- How you're running it (Docker Compose / Dev Container / bare metal)
 - What you expected vs what happened
 - Minimal reproduction steps
 - Relevant logs (redact any API keys or personal data)

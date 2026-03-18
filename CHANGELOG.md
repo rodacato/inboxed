@@ -96,9 +96,9 @@ First public release of Inboxed — a developer-first email testing platform.
 - Model Context Protocol server for AI agent integration
 - Tools: `get_latest_email`, `wait_for_email`, `extract_otp`, `extract_link`, `list_emails`, `delete_inbox`, `search_emails`
 
-#### Client Libraries
-- Ruby RSpec helper (`inboxed` gem)
-- TypeScript/Playwright helper (`inboxed` npm package)
+#### Client Libraries (unpublished)
+- Ruby client (`packages/ruby/`) — not yet published to RubyGems
+- TypeScript client (`packages/typescript/`) — not yet published to npm
 
 #### Infrastructure
 - Docker Compose setup for self-hosting

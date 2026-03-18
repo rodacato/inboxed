@@ -16,13 +16,14 @@ Inboxed is a **self-hosted SMTP server built for developers and QA automation**.
 
 | Layer | Technology |
 |-------|-----------|
-| Web + API | Ruby on Rails 8, Hotwire |
+| API | Ruby on Rails 8 (API-only) |
 | SMTP server | midi-smtp-server gem |
+| Dashboard | Svelte 5 SPA + Tailwind 4 |
 | MCP server | Node.js 22, TypeScript, MCP SDK |
 | Database | PostgreSQL 16 |
 | Background jobs | Solid Queue |
-| Real-time | Turbo Streams + ActionCable |
-| Deploy | Docker + Kamal |
+| Real-time | ActionCable |
+| Deploy | Docker Compose, Kamal |
 
 ### Repository Structure
 
