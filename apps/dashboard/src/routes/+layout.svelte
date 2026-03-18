@@ -17,7 +17,7 @@
 	let sidebarCollapsed = $state(false);
 	const realtime = getRealtimeStore();
 
-	const PUBLIC_ROUTES = ['/', '/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation', '/setup/complete', '/privacy', '/terms', '/self-host'];
+	const PUBLIC_ROUTES = ['/', '/login', '/register', '/setup', '/verify', '/forgot-password', '/reset-password', '/invitation', '/setup/complete', '/privacy', '/terms', '/self-host', '/docs'];
 
 	function isPublicRoute(pathname: string): boolean {
 		return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'));

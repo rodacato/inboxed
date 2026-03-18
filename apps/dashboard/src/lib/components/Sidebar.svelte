@@ -303,7 +303,7 @@
 				</span>
 			{/if}
 			<a
-				href="/docs"
+				href="/docs/index.html"
 				class="size-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
 				title="API Docs"
 			>
