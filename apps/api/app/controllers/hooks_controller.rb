@@ -111,10 +111,10 @@ class HooksController < ApplicationController
     Rails::HTML5::SafeListSanitizer.new.sanitize(
       html,
       tags: %w[html head title body h1 h2 h3 h4 h5 h6 p a br hr div span ul ol li
-               strong em b i u table thead tbody tfoot tr td th img form input
-               label button select option textarea meta link style],
+        strong em b i u table thead tbody tfoot tr td th img form input
+        label button select option textarea meta link style],
       attributes: %w[href src alt title class id style name type value placeholder
-                     action method charset content rel media]
+        action method charset content rel media]
     )
   end
 

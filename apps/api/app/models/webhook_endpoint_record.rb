@@ -69,12 +69,8 @@ class WebhookEndpointRecord < ApplicationRecord
     # hostname, not an IP — resolve and check
     begin
       resolved = Resolv.getaddresses(host)
-      resolved.each do |addr|
-        ip = IPAddr.new(addr)
-        if PRIVATE_IP_RANGES.any? { |range| range.include?(ip) }
-          errors.add(:url, "resolves to a private or internal IP address")
-          return
-        end
+      if resolved.any? { |addr| PRIVATE_IP_RANGES.any? { |range| range.include?(IPAddr.new(addr)) } }
+        errors.add(:url, "resolves to a private or internal IP address")
       end
     rescue Resolv::ResolvError
       # can't resolve at validation time, allow it

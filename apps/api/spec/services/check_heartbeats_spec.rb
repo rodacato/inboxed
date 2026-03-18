@@ -85,7 +85,7 @@ RSpec.describe Inboxed::Services::CheckHeartbeats do
   end
 
   it "fires webhook notification when transitioning to down" do
-    webhook = WebhookEndpointRecord.create!(
+    webhook_endpoint = WebhookEndpointRecord.create!(
       id: SecureRandom.uuid,
       project_id: project.id,
       url: "https://example.com/alert",
@@ -102,11 +102,11 @@ RSpec.describe Inboxed::Services::CheckHeartbeats do
 
     delivery = WebhookDeliveryRecord.last
     expect(delivery.event_type).to eq("heartbeat_down")
-    expect(delivery.webhook_endpoint_id).to eq(webhook.id)
+    expect(delivery.webhook_endpoint_id).to eq(webhook_endpoint.id)
   end
 
   it "fires recovery webhook when transitioning from down to healthy via CheckHeartbeats" do
-    webhook = WebhookEndpointRecord.create!(
+    _webhook = WebhookEndpointRecord.create!(
       id: SecureRandom.uuid,
       project_id: project.id,
       url: "https://example.com/alert",

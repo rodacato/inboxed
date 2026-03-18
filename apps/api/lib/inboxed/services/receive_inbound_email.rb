@@ -8,8 +8,8 @@ module Inboxed
       def call(envelope_to:, envelope_from:, raw_source:)
         normalized = envelope_to.to_s.gsub(/\A<|>\z/, "").strip
         inboxes = InboxRecord.where(address: [normalized, "<#{normalized}>"])
-                             .includes(:project)
-                             .limit(MAX_FAN_OUT)
+          .includes(:project)
+          .limit(MAX_FAN_OUT)
 
         return {delivered_to: 0, redacted: 0} if inboxes.empty?
 

@@ -53,7 +53,7 @@ module SiteAdmin
     def delete_matching_inboxes(address)
       # Find all inboxes matching this address (exact or wildcard)
       inboxes = if address.include?("*")
-        pattern = address.gsub("*", "%")
+        pattern = address.tr("*", "%")
         InboxRecord.where("address LIKE ?", pattern)
       else
         InboxRecord.where(address: address)

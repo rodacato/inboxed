@@ -2,9 +2,8 @@
 	import type { HttpRequestSummary } from '../hooks.types';
 
 	let {
-		requests,
-		expectedInterval
-	}: { requests: HttpRequestSummary[]; expectedInterval: number } = $props();
+		requests
+	}: { requests: HttpRequestSummary[] } = $props();
 
 	const HOURS = 24;
 	const SLOTS = 48; // half-hour slots
@@ -37,6 +36,7 @@
 
 	const tickCount = 7;
 	const tickInterval = (HOURS * 60 * 60 * 1000) / (tickCount - 1);
+	const tickIndices = Array.from({ length: tickCount }, (__, i) => i);
 </script>
 
 <div class="space-y-2">
@@ -54,7 +54,7 @@
 	</div>
 
 	<div class="flex justify-between text-xs font-mono text-text-dim">
-		{#each Array(tickCount) as _, i (i)}
+		{#each tickIndices as i (i)}
 			<span>{formatTime(timelineStart + i * tickInterval)}</span>
 		{/each}
 	</div>

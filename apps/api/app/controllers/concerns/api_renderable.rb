@@ -18,8 +18,8 @@ module ApiRenderable
 
     render json: {
       resource_name => serialized,
-      pagination: pagination_meta(result)
-    }, status: status
+      :pagination => pagination_meta(result)
+    }, status:
   end
 
   # Render a single resource with resource-named envelope (ADR-008, ADR-032)
@@ -28,6 +28,6 @@ module ApiRenderable
   #   → { "endpoint": { ... } }
   def render_resource(resource_name, record, serializer: nil, status: :ok)
     serialized = serializer ? serializer.render(record) : record
-    render json: {resource_name => serialized}, status: status
+    render json: {resource_name => serialized}, status:
   end
 end

@@ -34,7 +34,7 @@
 		const script = document.createElement('script');
 		script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit';
 		script.async = true;
-		(window as any).onTurnstileLoad = () => renderWidget();
+		(window as Record<string, unknown>).onTurnstileLoad = () => renderWidget();
 		document.head.appendChild(script);
 	}
 
@@ -43,7 +43,7 @@
 		if (!container || !turnstileSiteKey) return;
 		if (turnstileWidgetId !== null) return;
 
-		turnstileWidgetId = (window as any).turnstile.render('#turnstile-container', {
+		turnstileWidgetId = (window as Record<string, Record<string, (...args: unknown[]) => unknown>>).turnstile.render('#turnstile-container', {
 			sitekey: turnstileSiteKey,
 			callback: (token: string) => { turnstileToken = token; },
 			'expired-callback': () => { turnstileToken = ''; },
@@ -70,8 +70,8 @@
 		} catch (err) {
 			error = getErrorMessage(err);
 			// Reset turnstile on error
-			if (turnstileWidgetId !== null && (window as any).turnstile) {
-				(window as any).turnstile.reset(turnstileWidgetId);
+			if (turnstileWidgetId !== null && (window as Record<string, unknown>).turnstile) {
+				((window as Record<string, Record<string, (...args: unknown[]) => unknown>>).turnstile).reset(turnstileWidgetId);
 				turnstileToken = '';
 			}
 		} finally {

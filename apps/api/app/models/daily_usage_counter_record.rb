@@ -23,7 +23,7 @@ class DailyUsageCounterRecord < ApplicationRecord
       .update_all("#{column} = #{column} + 1")
 
     if result == 0
-      create!(organization_id: organization_id, date: today, column => 1)
+      create!(:organization_id => organization_id, :date => today, column => 1)
     end
   rescue ActiveRecord::RecordNotUnique
     # Race condition: another thread created it, just increment

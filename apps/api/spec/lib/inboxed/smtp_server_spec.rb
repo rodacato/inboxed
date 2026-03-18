@@ -27,7 +27,11 @@ RSpec.describe Inboxed::SmtpServer do
     )
   end
 
-  after { server.stop rescue nil }
+  after do
+    server.stop
+  rescue
+    nil
+  end
 
   describe "#on_auth_event" do
     let(:ctx) { {} }

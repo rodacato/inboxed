@@ -45,8 +45,8 @@
 			}
 			newAddress = '';
 			newReason = '';
-		} catch (err: any) {
-			const body = err?.body;
+		} catch (err: unknown) {
+			const body = (err as Record<string, Record<string, string>>)?.body;
 			error = body?.message || body?.detail || 'Failed to block address';
 		} finally {
 			adding = false;
