@@ -32,7 +32,10 @@
 	const visibleItems = $derived(navItems.filter((item) => !item.adminOnly || isAdmin));
 
 	function isActive(href: string): boolean {
-		return $page.url.pathname === href || $page.url.pathname.startsWith(href + '/');
+		if ($page.url.pathname === href) return true;
+		// Avoid /settings/site-admin matching /settings/site-admin/organizations
+		if (href === '/settings/site-admin') return false;
+		return $page.url.pathname.startsWith(href + '/');
 	}
 </script>
 

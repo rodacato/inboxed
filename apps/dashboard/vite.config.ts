@@ -10,6 +10,7 @@ export default defineConfig({
 		proxy: {
 			'/api': 'http://localhost:3100',
 			'/admin': 'http://localhost:3100',
+			'/site_admin': 'http://localhost:3100',
 			'/auth': 'http://localhost:3100',
 			'/setup': {
 				target: 'http://localhost:3100',

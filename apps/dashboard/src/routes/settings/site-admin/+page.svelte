@@ -13,7 +13,7 @@
 	});
 </script>
 
-<div class="p-8 max-w-2xl">
+<div class="max-w-2xl mx-auto p-6">
 	<h1 class="text-2xl font-display font-bold text-text-primary mb-6">Site Administration</h1>
 
 	{#if loading}
