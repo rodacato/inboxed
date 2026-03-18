@@ -64,17 +64,30 @@
 		// Register project navigation commands
 		commandStore.unregisterByPrefix('goto-project-');
 		commandStore.registerMany(
-			projs.map((p) => ({
-				id: `goto-project-${p.id}`,
-				label: `Go to "${p.name}" Mail`,
-				category: 'navigation' as const,
-				icon: 'folder',
-				keywords: [p.name, p.slug],
-				execute: () => {
-					goto(`/projects/${p.id}/mail`);
-					onNavigate?.();
+			projs.flatMap((p) => [
+				{
+					id: `goto-project-${p.id}-mail`,
+					label: `Go to "${p.name}" Mail`,
+					category: 'navigation' as const,
+					icon: 'mail',
+					keywords: [p.name, p.slug, 'email', 'inbox'],
+					execute: () => {
+						goto(`/projects/${p.id}/mail`);
+						onNavigate?.();
+					}
+				},
+				{
+					id: `goto-project-${p.id}-hooks`,
+					label: `Go to "${p.name}" Hooks`,
+					category: 'navigation' as const,
+					icon: 'webhook',
+					keywords: [p.name, p.slug, 'webhook', 'endpoint', 'form', 'heartbeat'],
+					execute: () => {
+						goto(`/projects/${p.id}/hooks`);
+						onNavigate?.();
+					}
 				}
-			}))
+			])
 		);
 
 		// Static commands
