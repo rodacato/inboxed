@@ -70,6 +70,7 @@ Rails.application.routes.draw do
       post :grant_permanent, on: :member
     end
     resources :users, only: [:index, :show, :destroy]
+    resources :blocked_addresses, only: [:index, :create, :destroy]
     resource :settings, only: [:show]
   end
 

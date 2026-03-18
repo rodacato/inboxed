@@ -29,3 +29,11 @@ export interface SiteSettings {
 	user_count: number;
 	organization_count: number;
 }
+
+export interface BlockedAddress {
+	id: string;
+	address: string;
+	reason: string | null;
+	blocked_by_id: string | null;
+	created_at: string;
+}

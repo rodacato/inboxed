@@ -27,6 +27,7 @@
 		{ href: '/settings/site-admin', label: 'Overview', icon: 'dashboard', siteAdminOnly: true },
 		{ href: '/settings/site-admin/organizations', label: 'Organizations', icon: 'domain_add', siteAdminOnly: true },
 		{ href: '/settings/site-admin/users', label: 'Users', icon: 'manage_accounts', siteAdminOnly: true },
+		{ href: '/settings/site-admin/blocked-addresses', label: 'Blocked Addresses', icon: 'block', siteAdminOnly: true },
 	];
 
 	const visibleItems = $derived(navItems.filter((item) => !item.adminOnly || isAdmin));
