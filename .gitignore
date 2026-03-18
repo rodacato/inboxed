@@ -24,6 +24,7 @@ packages/ruby/Gemfile.lock
 
 # ── Generated docs ───────────────────────────────────────────
 apps/api/public/docs/
+apps/dashboard/static/docs/
 
 # ── IDE ───────────────────────────────────────────────────────
 .vscode/*

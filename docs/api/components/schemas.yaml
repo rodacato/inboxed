@@ -328,7 +328,7 @@ ProblemDetail:
     type:
       type: string
       format: uri
-      example: https://docs.inboxed.dev/errors/not-found
+      example: https://inboxed.notdefined.dev/docs/errors/not-found
     title:
       type: string
       example: Resource not found

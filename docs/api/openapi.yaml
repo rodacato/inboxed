@@ -39,7 +39,7 @@ info:
 
     ```json
     {
-      "type": "https://docs.inboxed.dev/errors/not-found",
+      "type": "https://inboxed.notdefined.dev/docs/errors/not-found",
       "title": "Resource not found",
       "detail": "Couldn't find InboxRecord with 'id'=abc",
       "status": 404

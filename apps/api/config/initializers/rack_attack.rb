@@ -70,7 +70,7 @@ class Rack::Attack
         "X-RateLimit-Reset" => (Time.current.to_i + retry_after.to_i).to_s
       },
       [{
-        type: "https://docs.inboxed.dev/errors/rate-limited",
+        type: "https://inboxed.notdefined.dev/docs/errors/rate-limited",
         title: "Rate limit exceeded",
         detail: "Rate limit exceeded. Retry after #{retry_after} seconds.",
         status: 429

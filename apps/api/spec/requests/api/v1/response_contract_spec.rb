@@ -50,7 +50,7 @@ RSpec.describe "API v1 Response Contract", type: :request do
     expect(body).to have_key("detail")
     expect(body).to have_key("status")
     expect(body["status"]).to eq(expected_status)
-    expect(body["type"]).to start_with("https://docs.inboxed.dev/errors/")
+    expect(body["type"]).to start_with("https://inboxed.notdefined.dev/docs/errors/")
   end
 
   # ── Inboxes ──────────────────────────────────────────────

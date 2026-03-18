@@ -303,6 +303,13 @@
 				</span>
 			{/if}
 			<a
+				href="/docs"
+				class="size-7 flex items-center justify-center rounded-lg text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
+				title="API Docs"
+			>
+				<span class="material-symbols-outlined text-lg">help</span>
+			</a>
+			<a
 				href="/settings"
 				onclick={() => onNavigate?.()}
 				class="size-7 flex items-center justify-center rounded-lg transition-colors

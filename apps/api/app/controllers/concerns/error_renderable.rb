@@ -5,7 +5,7 @@ module ErrorRenderable
   extend ActiveSupport::Concern
 
   PROBLEM_CONTENT_TYPE = "application/problem+json"
-  ERROR_BASE_URL = "https://docs.inboxed.dev/errors"
+  ERROR_BASE_URL = "https://inboxed.notdefined.dev/docs/errors"
 
   included do
     rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
