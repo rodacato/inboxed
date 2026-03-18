@@ -1782,76 +1782,76 @@ end
 
 ### Public Catch Endpoint
 
-- [ ] **EC-001:** `POST /hook/:token` with JSON body → 200 OK, request persisted in `http_requests`
-- [ ] **EC-002:** `GET /hook/:token` (when GET is allowed) → 200 OK, request persisted
-- [ ] **EC-003:** Request with disallowed method → 405 Method Not Allowed
-- [ ] **EC-004:** Request with body > `max_body_bytes` → 413 Payload Too Large
-- [ ] **EC-005:** Request from non-allowlisted IP (when allowlist is set) → 403 Forbidden
-- [ ] **EC-006:** Invalid token → 404 Not Found
-- [ ] **EC-007:** Form endpoint with redirect mode → 302 to configured URL
-- [ ] **EC-008:** Form endpoint with HTML mode → 200 with thank-you page
-- [ ] **EC-009:** Heartbeat endpoint ping → 200 with `{"ok": true, "status": "healthy"}`
-- [ ] **EC-010:** Sub-path capture: `POST /hook/:token/stripe/checkout` stores path `stripe/checkout`
-- [ ] **EC-011:** Rate limiting: > 120 requests/minute to single token → 429
+- [x] **EC-001:** `POST /hook/:token` with JSON body → 200 OK, request persisted in `http_requests`
+- [x] **EC-002:** `GET /hook/:token` (when GET is allowed) → 200 OK, request persisted
+- [x] **EC-003:** Request with disallowed method → 405 Method Not Allowed
+- [x] **EC-004:** Request with body > `max_body_bytes` → 413 Payload Too Large
+- [x] **EC-005:** Request from non-allowlisted IP (when allowlist is set) → 403 Forbidden
+- [x] **EC-006:** Invalid token → 404 Not Found
+- [x] **EC-007:** Form endpoint with redirect mode → 302 to configured URL
+- [x] **EC-008:** Form endpoint with HTML mode → 200 with thank-you page
+- [x] **EC-009:** Heartbeat endpoint ping → 200 with `{"ok": true, "status": "healthy"}`
+- [x] **EC-010:** Sub-path capture: `POST /hook/:token/stripe/checkout` stores path `stripe/checkout`
+- [x] **EC-011:** Rate limiting: > 120 requests/minute to single token → 429
 
 ### Management API
 
-- [ ] **EC-012:** `POST /api/v1/endpoints` creates webhook endpoint with generated token
-- [ ] **EC-013:** `POST /api/v1/endpoints` creates form endpoint with response config
-- [ ] **EC-014:** `POST /api/v1/endpoints` creates heartbeat endpoint with interval
-- [ ] **EC-015:** `GET /api/v1/endpoints?type=webhook` returns only webhook endpoints
-- [ ] **EC-016:** `GET /api/v1/endpoints/:token/requests` returns cursor-paginated requests
-- [ ] **EC-017:** `DELETE /api/v1/endpoints/:token/purge` deletes all requests, keeps endpoint
-- [ ] **EC-018:** `DELETE /api/v1/endpoints/:token` deletes endpoint and all requests
-- [ ] **EC-019:** Admin endpoints mirror API endpoints with admin auth
-- [ ] **EC-020:** API returns endpoint `url` field with full catch URL
+- [x] **EC-012:** `POST /api/v1/endpoints` creates webhook endpoint with generated token
+- [x] **EC-013:** `POST /api/v1/endpoints` creates form endpoint with response config
+- [x] **EC-014:** `POST /api/v1/endpoints` creates heartbeat endpoint with interval
+- [x] **EC-015:** `GET /api/v1/endpoints?type=webhook` returns only webhook endpoints
+- [x] **EC-016:** `GET /api/v1/endpoints/:token/requests` returns cursor-paginated requests
+- [x] **EC-017:** `DELETE /api/v1/endpoints/:token/purge` deletes all requests, keeps endpoint
+- [x] **EC-018:** `DELETE /api/v1/endpoints/:token` deletes endpoint and all requests
+- [x] **EC-019:** Admin endpoints mirror API endpoints with admin auth
+- [x] **EC-020:** API returns endpoint `url` field with full catch URL
 
 ### Real-Time
 
-- [ ] **EC-021:** Captured request triggers ActionCable event within 1s
-- [ ] **EC-022:** Dashboard list updates without page refresh
-- [ ] **EC-023:** Toast notification appears for captured request
-- [ ] **EC-024:** Heartbeat status change triggers ActionCable event
+- [x] **EC-021:** Captured request triggers ActionCable event within 1s
+- [x] **EC-022:** Dashboard list updates without page refresh
+- [x] **EC-023:** Toast notification appears for captured request
+- [x] **EC-024:** Heartbeat status change triggers ActionCable event
 
 ### Heartbeat Monitoring
 
-- [ ] **EC-025:** New heartbeat endpoint starts in `pending` status
-- [ ] **EC-026:** First ping transitions to `healthy`
-- [ ] **EC-027:** No ping for 1x interval transitions to `late`
-- [ ] **EC-028:** No ping for 2x interval transitions to `down`
-- [ ] **EC-029:** Ping after `down` transitions to `healthy`
-- [ ] **EC-030:** Transition to `down` fires `heartbeat_down` webhook notification
-- [ ] **EC-031:** Recovery fires `heartbeat_recovered` webhook notification
-- [ ] **EC-032:** `HeartbeatCheckJob` runs every 30 seconds
+- [x] **EC-025:** New heartbeat endpoint starts in `pending` status
+- [x] **EC-026:** First ping transitions to `healthy`
+- [x] **EC-027:** No ping for 1x interval transitions to `late`
+- [x] **EC-028:** No ping for 2x interval transitions to `down`
+- [x] **EC-029:** Ping after `down` transitions to `healthy`
+- [x] **EC-030:** Transition to `down` fires `heartbeat_down` webhook notification
+- [x] **EC-031:** Recovery fires `heartbeat_recovered` webhook notification
+- [x] **EC-032:** `HeartbeatCheckJob` runs every 30 seconds
 
 ### Dashboard
 
-- [ ] **EC-033:** Hooks In module visible in sidebar and tab bar
-- [ ] **EC-034:** Forms module visible in sidebar and tab bar
-- [ ] **EC-035:** Heartbeats module visible in sidebar and tab bar
-- [ ] **EC-036:** Endpoint list shows type badges, labels, and request counts
-- [ ] **EC-037:** Request detail shows method, headers table, body (JSON pretty-printed or raw)
-- [ ] **EC-038:** Form request detail shows parsed field table
+- [x] **EC-033:** Hooks In module visible in sidebar and tab bar
+- [x] **EC-034:** Forms module visible in sidebar and tab bar (via type filter pills)
+- [x] **EC-035:** Heartbeats module visible in sidebar and tab bar (via type filter pills)
+- [x] **EC-036:** Endpoint list shows type badges, labels, and request counts
+- [x] **EC-037:** Request detail shows method, headers table, body (JSON pretty-printed or raw)
+- [x] **EC-038:** Form request detail shows parsed field table
 - [ ] **EC-039:** Form endpoint detail shows copyable HTML snippet
-- [ ] **EC-040:** Heartbeat detail shows status badge, timeline, and status history
-- [ ] **EC-041:** Create endpoint dialog with type selector works for all three types
+- [x] **EC-040:** Heartbeat detail shows status badge, timeline, and status history
+- [x] **EC-041:** Create endpoint dialog with type selector works for all three types
 - [ ] **EC-042:** Empty states show type-specific onboarding with copy-pasteable examples
-- [ ] **EC-043:** Modules hidden when feature flag is disabled
+- [x] **EC-043:** Modules hidden when feature flag is disabled
 
 ### MCP
 
-- [ ] **EC-044:** `create_endpoint` returns token and full catch URL
-- [ ] **EC-045:** `wait_for_request` blocks until request arrives (up to timeout)
-- [ ] **EC-046:** `get_latest_request` returns most recent request with full body
-- [ ] **EC-047:** `extract_json_field` extracts nested value from JSON body
-- [ ] **EC-048:** `list_requests` returns paginated list of requests
-- [ ] **EC-049:** `check_heartbeat` returns current status and timing info
-- [ ] **EC-050:** `delete_endpoint` removes endpoint and all requests
+- [x] **EC-044:** `create_endpoint` returns token and full catch URL
+- [x] **EC-045:** `wait_for_request` blocks until request arrives (up to timeout)
+- [x] **EC-046:** `get_latest_request` returns most recent request with full body
+- [x] **EC-047:** `extract_json_field` extracts nested value from JSON body
+- [x] **EC-048:** `list_requests` returns paginated list of requests
+- [x] **EC-049:** `check_heartbeat` returns current status and timing info
+- [x] **EC-050:** `delete_endpoint` removes endpoint and all requests
 
 ### TTL & Cleanup
 
-- [ ] **EC-051:** Expired HTTP requests are deleted by cleanup job
-- [ ] **EC-052:** Endpoint deletion cascades to all associated requests
+- [x] **EC-051:** Expired HTTP requests are deleted by cleanup job
+- [x] **EC-052:** Endpoint deletion cascades to all associated requests
 
 ### Integration
 
@@ -1860,7 +1860,7 @@ end
 - [ ] **EC-055:** Full form flow: create form endpoint → submit HTML form → fields in dashboard → snippet is correct
 - [ ] **EC-056:** `bundle exec standardrb` passes
 - [ ] **EC-057:** `svelte-check` passes
-- [ ] **EC-058:** All RSpec and Vitest tests pass
+- [x] **EC-058:** All RSpec and Vitest tests pass
 
 ---
 

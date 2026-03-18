@@ -626,43 +626,43 @@ apps/api/config/routes.rb                     # Add /hooks/inbound route
 
 ### Schema & Data Model
 
-- [ ] **EC-001:** Migration changes `inboxes.address` from global unique to `(project_id, address)` unique
-- [ ] **EC-002:** Non-unique index on `inboxes.address` exists for fan-out lookups
-- [ ] **EC-003:** All existing queries that use `InboxRecord.find_by(address:)` are verified to be correctly scoped
-- [ ] **EC-004:** Same address can exist in multiple projects without constraint violation
+- [x] **EC-001:** Migration changes `inboxes.address` from global unique to `(project_id, address)` unique
+- [x] **EC-002:** Non-unique index on `inboxes.address` exists for fan-out lookups
+- [x] **EC-003:** All existing queries that use `InboxRecord.find_by(address:)` are verified to be correctly scoped
+- [x] **EC-004:** Same address can exist in multiple projects without constraint violation
 
 ### Inbound Webhook Endpoint
 
-- [ ] **EC-005:** `POST /hooks/inbound` with valid secret and raw RFC 5322 body returns 202
-- [ ] **EC-006:** `POST /hooks/inbound` without `Authorization` header returns 401
-- [ ] **EC-007:** `POST /hooks/inbound` with invalid secret returns 401
-- [ ] **EC-008:** `POST /hooks/inbound` without `X-Envelope-To` header returns 422
-- [ ] **EC-009:** Shared secret is compared using constant-time comparison (`secure_compare`)
+- [x] **EC-005:** `POST /hooks/inbound` with valid secret and raw RFC 5322 body returns 202
+- [x] **EC-006:** `POST /hooks/inbound` without `Authorization` header returns 401
+- [x] **EC-007:** `POST /hooks/inbound` with invalid secret returns 401
+- [x] **EC-008:** `POST /hooks/inbound` without `X-Envelope-To` header returns 422
+- [x] **EC-009:** Shared secret is compared using constant-time comparison (`secure_compare`)
 
 ### Fan-Out Delivery
 
-- [ ] **EC-010:** Inbound email to an address that exists in 3 projects creates 3 email records (one per inbox)
-- [ ] **EC-011:** Inbound email to an address with no matching inboxes returns `delivered_to: 0` and creates no records
-- [ ] **EC-012:** Fan-out is limited to 10 projects per inbound email
-- [ ] **EC-013:** No new inboxes are auto-created from inbound email
+- [x] **EC-010:** Inbound email to an address that exists in 3 projects creates 3 email records (one per inbox)
+- [x] **EC-011:** Inbound email to an address with no matching inboxes returns `delivered_to: 0` and creates no records
+- [x] **EC-012:** Fan-out is limited to 10 projects per inbound email
+- [x] **EC-013:** No new inboxes are auto-created from inbound email
 
 ### Feature Flag
 
-- [ ] **EC-014:** With `INBOXED_FEATURE_INBOUND_EMAIL=true`, inbound email is stored with full body, headers, attachments, and raw source (`source_type: "inbound"`)
-- [ ] **EC-015:** With `INBOXED_FEATURE_INBOUND_EMAIL=false` (default), inbound email is stored with redacted body containing explanation message (`source_type: "inbound_redacted"`)
-- [ ] **EC-016:** Redacted emails preserve From, To, Subject, Date, and Message-ID headers
-- [ ] **EC-017:** Redacted emails do NOT store original body content or attachments
+- [x] **EC-014:** With `INBOXED_FEATURE_INBOUND_EMAIL=true`, inbound email is stored with full body, headers, attachments, and raw source (`source_type: "inbound"`)
+- [x] **EC-015:** With `INBOXED_FEATURE_INBOUND_EMAIL=false` (default), inbound email is stored with redacted body containing explanation message (`source_type: "inbound_redacted"`)
+- [x] **EC-016:** Redacted emails preserve From, To, Subject, Date, and Message-ID headers
+- [x] **EC-017:** Redacted emails do NOT store original body content or attachments
 
 ### Cloudflare Email Worker
 
-- [ ] **EC-018:** Worker receives email at `*@mail.notdefined.dev` and POSTs raw RFC 5322 to `/hooks/inbound`
-- [ ] **EC-019:** Worker sends `Authorization`, `Content-Type`, `X-Envelope-From`, and `X-Envelope-To` headers
-- [ ] **EC-020:** Worker throws on non-2xx response (triggers Cloudflare retry)
+- [x] **EC-018:** Worker receives email at `*@mail.notdefined.dev` and POSTs raw RFC 5322 to `/hooks/inbound`
+- [x] **EC-019:** Worker sends `Authorization`, `Content-Type`, `X-Envelope-From`, and `X-Envelope-To` headers
+- [x] **EC-020:** Worker throws on non-2xx response (triggers Cloudflare retry)
 
 ### Security
 
-- [ ] **EC-021:** Rack::Attack throttles `/hooks/inbound` at 30 req/min per IP
-- [ ] **EC-022:** Requests exceeding rate limit receive 429 response
+- [x] **EC-021:** Rack::Attack throttles `/hooks/inbound` at 30 req/min per IP
+- [x] **EC-022:** Requests exceeding rate limit receive 429 response
 
 ### Dashboard
 
@@ -671,9 +671,9 @@ apps/api/config/routes.rb                     # Add /hooks/inbound route
 
 ### Integration
 
-- [ ] **EC-025:** End-to-end: POST raw RFC 5322 to `/hooks/inbound` with valid secret -> email appears in matching inbox within 5 seconds
-- [ ] **EC-026:** Existing SMTP relay flow continues to work after schema migration
-- [ ] **EC-027:** All existing tests pass after schema migration
+- [x] **EC-025:** End-to-end: POST raw RFC 5322 to `/hooks/inbound` with valid secret -> email appears in matching inbox within 5 seconds
+- [x] **EC-026:** Existing SMTP relay flow continues to work after schema migration
+- [x] **EC-027:** All existing tests pass after schema migration
 - [ ] **EC-028:** CI green
 
 ---

@@ -1410,22 +1410,22 @@ maintenance_cleanup:
 
 ### Tenant Isolation
 
-- [ ] **EC-022:** User in Org A cannot list Org B's projects
-- [ ] **EC-023:** User in Org A cannot view Org B's emails
-- [ ] **EC-024:** User in Org A cannot access Org B's HTTP endpoints
-- [ ] **EC-025:** User in Org A cannot access Org B's API keys
+- [x] **EC-022:** User in Org A cannot list Org B's projects
+- [x] **EC-023:** User in Org A cannot view Org B's emails
+- [x] **EC-024:** User in Org A cannot access Org B's HTTP endpoints
+- [x] **EC-025:** User in Org A cannot access Org B's API keys
 - [ ] **EC-026:** site_admin can access all organizations' data
-- [ ] **EC-027:** `CurrentTenant` raises if not set (fail-open impossible)
-- [ ] **EC-028:** Tenant isolation test suite passes in CI
+- [x] **EC-027:** `CurrentTenant` raises if not set (fail-open impossible)
+- [x] **EC-028:** Tenant isolation test suite passes in CI
 
 ### Trial
 
-- [ ] **EC-029:** Trial org has full access during trial period
-- [ ] **EC-030:** Expired trial: read-only (can view, cannot create/send)
+- [x] **EC-029:** Trial org has full access during trial period
+- [x] **EC-030:** Expired trial: read-only (can view, cannot create/send)
 - [ ] **EC-031:** Expired trial: SMTP rejection (cannot send emails)
-- [ ] **EC-032:** Trial banner shows days remaining
-- [ ] **EC-033:** Expired banner shows "contact admin" message
-- [ ] **EC-034:** Permanent org has no trial banner or restrictions
+- [x] **EC-032:** Trial banner shows days remaining
+- [x] **EC-033:** Expired banner shows "contact admin" message
+- [x] **EC-034:** Permanent org has no trial banner or restrictions
 
 ### Invitations
 
