@@ -41,6 +41,36 @@ export class InboxedApi {
     return res.json() as Promise<T>;
   }
 
+  /**
+   * Normalize API responses that use resource-named keys (e.g. { inboxes: [], pagination: {} })
+   * into the standard PaginatedResponse shape ({ data: [], meta: {} }).
+   */
+  private normalizePaginated<T>(raw: Record<string, unknown>): PaginatedResponse<T> {
+    if ("data" in raw && "meta" in raw) {
+      return raw as unknown as PaginatedResponse<T>;
+    }
+
+    const pagination = raw.pagination as { total_count: number; next_cursor: string | null; has_more: boolean } | undefined;
+    const dataKey = Object.keys(raw).find((k) => k !== "pagination");
+    const items = dataKey ? (raw[dataKey] as T[]) : [];
+
+    return {
+      data: items,
+      meta: {
+        total_count: pagination?.total_count ?? items.length,
+        next_cursor: pagination?.next_cursor ?? null,
+      },
+    };
+  }
+
+  private async requestPaginated<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<PaginatedResponse<T>> {
+    const raw = await this.request<Record<string, unknown>>(path, options);
+    return this.normalizePaginated<T>(raw);
+  }
+
   // Status
   async getStatus(): Promise<ApiStatus> {
     return this.request<ApiStatus>("/api/v1/status");
@@ -48,11 +78,11 @@ export class InboxedApi {
 
   // Inbox operations
   async listInboxes(): Promise<PaginatedResponse<Inbox>> {
-    return this.request<PaginatedResponse<Inbox>>("/api/v1/inboxes");
+    return this.requestPaginated<Inbox>("/api/v1/inboxes");
   }
 
   async findInboxByAddress(address: string): Promise<Inbox | null> {
-    const res = await this.request<PaginatedResponse<Inbox>>(
+    const res = await this.requestPaginated<Inbox>(
       `/api/v1/inboxes?address=${encodeURIComponent(address)}`
     );
     return res.data.length > 0 ? res.data[0] : null;
@@ -67,7 +97,7 @@ export class InboxedApi {
     inboxId: string,
     limit: number = 10
   ): Promise<PaginatedResponse<EmailSummary>> {
-    return this.request<PaginatedResponse<EmailSummary>>(
+    return this.requestPaginated<EmailSummary>(
       `/api/v1/inboxes/${inboxId}/emails?limit=${limit}`
     );
   }
@@ -137,7 +167,7 @@ export class InboxedApi {
     if (params?.type) qs.set("type", params.type);
     if (params?.limit) qs.set("limit", String(params.limit));
     const query = qs.toString() ? `?${qs}` : "";
-    return this.request<PaginatedResponse<HttpEndpoint>>(
+    return this.requestPaginated<HttpEndpoint>(
       `/api/v1/endpoints${query}`
     );
   }
@@ -158,7 +188,7 @@ export class InboxedApi {
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.method) qs.set("method", params.method);
     const query = qs.toString() ? `?${qs}` : "";
-    return this.request<PaginatedResponse<HttpRequestSummary>>(
+    return this.requestPaginated<HttpRequestSummary>(
       `/api/v1/endpoints/${encodeURIComponent(token)}/requests${query}`
     );
   }
@@ -178,7 +208,7 @@ export class InboxedApi {
   ): Promise<HttpRequest | null> {
     const qs = new URLSearchParams({ limit: "1" });
     if (method) qs.set("method", method);
-    const res = await this.request<PaginatedResponse<HttpRequest>>(
+    const res = await this.requestPaginated<HttpRequest>(
       `/api/v1/endpoints/${encodeURIComponent(token)}/requests?${qs}`
     );
     return res.data.length > 0 ? res.data[0] : null;
@@ -219,7 +249,7 @@ export class InboxedApi {
     query: string,
     limit: number = 10
   ): Promise<PaginatedResponse<SearchResult>> {
-    return this.request<PaginatedResponse<SearchResult>>(
+    return this.requestPaginated<SearchResult>(
       `/api/v1/search?q=${encodeURIComponent(query)}&limit=${limit}`
     );
   }
