@@ -666,8 +666,8 @@ apps/api/config/routes.rb                     # Add /hooks/inbound route
 
 ### Dashboard
 
-- [ ] **EC-023:** Emails with `source_type: "inbound"` display a distinguishing badge in the dashboard
-- [ ] **EC-024:** Emails with `source_type: "inbound_redacted"` display a distinct badge indicating limited content
+- [x] **EC-023:** Emails with `source_type: "inbound"` display a distinguishing badge in the dashboard
+- [x] **EC-024:** Emails with `source_type: "inbound_redacted"` display a distinct badge indicating limited content
 
 ### Integration
 

@@ -1454,7 +1454,7 @@ maintenance_cleanup:
 - [ ] **EC-051:** Invite dialog sends invitation
 - [ ] **EC-052:** Sidebar shows org name, user email, trial status
 - [ ] **EC-053:** Trial banner visible when trial active
-- [ ] **EC-054:** Site admin panel visible only to site_admin
+- [x] **EC-054:** Site admin panel visible only to site_admin
 
 ### Migration
 
