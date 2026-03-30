@@ -1,5 +1,23 @@
 # [@] Inboxed
 
+> **This project is archived and no longer maintained.**
+
+---
+
+### Lessons Learned
+
+This project set out to build a self-hosted dev inbox with native MCP server integration, enabling AI agents (like Claude) to programmatically extract OTPs, verification links, and email content during automated E2E testing flows.
+
+**The idea works and is useful** — the SMTP capture, REST API, dashboard, and MCP tooling all function as designed. However, the primary use case that motivated this project — having Claude register on services and complete E2E flows autonomously — hit a fundamental blocker:
+
+- **AI agents cannot self-register on websites.** Claude (and similar agents) have built-in safety restrictions that prevent them from completing signup/registration flows, even on `localhost` or self-hosted services. This means the core workflow of "Claude signs up → receives verification email → extracts OTP via MCP → completes registration" is not feasible with current AI agent policies.
+- **MCP integration is solid but underserved by its intended consumer.** The MCP server works well for manual or semi-automated workflows, but the fully autonomous agent-driven E2E testing loop it was designed for cannot be closed due to the registration restriction above.
+- **Scope vs. utility trade-off.** For simpler use cases (catching test emails, inspecting webhooks), existing tools like Mailpit or MailHog are sufficient and battle-tested. Inboxed's differentiator was the MCP layer for AI agents, which is currently blocked at the policy level, not the technical level.
+
+**If AI agent policies evolve** to allow controlled self-registration in sandboxed/dev environments, this project (or its approach) could become highly relevant again.
+
+---
+
 > Your emails go nowhere. You see everything.
 
 **Inboxed** is a self-hosted dev inbox for emails, webhooks, and HTTP requests. Catch test emails, inspect webhooks, and let AI agents extract OTPs via MCP.
